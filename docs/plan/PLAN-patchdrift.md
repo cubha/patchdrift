@@ -35,7 +35,7 @@
 | ST-02 | Riot API 클라이언트 — fetch + bottleneck chain(20/1s ⟵ 100/120s, minTime·maxConcurrent), 429 `Retry-After`·5xx 지수 재시도, 타입드 엔드포인트(league-v4 challenger/grandmaster/master entries, match-v5 ids by puuid(startTime/endTime/queue/count), match, timeline) | `src/pipeline/collect/riot-client.ts` + 테스트(fetch 모킹) | F1 | B1 [S] |
 | ST-03 | 시드·크롤러·체크포인트 + run-collect CLI — 시드(3티어 puuid 집합) → 매치ID(시간창 휴리스틱) → 상세 → `gameVersion` 접두 컷 → `MatchSlim` reduce-on-ingest(JSONL append) · seen-ids 인덱스 · 재개 · 진행 로그 · `--patch 26.17 --target 10000` | `src/pipeline/collect/{seed,crawler,checkpoint}.ts` `scripts/run-collect.ts` + 테스트 | F1 | B2 [P] |
 | ST-04 | 타임라인 표본 수집·축약 + run-timeline CLI — 상세 JSONL에서 표본 K개 선택 → timeline → 라인별 골드@10/@14·첫 오브젝트(용·전령·바론·첫 포탑) 시각 → `TimelineSlim` JSONL | `src/pipeline/collect/timeline.ts` `scripts/run-timeline.ts` + 테스트(fixture) | F8 | B2 [P] |
-| ST-05 | 통계 엔진 — Wilson CI, Newcombe 두 비율 차이 CI, BH-FDR, beta-binomial 축소, 최소 n 게이트 판정 | `src/pipeline/aggregate/stats.ts` + 테스트(기지값 대조) | F2 | B2 [P] |
+| ST-05 | 통계 엔진 — Wilson CI, Newcombe 두 비율 차이 CI, BH-FDR, beta-binomial 축소, 최소 n 게이트 판정, 연속 지표(골드·초) 평균 차이 CI(Welch)·summarize (F8 델타용) | `src/pipeline/aggregate/stats.ts` + 테스트(기지값 대조) | F2 | B2 [P] |
 | ST-06 | 집계기 + run-aggregate — 챔피언(포지션별 픽·밴·승률, n, CI), 아이템 채택률(완성템), 타임라인 집계(골드·오브젝트), 매치 평균(경기 시간 등) → `data/aggregated/{patch}/{champions,items,lanes,objectives,summary}.json` | `src/pipeline/aggregate/{champions,items,lanes,objectives,summary}.ts` `scripts/run-aggregate.ts` + 테스트 | F2 F8 | B3 [P] |
 | ST-07 | 패치노트 파서 + fixture — ko-kr HTML fetch(캐시) → cheerio → `PatchNoteItem[]`(section·entity·skill·stat·before·after·direction·anchor) + 요약문 · fixture `src/__fixtures__/patch-26-17.html` | `src/pipeline/match/patchnotes-parser.ts` `scripts/run-fetch-notes.ts` + fixture·테스트 | F3 | B3 [P] |
 | ST-08 | 델타·1단 결정론 짝짓기·판정 + Data Dragon 매핑 — 두 패치 집계 diff → `DeltaRecord`(Δ·CI·q·n) → 엔티티 ID 블로킹(ko 이름↔ddragon key) → 방향 정합 → `MatchStatus` 4종 → `data/aggregated/deltas/{from}_{to}.json` · `scripts/run-ddragon.ts`(챔피언/아이템 JSON·이미지 → `public/dd/`) | `src/pipeline/match/{entity-match,verdict,ddragon}.ts` `scripts/run-ddragon.ts` + 테스트 | F4 | B4 [S] |
@@ -52,7 +52,7 @@
 |---|---|---|---|
 | B1 | ST-01 → ST-02 | [S] 순차 1에이전트 | 타입·클라이언트는 핵심 레이어(core) — 직렬 |
 | B2 | ST-03 ∥ ST-04 ∥ ST-05 | [P] 3에이전트 | 파일 독립. ST-05는 수집과 무관한 순수 함수 |
-| ▶ 운영 | B2 검증 후 **실수집 시작**(백그라운드): 26.16·26.17 상세 각 ≥2,000(목표 1만) + 타임라인 표본 — D+1 게이트(gameVersion 포맷·startTime·challenges 필드 확인) | — | 수집 3.3h/패치, 구현과 병행 |
+| ▶ 운영 | B2 검증 후 **실수집 시작**(백그라운드): 26.16·26.17 상세 각 ≥2,000(목표 1만) → **상세 수집 종료 후** 타임라인 표본(표본은 matches.jsonl 스냅샷에 결정론) — D+1 게이트(gameVersion 포맷·startTime·challenges 필드 확인) | — | 수집 3.3h/패치, 구현과 병행 |
 | B3 | ST-06 ∥ ST-07 | [P] 2에이전트 | 집계기는 ST-05 시그니처 위에, 파서는 독립 |
 | B4 | ST-08 → ST-09 | [S] 순차 | LLM 2단은 1단 출력 스키마에 의존. ST-09 전 claude-api 스킬 참조 |
 | ▶ 게이트 | 실데이터로 `pipeline:aggregate→match` 실행 → 델타 상위 10 짝짓기 비율·미공지 ≥1 확인 | — | SCOPE §4 D+1 게이트 |
@@ -67,6 +67,6 @@
 - 구현 규칙: 프로토타입 마크업·클래스 위계 1:1, Tailwind 유틸은 `@theme inline` 바인딩 토큰만, 차트는 recharts(색=토큰 var), 이미지=`public/dd/`
 
 ## ⑥ 데이터 계약 (배치 간 인터페이스 — ST-01이 확정, 이후 변경 시 PLAN 갱신)
-- `data/raw/{patch}/matches.jsonl` — `MatchSlim` 1행/매치 · `data/raw/{patch}/timelines.jsonl` — `TimelineSlim` · `data/raw/{patch}/seen-ids.txt`
+- `data/raw/{patch}/matches.jsonl` — `MatchSlim` 1행/매치 · `data/raw/{patch}/timelines.jsonl` — `TimelineSlim` · `data/raw/{patch}/seen-ids.txt` · 수집기 내부(웹·집계기 미소비): `seed-puuids.json`(24h 캐시)·`collect-state.json`(재개 체크포인트)·`samples/`
 - `data/aggregated/{patch}/{champions,items,lanes,objectives,summary}.json` · `data/aggregated/deltas/{from}_{to}.json` · `data/aggregated/notes/{patch}.json`(파서 출력) · `data/cache/llm/*.json`(gitignore)
 - 웹은 `data/aggregated/**`만 읽는다(빌드 타임)

@@ -1,0 +1,96 @@
+{
+  "metadata": {
+    "matchId": "KR_8367245341"
+  },
+  "info": {
+    "frameInterval": 60000,
+    "frames": [
+      {
+        "timestamp": 0,
+        "participantFrames": {
+          "1": { "totalGold": 500 },
+          "2": { "totalGold": 500 },
+          "3": { "totalGold": 500 },
+          "4": { "totalGold": 500 },
+          "5": { "totalGold": 500 },
+          "6": { "totalGold": 500 },
+          "7": { "totalGold": 500 },
+          "8": { "totalGold": 500 },
+          "9": { "totalGold": 500 },
+          "10": { "totalGold": 500 }
+        },
+        "events": []
+      },
+      {
+        "timestamp": 600221,
+        "participantFrames": {
+          "1": { "totalGold": 2831 },
+          "2": { "totalGold": 5498 },
+          "3": { "totalGold": 4858 },
+          "4": { "totalGold": 3635 },
+          "5": { "totalGold": 3267 },
+          "6": { "totalGold": 4324 },
+          "7": { "totalGold": 4230 },
+          "8": { "totalGold": 3706 },
+          "9": { "totalGold": 4409 },
+          "10": { "totalGold": 3074 }
+        },
+        "events": []
+      },
+      {
+        "timestamp": 840294,
+        "participantFrames": {
+          "1": { "totalGold": 4383 },
+          "2": { "totalGold": 7610 },
+          "3": { "totalGold": 7203 },
+          "4": { "totalGold": 5910 },
+          "5": { "totalGold": 4700 },
+          "6": { "totalGold": 6384 },
+          "7": { "totalGold": 6234 },
+          "8": { "totalGold": 5145 },
+          "9": { "totalGold": 7418 },
+          "10": { "totalGold": 4700 }
+        },
+        "events": [
+          {
+            "type": "ELITE_MONSTER_KILL",
+            "timestamp": 637796,
+            "killerId": 7,
+            "killerTeamId": 200,
+            "monsterType": "HORDE",
+            "bounty": 0
+          },
+          {
+            "type": "BUILDING_KILL",
+            "timestamp": 720916,
+            "buildingType": "TOWER_BUILDING",
+            "towerType": "OUTER_TURRET",
+            "teamId": 200,
+            "laneType": "MID_LANE",
+            "killerId": 3,
+            "bounty": 0
+          },
+          {
+            "type": "ELITE_MONSTER_KILL",
+            "timestamp": 736213,
+            "killerId": 2,
+            "killerTeamId": 100,
+            "monsterType": "DRAGON",
+            "monsterSubType": "WATER_DRAGON",
+            "assistingParticipantIds": [3],
+            "bounty": 0
+          },
+          {
+            "type": "ELITE_MONSTER_KILL",
+            "timestamp": 994817,
+            "killerId": 2,
+            "killerTeamId": 100,
+            "monsterType": "RIFTHERALD",
+            "assistingParticipantIds": [4, 5],
+            "bounty": 0
+          }
+        ]
+      }
+    ]
+  }
+}
