@@ -32,6 +32,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -39,3 +40,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# patchdrift pipeline data / harness scratch
+# 주의: `/data/raw/`(디렉토리 자체)를 제외하면 git이 내부를 아예 순회하지 않아 아래 negation이
+# 무효화된다 — 반드시 `/data/raw/*`(내용물)를 제외해야 `.gitkeep` 재포함이 동작한다.
+/data/raw/*
+!/data/raw/.gitkeep
+/data/cache/
+.playwright-mcp/
+scratch.md
+.mvp-state*.json
