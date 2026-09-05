@@ -65,7 +65,7 @@
 ## ⑤ UI 설계 명세 경로
 - `docs/design/UX-BRIEF.md` §3 스토리보드 · `docs/design/prototype/01~04.html`(+png) · `docs/design/DESIGN-TOKENS.md` · REF-RECON.md
 - 구현 규칙: 프로토타입 마크업·클래스 위계 1:1, Tailwind 유틸은 `@theme inline` 바인딩 토큰만, 차트는 recharts(색=토큰 var), 이미지=`public/dd/`
-- 승인 편차(오케스트레이터 지시): `DeltaValue`는 모든 kind에 ▲/▼ 화살표 표기(방향 가독성) · 티어/지역/큐 select는 데이터가 있는 옵션만(현재 1개+disabled — C2 미착수) · 패치 쌍 select는 경로 기반 라우팅
+- 승인 편차(오케스트레이터 지시): `DeltaValue`는 모든 kind에 ▲/▼ 화살표 표기(방향 가독성) · 티어/지역/큐 select는 데이터가 있는 옵션만(현재 1개+disabled — C2 미착수) · 패치 쌍 select는 경로 기반 라우팅 · 홈 사이드 "매치 평균"은 경기 시간 + 첫 오브젝트 4종(용·전령·바론·포탑) — 골드@14는 라인별 지표라 대조표/상세로 이관 · 대조표 정렬은 헤더 클릭(|Δ|·q·n) · 상세 차트는 전/후 막대+CI(일별 시계열은 수집 확장 후) · `/item/{slug}/`는 `:`→`~` 슬러그(퍼센트 인코딩 금지 — 정적 서버 404 실측)
 
 ## ⑥ 데이터 계약 (배치 간 인터페이스 — ST-01이 확정, 이후 변경 시 PLAN 갱신)
 - `data/raw/{patch}/matches.jsonl` — `MatchSlim` 1행/매치 · `data/raw/{patch}/timelines.jsonl` — `TimelineSlim` · `data/raw/{patch}/seen-ids.txt` · 수집기 내부(웹·집계기 미소비): `seed-puuids.json`(24h 캐시)·`collect-state.json`(재개 체크포인트)·`samples/`

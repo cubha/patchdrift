@@ -1,0 +1,75 @@
+name: ci
+
+# PR/push마다 verify.sh --full(tsc + eslint + vitest + build)을 돌려 회귀를 잡는다. 데이터 수집·LLM
+# 호출 등 외부 API 의존 단계는 없다 — data/aggregated/**에 이미 커밋된 산출물만으로 빌드가
+# 성립해야 한다(ST-14 완료 조건 "빈 데이터 빌드 보장"과 동일한 전제).
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: patchdrift-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: verify.sh --full (tsc + eslint + vitest + build)
+        run: bash verify.sh --full
+
+      - name: Empty-data build gate — data/aggregated 비워도 빌드되는지 확인 (ST-14 완료 조건)
+        env:
+          # 고정 경로 — 다음 스텝이 step output에 의존하지 않고도(백업 스텝이 중간에 실패해도)
+          # 항상 같은 경로를 참조해 복원을 시도할 수 있게 한다.
+          BACKUP_DIR: ${{ runner.temp }}/aggregated-backup
+        # F7 "정적 배포·상시 작동" 자격요건: 레포를 새로 clone했을 때(또는 아직 어떤 패치도
+        # 집계되지 않은 초기 상태) `npm run build`가 죽지 않아야 한다(src/lib/data.ts 로더가
+        # 파일 부재를 null/[]로 흡수하도록 설계돼 있다는 산문 서술을 코드로 강제 검증). data/raw
+        # 는 원래도 커밋되지 않으므로 건드리지 않는다 — data/aggregated만 비운다.
+        run: |
+          set -e
+          mkdir -p "$BACKUP_DIR"
+          shopt -s dotglob nullglob
+          for entry in data/aggregated/*; do
+            base="$(basename "$entry")"
+            # .gitkeep과 README.md만 남긴다(둘 다 데이터가 아니라 디렉토리 존재 보증·문서용).
+            if [[ "$base" == ".gitkeep" || "$base" == "README.md" ]]; then
+              continue
+            fi
+            mv "$entry" "$BACKUP_DIR/"
+          done
+          echo "[empty-data-backup] data/aggregated 백업 완료 — 남은 항목:"
+          ls -la data/aggregated
+
+      - name: Build with empty data/aggregated
+        run: npm run build
+
+      - name: Restore data/aggregated (항상 복원 — 위 두 스텝 중 하나라도 실패해도 실행)
+        if: always()
+        env:
+          BACKUP_DIR: ${{ runner.temp }}/aggregated-backup
+        run: |
+          shopt -s dotglob nullglob
+          if [[ -d "$BACKUP_DIR" ]]; then
+            for entry in "$BACKUP_DIR"/*; do
+              mv "$entry" data/aggregated/
+            done
+          fi
+          echo "[restore] data/aggregated 복원 완료:"
+          ls -la data/aggregated

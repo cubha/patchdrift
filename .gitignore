@@ -51,3 +51,4 @@ next-env.d.ts
 scratch.md
 .mvp-state*.json
 /logs/
+/data/aggregated/deltas/*.notify.json

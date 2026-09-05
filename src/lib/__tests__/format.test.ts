@@ -8,6 +8,9 @@ import {
   fmtPct,
   fmtPp,
   fmtSec,
+  itemHref,
+  itemIdFromSlug,
+  itemSlug,
   metricLabel,
   positionLabel,
   statusLabel,
@@ -149,5 +152,41 @@ describe("positionLabel", () => {
     expect(positionLabel("BOTTOM")).toBe("원딜");
     expect(positionLabel("UTILITY")).toBe("서포터");
     expect(positionLabel("")).toBe("미배정");
+  });
+});
+
+// 2026-09-05 오케스트레이터 지시 — 퍼센트 인코딩 슬러그(encodeURIComponent) 폐기, `:`→`~`
+// 문자 치환 슬러그로 전환(실측: 정적 파일 서버에 out/를 직접 서빙하면 단일/원문 인코딩 둘 다
+// 404, 이중 인코딩만 200이 나와 배포 시 링크가 깨지는 근본 문제를 확인했다).
+describe("itemSlug / itemIdFromSlug / itemHref", () => {
+  it("':'를 '~'로 치환한다", () => {
+    expect(itemSlug("champion:Trundle:pickRate")).toBe("champion~Trundle~pickRate");
+  });
+
+  it("결과에 '%' 문자가 없다(퍼센트 인코딩 미사용 확인)", () => {
+    expect(itemSlug("champion:Aatrox:BOTTOM:pickRate")).not.toContain("%");
+    expect(itemHref("champion:Aatrox:BOTTOM:pickRate")).not.toContain("%");
+  });
+
+  it("itemIdFromSlug는 itemSlug의 정확한 역변환이다(왕복)", () => {
+    const ids = [
+      "champion:Trundle:pickRate",
+      "champion:Aatrox:BOTTOM:pickRate",
+      "item:3047:adoptionRate",
+      "lane:TOP:goldAt14",
+      "objective:dragon",
+      "summary:avgDurationSec",
+    ];
+    for (const id of ids) {
+      expect(itemIdFromSlug(itemSlug(id))).toBe(id);
+    }
+  });
+
+  it("id에 이미 '~'가 있으면 왕복이 불안전하므로 throw한다", () => {
+    expect(() => itemSlug("champion:Weird~Name:pickRate")).toThrow();
+  });
+
+  it("itemHref는 '/item/{slug}/' 형태를 반환한다", () => {
+    expect(itemHref("champion:Trundle:pickRate")).toBe("/item/champion~Trundle~pickRate/");
   });
 });

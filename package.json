@@ -15,7 +15,8 @@
     "pipeline:fetch-notes": "tsx scripts/run-fetch-notes.ts",
     "pipeline:match": "tsx scripts/run-match.ts",
     "pipeline:notify": "tsx scripts/run-notify.ts",
-    "pipeline:all": "npm run pipeline:collect && npm run pipeline:aggregate && npm run pipeline:match"
+    "pipeline:all": "npm run pipeline:collect -- --patch $PATCH_TO && npm run pipeline:timeline -- --patch $PATCH_TO && npm run pipeline:aggregate -- --patch $PATCH_TO && npm run pipeline:ddragon && npm run pipeline:match -- --from $PATCH_FROM --to $PATCH_TO && npm run build",
+    "pipeline:timeline": "tsx scripts/run-timeline.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",

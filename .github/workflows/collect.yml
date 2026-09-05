@@ -1,0 +1,271 @@
+name: collect
+
+# F1/F8/F2/F4 파이프라인 오케스트레이션 — 수집 → 타임라인 → 집계 → ddragon → 매칭 → (선택)디스코드
+# → data/aggregated·public/dd·data/ddragon 변경분 커밋·푸시.
+#
+# 트리거:
+#   - workflow_dispatch: 수동 실행(백업·재개·임의 패치 재처리). 모든 입력이 optional — 비우면
+#     schedule과 동일하게 PATCH_CALENDAR 기반 자동 판정을 탄다.
+#   - schedule: 매주 목요일 00:00 UTC. 이 프로젝트가 관측한 패치 라이브 요일이 전부 KST 목요일이라
+#     (26.16~26.19, src/pipeline/collect/patch-calendar.ts PATCH_CALENDAR 실측) 잡아둔 고정 cron —
+#     실제로 "오늘 라이브하는 신규 패치가 캘린더에 있는지"는 `determine` 스텝이 매번 재판정한다.
+#     캘린더에 없는 주(=아직 다음 패치가 미확정)에는 determine이 should_run=false로 no-op 종료한다.
+#
+# 리밋 근거(RESEARCH §2-5): GitHub Actions job 최대 6h, private repo 무료 2,000분/월. 1만 매치
+# 수집=약 3.3h(SCOPE §4) + 타임라인 표본 + 집계·매칭을 합쳐도 6h 안에 들어오지만 여유를 위해
+# timeout-minutes를 350(5h50m)으로 둔다. Vercel Cron(Hobby, 60~300s 함수)은 이 길이의 배치에
+# 원천적으로 부적합해 후보에서 제외했다(RESEARCH §2-5).
+#
+# 필요 secrets(Settings → Secrets and variables → Actions → Secrets): RIOT_API_KEY(필수),
+# ANTHROPIC_API_KEY(선택 — 없으면 run-match.ts가 LLM 2단을 캐시 폴백/스킵), DISCORD_WEBHOOK_URL
+# (선택 — 없으면 Discord briefing 스텝 자체를 건너뜀).
+# 필요 variables(Settings → Secrets and variables → Actions → Variables): PATCHDRIFT_SITE_URL —
+# **Vercel 배포 URL이 확정된 뒤에는 반드시 등록한다.** 미등록 상태로는 run-notify.ts가 자체
+# 자리표시 기본값(DEFAULT_SITE_URL="https://patchdrift.vercel.app")으로 브리핑 embed 링크를
+# 만들어 실제 배포 도메인과 어긋날 수 있다(R5 — 배포 전엔 optional, 배포 후엔 required).
+
+on:
+  workflow_dispatch:
+    inputs:
+      patch:
+        description: "수집할 패치 ID(예: 26.19). 비우면 오늘(KST) PATCH_CALENDAR 라이브일로 자동 판정한다."
+        required: false
+        type: string
+      target:
+        description: "패치당 상세 매치 수집 목표(run-collect --target)"
+        required: false
+        default: "10000"
+        type: string
+      timeline_sample:
+        description: "타임라인 표본 수(run-timeline --sample)"
+        required: false
+        default: "1500"
+        type: string
+      from:
+        description: "매칭 기준 이전 패치(run-match --from). 비우면 캘린더상 patch 직전 등록 패치를 쓴다."
+        required: false
+        type: string
+      to:
+        description: "매칭 대상 패치(run-match --to). 비우면 patch와 동일하게 취급한다."
+        required: false
+        type: string
+      llm_max:
+        description: "LLM 2단 매칭 세션 상한(run-match --llm-max)"
+        required: false
+        default: "50"
+        type: string
+      force:
+        description: "true면 data/aggregated/{patch}/summary.json이 이미 있어도 재실행한다(재수집·재집계 강제)"
+        required: false
+        default: "false"
+        type: boolean
+
+  schedule:
+    - cron: "0 0 * * 4"
+
+# 동시 실행 방지 — 같은 워크플로우가 겹쳐 돌면 data/raw 캐시·git push가 충돌한다. 예약 실행 중
+# 수동 백업 실행을 걸면 앞선 실행이 끝날 때까지 대기시킨다(취소하지 않음 — 진행 중인 3시간대
+# 수집을 잃지 않기 위해 cancel-in-progress: false).
+concurrency:
+  group: patchdrift-collect
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      RIOT_API_KEY: ${{ secrets.RIOT_API_KEY }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Determine patch (캘린더 자동 판정 + 중복 실행 가드)
+        id: determine
+        env:
+          MANUAL_PATCH: ${{ github.event.inputs.patch }}
+          MANUAL_FROM: ${{ github.event.inputs.from }}
+          MANUAL_TO: ${{ github.event.inputs.to }}
+          MANUAL_FORCE: ${{ github.event.inputs.force }}
+        run: |
+          # 임시 스크립트 — 이 잡 안에서만 쓰고 커밋 전에 반드시 제거한다(레포에 남기지 않음).
+          # 상대 import(`../src/...`)가 checkout된 repo의 실제 파일을 가리키도록 `.github/` 바로
+          # 아래(repo root 한 단계 하위)에 만든다 — src/**·scripts/**는 건드리지 않는다.
+          cat <<'NODE_EOF' > .github/.determine-patch.ts
+          import fs from "node:fs";
+          import path from "node:path";
+          import { PATCH_CALENDAR } from "../src/pipeline/collect/patch-calendar";
+
+          const KST_OFFSET_MS = 9 * 60 * 60 * 1000;
+          function todayKst(): string {
+            return new Date(Date.now() + KST_OFFSET_MS).toISOString().slice(0, 10);
+          }
+
+          const manualPatch = (process.env.MANUAL_PATCH ?? "").trim() || undefined;
+          const manualFrom = (process.env.MANUAL_FROM ?? "").trim() || undefined;
+          const manualTo = (process.env.MANUAL_TO ?? "").trim() || undefined;
+          const force = (process.env.MANUAL_FORCE ?? "").trim() === "true";
+
+          const output = process.env.GITHUB_OUTPUT;
+          if (!output) throw new Error("GITHUB_OUTPUT not set");
+
+          function emit(lines: Record<string, string>): void {
+            const body = Object.entries(lines)
+              .map(([k, v]) => `${k}=${v}`)
+              .join("\n");
+            fs.appendFileSync(output, `${body}\n`);
+          }
+
+          const sortedPatches = Object.keys(PATCH_CALENDAR).sort();
+
+          function prevOf(patch: string): string {
+            const idx = sortedPatches.indexOf(patch);
+            return idx > 0 ? sortedPatches[idx - 1] : patch;
+          }
+
+          let patch = manualPatch;
+          let calendarDetermined = false;
+
+          if (!patch) {
+            const today = todayKst();
+            const found = Object.entries(PATCH_CALENDAR).find(([, e]) => e.liveKst === today);
+            if (found) {
+              patch = found[0];
+              calendarDetermined = true;
+            }
+          }
+
+          if (!patch) {
+            console.log(`no-run: 오늘(KST ${todayKst()}) PATCH_CALENDAR에 등록된 신규 패치 라이브 없음`);
+            emit({ should_run: "false" });
+            process.exit(0);
+          }
+
+          const aggDoneFile = path.join(process.cwd(), "data", "aggregated", patch, "summary.json");
+          if (calendarDetermined && !force && fs.existsSync(aggDoneFile)) {
+            console.log(`no-run: ${aggDoneFile} 이미 존재 — 이번 주 수집은 중복 실행으로 판단해 건너뜀`);
+            emit({ should_run: "false" });
+            process.exit(0);
+          }
+
+          const from = manualFrom ?? prevOf(patch);
+          const to = manualTo ?? patch;
+
+          console.log(`run: patch=${patch} from=${from} to=${to} force=${force}`);
+          emit({ should_run: "true", patch, from, to });
+          NODE_EOF
+
+          npx tsx .github/.determine-patch.ts
+          rm -f .github/.determine-patch.ts
+
+      - name: Restore data/raw (재개용 — 실패·재실행 시 이미 받은 매치는 다시 받지 않는다)
+        if: steps.determine.outputs.should_run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: patchdrift-raw-${{ steps.determine.outputs.patch }}-${{ github.run_id }}
+          restore-keys: |
+            patchdrift-raw-${{ steps.determine.outputs.patch }}-
+
+      - name: Collect matches (F1)
+        if: steps.determine.outputs.should_run == 'true'
+        run: |
+          npx tsx scripts/run-collect.ts \
+            --patch "${{ steps.determine.outputs.patch }}" \
+            --target "${{ github.event.inputs.target || '10000' }}"
+
+      - name: Collect timeline sample (F8)
+        if: steps.determine.outputs.should_run == 'true'
+        run: |
+          npx tsx scripts/run-timeline.ts \
+            --patch "${{ steps.determine.outputs.patch }}" \
+            --sample "${{ github.event.inputs.timeline_sample || '1500' }}"
+
+      - name: Aggregate (F2/F8)
+        if: steps.determine.outputs.should_run == 'true'
+        run: |
+          # from 패치는 이 워크플로우가 자동화되기 전(로컬/도그푸딩) 이미 집계·커밋된 상태를
+          # 전제한다(SCOPE §3 "로컬(초기·도그푸딩) → GH Actions cron(9/19~)") — data/raw가 로컬
+          # 전용(gitignore)이라 여기서 from을 재집계하려 해도 원본이 없다. 오늘 새로 수집한
+          # to 패치만 집계한다.
+          npx tsx scripts/run-aggregate.ts --patch "${{ steps.determine.outputs.to }}"
+
+      - name: Update Data Dragon assets
+        if: steps.determine.outputs.should_run == 'true'
+        run: npx tsx scripts/run-ddragon.ts
+
+      - name: Match + verdict (F3/F4, LLM 2단 포함)
+        if: steps.determine.outputs.should_run == 'true'
+        run: |
+          npx tsx scripts/run-match.ts \
+            --from "${{ steps.determine.outputs.from }}" \
+            --to "${{ steps.determine.outputs.to }}" \
+            --llm-max "${{ github.event.inputs.llm_max || '50' }}"
+
+      - name: Discord briefing (F6, 웹훅 시크릿이 있을 때만)
+        if: steps.determine.outputs.should_run == 'true' && env.DISCORD_WEBHOOK_URL != ''
+        # run-notify.ts CLI 인자(--from --to --top --site)는 이제 확정된 시그니처다(scripts/run-notify.ts
+        # 실물 확인). `--site`는 **미지정 시 스크립트 자체 기본값**(DEFAULT_SITE_URL,
+        # https://patchdrift.vercel.app 자리표시)을 쓰고, 지정하려면 http(s):// 스킴에 non-empty
+        # 문자열이어야 한다(빈 문자열을 넘기면 parseArgs가 즉시 throw) — 그래서 SITE_URL이 비어
+        # 있으면 `--site` 플래그 자체를 아예 넣지 않는다(빈 문자열을 강제로 넘겨 상대경로 링크가
+        # 되거나 조기 실패하는 결함 방지, R5). 실제 배포 도메인이 정해지면 저장소 Variables에
+        # PATCHDRIFT_SITE_URL을 등록해야 브리핑 embed가 정확한 절대 URL을 가리킨다 — README
+        # "필요 secrets·variables" 표에 "배포 후 필수"로 명시.
+        env:
+          SITE_URL: ${{ vars.PATCHDRIFT_SITE_URL }}
+        run: |
+          set -e
+          SITE_ARGS=()
+          if [[ -n "${SITE_URL}" ]]; then
+            SITE_ARGS=(--site "${SITE_URL}")
+          else
+            echo "[collect.yml] PATCHDRIFT_SITE_URL 미설정 — run-notify.ts DEFAULT_SITE_URL(자리표시) 사용"
+          fi
+          npx tsx scripts/run-notify.ts \
+            --from "${{ steps.determine.outputs.from }}" \
+            --to "${{ steps.determine.outputs.to }}" \
+            --top 5 \
+            "${SITE_ARGS[@]}"
+        continue-on-error: true
+
+      - name: Commit + push generated data
+        if: steps.determine.outputs.should_run == 'true'
+        run: |
+          git config user.name "patchdrift-bot"
+          git config user.email "patchdrift-bot@users.noreply.github.com"
+          git add data/aggregated public/dd data/ddragon
+          if git diff --cached --quiet; then
+            echo "변경분 없음 — 커밋 생략"
+          else
+            git commit -m "chore(data): auto-collect ${{ steps.determine.outputs.from }} -> ${{ steps.determine.outputs.to }}
+
+            GitHub Actions collect.yml(run_id=${{ github.run_id }})가 생성."
+            # [skip ci]를 넣지 않는다 — Vercel git 연동이 이 커밋을 감지해 재빌드해야 한다(PLAN ④).
+            git push
+          fi
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: collect-failure-logs-${{ github.run_id }}
+          path: |
+            logs/**
+            data/aggregated/**
+          if-no-files-found: ignore
+          retention-days: 14

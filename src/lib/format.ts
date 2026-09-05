@@ -133,3 +133,33 @@ const POSITION_LABELS: Record<TeamPosition, string> = {
 export function positionLabel(position: LanePosition | TeamPosition | string): string {
   return POSITION_LABELS[position as TeamPosition] ?? position;
 }
+
+/**
+ * `DeltaRecord.id` → `/item/[id]/` 정적 라우트 슬러그(오케스트레이터 지시, 2026-09-05 근본
+ * 수정). `encodeURIComponent(id)`는 `:` 포함 id를 퍼센트 인코딩하는데, 실측(정적 파일 서버로
+ * `out/`를 직접 서빙 — Vercel과 동일한 "URL 1회 디코드 후 파일 매칭" 규칙)으로 단일 인코딩·
+ * 원문 콜론 둘 다 404, 이중 인코딩만 200이 나오는 걸 확인했다 — 즉 퍼센트 인코딩을 슬러그에
+ * 쓰는 한 링크가 배포 시 전부 깨진다. 그래서 인코딩을 아예 쓰지 않고 `:`를 `~`로 바꾸는
+ * 문자 치환 슬러그로 전환한다(`~`는 URL 경로 세그먼트에서 예약되지 않은 문자라 퍼센트
+ * 인코딩이 전혀 필요 없다). id 자체에 이미 `~`가 있으면 왕복이 깨지므로 방어적으로 throw —
+ * 실 데이터(`data/aggregated/deltas/26.17_26.17.json`, 1,751행) 전수 조회로 현재 id 네임스페이스
+ * (`champion:`/`item:`/`lane:`/`objective:`/`summary:` + ddragon id·포지션·metric 세그먼트)에
+ * `~`가 전혀 없음을 확인했다.
+ */
+export function itemSlug(id: string): string {
+  if (id.includes("~")) {
+    throw new Error(`itemSlug: id에 이미 '~'가 포함되어 있어 슬러그 왕복이 불안전합니다: ${id}`);
+  }
+  return id.replaceAll(":", "~");
+}
+
+/** `itemSlug`의 역변환 — `/item/[id]/` 라우트 파라미터에서 원래 `DeltaRecord.id`를 복원한다. */
+export function itemIdFromSlug(slug: string): string {
+  return slug.replaceAll("~", ":");
+}
+
+/** `DeltaRecord.id` → `/item/{slug}/` 링크 href. 홈·대조표·디스코드 알림 등 항목 상세로
+ * 링크를 거는 모든 곳이 이 함수를 통해서만 href를 만든다(퍼센트 인코딩 재도입 방지). */
+export function itemHref(id: string): string {
+  return `/item/${itemSlug(id)}/`;
+}
