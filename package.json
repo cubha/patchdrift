@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "pipeline:collect": "tsx scripts/run-collect.ts",
     "pipeline:aggregate": "tsx scripts/run-aggregate.ts",
+    "pipeline:fetch-notes": "tsx scripts/run-fetch-notes.ts",
     "pipeline:match": "tsx scripts/run-match.ts",
     "pipeline:notify": "tsx scripts/run-notify.ts",
     "pipeline:all": "npm run pipeline:collect && npm run pipeline:aggregate && npm run pipeline:match"

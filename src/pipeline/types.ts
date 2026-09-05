@@ -106,37 +106,68 @@ export interface TimelineSlim {
   firstObjectives: FirstObjectiveSeconds;
 }
 
-/** 비율 지표(픽률·밴률·승률) 각각의 CI. 승률은 최소 n 게이트 미달 시 null. */
+/**
+ * 비율 지표(픽률·밴률·승률) 각각의 CI. 승률은 최소 n 게이트 미달 시 null.
+ * 밴은 포지션 정보가 없는 챔피언 단위 지표라 `ChampionStat.scope !== "all"`인 행(포지션별·미배정)
+ * 에서는 항상 null이다 — ST-08이 같은 밴을 여러 포지션 행에서 중복 합산하는 것을 계약으로
+ * 차단한다(ST-06 실장 중 발견, 2026-09-05 types.ts로 승격).
+ */
 export interface ChampionRateCi {
   pick: Interval;
-  ban: Interval;
+  ban: Interval | null;
   win: Interval | null;
 }
 
-/** 챔피언 단위 집계 지표 (포지션별). */
+/**
+ * 챔피언 단위 집계 지표. `scope`로 세 종류의 행을 구분한다:
+ * - `"position"`: 명명된 포지션(TOP/JUNGLE/MIDDLE/BOTTOM/UTILITY) 1개에서의 등장(픽/승) 통계.
+ * - `"unknown"`: teamPosition이 빈 문자열(미배정·비표준 케이스)인 등장 통계.
+ * - `"all"`: 챔피언 전체(포지션 무관) 합산 — 챔피언당 정확히 1행. **밴률(`banRate`/`ci.ban`)은
+ *   이 scope에서만 값이 있다.**
+ * `position`은 `scope==="position"`일 때만 명명된 포지션 값을, 그 외(`"all"`/`"unknown"`)는
+ * `""`을 갖는다 — `""`이 곧 "미배정"이던 이전 계약을 `scope`가 명시적으로 대체한다.
+ */
 export interface ChampionStat {
   championId: number;
   championKey: string;
   championName: string;
   position: LanePosition | "";
   patch: PatchId;
+  scope: "all" | "position" | "unknown";
+  /** pickRate/banRate의 공통 분모(해당 패치 전체 매치 수) — 행 단위로 자기완결시킨다. */
+  totalMatches: number;
   n: number;
   pickRate: number;
-  banRate: number;
+  /** scope!=="all"이면 null(위 ChampionRateCi 주석 참고). */
+  banRate: number | null;
   winRate: number;
   ci: ChampionRateCi;
 }
 
-/** 아이템 채택률 집계 지표 (완성템 6슬롯). */
+/** 아이템 채택률 집계 지표 (완성템 필터는 ST-08 Data Dragon 매핑 단계 몫 — 여기서는 6슬롯에
+ * 등장한 아이템 전체를 집계). */
 export interface ItemStat {
   itemId: number;
   patch: PatchId;
   n: number;
+  /** adoptionRate의 분모(해당 패치 전체 참가자 수 = 매치 수 × 10) — 행 단위로 자기완결시킨다. */
+  totalParticipants: number;
   adoptionRate: number;
   ci: Interval;
 }
 
-/** 오브젝트(용·전령·바론·포탑) 최초 획득 시각 평균 — 라인 골드는 LaneGoldStat으로 분리(F8). */
+/** 오브젝트 1종의 확장 통계 — null 제외 평균·표본표준편차·n + 발생 비율(실제로 그 이벤트가
+ * 있었던 매치 비율). */
+export interface ObjectiveMetricDetail {
+  n: number;
+  mean: number | null;
+  sd: number;
+  occurrenceRate: number;
+}
+
+/** 오브젝트(용·전령·바론·포탑) 최초 획득 시각 집계 — 라인 골드는 LaneGoldStat으로 분리(F8).
+ * `n`은 오브젝트 종류와 무관한 공통 표본(타임라인) 수 — 오브젝트별 실제 발생 건수·sd·발생 비율은
+ * `dragon`/`herald`/`baron`/`tower` 하위 필드에 있다. */
 export interface ObjectiveStat {
   patch: PatchId;
   n: number;
@@ -144,15 +175,23 @@ export interface ObjectiveStat {
   firstHeraldSecAvg: number | null;
   firstBaronSecAvg: number | null;
   firstTowerSecAvg: number | null;
+  dragon: ObjectiveMetricDetail;
+  herald: ObjectiveMetricDetail;
+  baron: ObjectiveMetricDetail;
+  tower: ObjectiveMetricDetail;
 }
 
-/** 라인별 10분/14분 시점 평균 골드 집계 (F8). */
+/** 라인별 10분/14분 시점 평균 골드 집계 (F8). `goldAt14Avg`는 non-nullable이라 `n14===0`이면
+ * 실측 없는 0이 들어갈 수 있다 — 소비처는 반드시 `n14`을 먼저 확인해야 한다. */
 export interface LaneGoldStat {
   patch: PatchId;
   position: LanePosition;
   n: number;
   goldAt10Avg: number;
+  goldAt10Sd: number;
   goldAt14Avg: number;
+  goldAt14Sd: number;
+  n14: number;
 }
 
 /** 패치 단위 요약 지표(브리핑 홈 카드용). */
@@ -160,10 +199,17 @@ export interface PatchSummary {
   patch: PatchId;
   matches: number;
   avgDurationSec: number;
+  avgDurationSecSd: number;
   firstDragonSecAvg: number | null;
   firstHeraldSecAvg: number | null;
   firstBaronSecAvg: number | null;
   firstTowerSecAvg: number | null;
+  /** queueId → 해당 큐로 진행된 매치 수. */
+  queueDistribution: Record<number, number>;
+  /** 수집된 매치들의 gameCreationMs 최소~최대 범위. 매치 0건이면 null. */
+  gameCreationMsRange: { min: number; max: number } | null;
+  /** 타임라인 표본 수(matches와 별도 — F8은 상세 수집의 부분표본). */
+  timelineSamples: number;
 }
 
 /** 패치노트 항목 섹션 분류. */
@@ -174,6 +220,12 @@ export interface PatchNoteItem {
   id: string;
   patch: PatchId;
   section: PatchNoteSection;
+  /**
+   * section이 `"system"`일 때만 의미 있는 세부 분류(그 외 section에서는 항상 undefined).
+   * "룬" 밸런스 변경은 `"rune"`, "체계"(게임 매커니즘) 변경은 `"system"`. 클래식/버그 수정/
+   * 시스템 사양 업데이트처럼 더 세분화할 근거가 없으면 undefined로 둔다(ST-07 라운드 2).
+   */
+  subsection?: "rune" | "system";
   entity: string;
   skill: string | null;
   stat: string | null;
@@ -182,6 +234,12 @@ export interface PatchNoteItem {
   direction: "buff" | "nerf" | "adjust" | "unknown";
   summary: string;
   anchorUrl: string;
+  /**
+   * anchorUrl의 정밀도. `"entity"`=해당 엔티티 고유 앵커(h3 id) · `"section"`=섹션 헤더 앵커로
+   * 폴백(엔티티 전용 앵커가 없음) · `"page"`=앵커 없이 기본 URL(섹션 앵커조차 없음). 하류(브리핑
+   * 화면)가 링크 정밀도를 구분해 표시할 수 있도록 ST-07 라운드 2에서 추가.
+   */
+  anchorKind: "entity" | "section" | "page";
 }
 
 /** 델타(관측 변화)의 판정 상태 — UX-BRIEF의 4개 상태 뱃지에 대응한다. */

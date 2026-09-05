@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "patch": "26.17",
+    "generatedAt": "2026-09-05T08:11:31.329Z",
+    "nMatches": 1379,
+    "nParticipants": 13790,
+    "nTimelines": 0,
+    "source": "riot-match-v5"
+  },
+  "data": {
+    "patch": "26.17",
+    "n": 0,
+    "firstDragonSecAvg": null,
+    "firstHeraldSecAvg": null,
+    "firstBaronSecAvg": null,
+    "firstTowerSecAvg": null,
+    "dragon": {
+      "n": 0,
+      "mean": null,
+      "sd": 0,
+      "occurrenceRate": 0
+    },
+    "herald": {
+      "n": 0,
+      "mean": null,
+      "sd": 0,
+      "occurrenceRate": 0
+    },
+    "baron": {
+      "n": 0,
+      "mean": null,
+      "sd": 0,
+      "occurrenceRate": 0
+    },
+    "tower": {
+      "n": 0,
+      "mean": null,
+      "sd": 0,
+      "occurrenceRate": 0
+    }
+  }
+}
