@@ -5,7 +5,6 @@
 // 표시와, DeltaRecord.metric → DeltaValue/차트가 쓰는 단위 종류(kind) 매핑을 이 파일에 모은다.
 // 순수 함수만 — 부수효과 없음(테스트 대상).
 
-import type { DeltaRecord } from "@/pipeline/types";
 import { fmtInt, fmtPct, fmtSec, metricLabel } from "@/lib/format";
 
 /** DeltaValue/차트가 구분하는 값의 단위 종류. */
@@ -36,10 +35,15 @@ export function formatMetricValue(value: number | null, kind: MetricKind): strin
 }
 
 /**
- * 델타의 사람이 읽는 지표 라벨. `format.ts`의 `metricLabel`이 커버하지 못하는 "firstSec"만
- * 여기서 `entityName`(오브젝트 한글명)과 조합해 만든다 — 그 외 metric은 그대로 위임한다.
+ * 델타의 사람이 읽는 지표 라벨. "firstSec"만 `entityName`(오브젝트 한글명)과 조합해
+ * "첫 {entityName} 시각"으로 만든다(format.ts의 `metricLabel("firstSec")`은 엔티티 비의존
+ * 일반 라벨 "첫 처치 시각"을 반환 — 이 페이지는 entityName을 이미 갖고 있어 더 구체적으로
+ * 표시한다) — 그 외 metric은 그대로 위임한다. 파라미터 타입은 `Pick<DeltaRecord,...>` 대신
+ * 명시적 필드로 느슨하게 둔다 — `DeltaRecord.metric`이 `DeltaMetric` 유니온으로 좁혀진 뒤에도
+ * (2026-09-05 리팩토링) 이 함수 자체는 알려지지 않은 metric 문자열까지 안전하게 받는 계약을
+ * 유지해야 하기 때문(아래 테스트 "알려지지 않은 metric은 원본 문자열 그대로" 참고).
  */
-export function displayMetricLabel(delta: Pick<DeltaRecord, "metric" | "entityName">): string {
+export function displayMetricLabel(delta: { metric: string; entityName: string }): string {
   if (delta.metric === "firstSec") {
     return `첫 ${delta.entityName} 시각`;
   }

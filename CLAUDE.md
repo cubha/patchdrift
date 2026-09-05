@@ -49,8 +49,8 @@ public/dd/          Data Dragon 정적 자산(챔피언/아이템 아이콘) —
 
 - **런타임 외부 API 호출 0** — 브라우저에서 서빙되는 정적 사이트는 `data/aggregated/*.json`만 읽는다. Riot API·LLM 호출은 전부 빌드 이전 파이프라인(`scripts/`)에서 끝낸다.
 - **사전 인덱싱** — 수집(F1) → 집계(F2) → 매칭/판정(F3~F4) → 빌드(F5) 순서를 반드시 지킨다. 각 단계 산출물은 다음 단계 입력 파일로만 연결한다.
-- **모든 판정문은 원천 링크를 가진다** — `Verdict.sourceUrl`·`sourceMatchIds`가 채워지지 않은 판정은 화면에 링크를 걸지 않는다.
-- **무근거 문장은 회색** — `Verdict.reasoning`이 `null`이면 `--muted` 토큰으로만 렌더한다. 임의로 근거를 지어내 채우지 않는다.
+- **모든 판정문은 원천 링크를 가진다** — `DeltaRecord.evidence`(`DeltaEvidence.matchIds`·`aggregatePath`·`noteAnchor`)가 채워지지 않은 판정은 화면에 링크를 걸지 않는다.
+- **무근거 문장은 회색** — `DeltaRecord.causes[].verified`가 `false`이거나 `causes`가 비어 있으면 `--muted` 토큰으로만 렌더한다. 임의로 근거를 지어내 채우지 않는다. (2026-09-05: 미사용 `Verdict` 인터페이스는 `DeltaEvidence`/`DeltaRecord.status`로 완전히 대체되어 삭제됐다 — ST-08 확정.)
 - **LLM 배치·캐시·상한** — `llm-match.ts`는 세션당 처리 델타 수 상한(`LlmMatchOptions.maxDeltas`)을 지키고, 캐시 파일이 있으면 우선 사용한다. 예산 소진 시 캐시 폴백 — 실패해도 무근거 회색으로 떨어질 뿐 크래시하지 않는다.
 - **라이엇 API terms 준수** — Personal 키 고정 리밋 이내로만 호출, 유료화·재판매 기능 금지, 아레나/무작위 총력전 승률 통계 생성 금지(Won't 항목).
 

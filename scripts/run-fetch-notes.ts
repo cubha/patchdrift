@@ -8,6 +8,7 @@ import path from "node:path";
 import { fetchPatchNotesHtml, parsePatchNotes } from "../src/pipeline/match/patchnotes-parser";
 import { notesFile } from "../src/pipeline/shared/paths";
 import type { PatchNoteSection } from "../src/pipeline/types";
+import { isMainModule, parseCliArgs } from "./shared/cli";
 
 interface CliArgs {
   patch: string;
@@ -16,32 +17,13 @@ interface CliArgs {
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  let patch: string | undefined;
-  let force = false;
-  let locale: string | undefined;
+  const raw = parseCliArgs("run-fetch-notes", argv, [
+    { name: "patch", type: "string", required: true },
+    { name: "force", type: "boolean", default: false },
+    { name: "locale", type: "string" },
+  ]);
 
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    switch (arg) {
-      case "--patch":
-        patch = argv[++i];
-        break;
-      case "--force":
-        force = true;
-        break;
-      case "--locale":
-        locale = argv[++i];
-        break;
-      default:
-        throw new Error(`run-fetch-notes: unknown argument "${arg}"`);
-    }
-  }
-
-  if (!patch) {
-    throw new Error("run-fetch-notes: --patch <id> is required (예: --patch 26.17)");
-  }
-
-  return { patch, force, locale };
+  return { patch: raw.patch as string, force: raw.force as boolean, locale: raw.locale as string | undefined };
 }
 
 async function main(): Promise<void> {
@@ -90,7 +72,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error) => {
-  console.error("run-fetch-notes 실패:", error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+if (isMainModule(import.meta.url)) {
+  main().catch((error) => {
+    console.error("run-fetch-notes 실패:", error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}

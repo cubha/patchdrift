@@ -5,30 +5,17 @@
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { z } from "zod";
-import { DATA_ROOT } from "../src/pipeline/shared/paths";
+import { DATA_ROOT, aggregatedDir, deltasFile, notesFile } from "../src/pipeline/shared/paths";
 import { buildBriefingEmbeds, sendWebhook } from "../src/pipeline/discord/webhook";
+import { countRelevantNoteEntities } from "../src/pipeline/shared/notes-count";
 import type { DeltasFile, PatchId, PatchNoteItem } from "../src/pipeline/types";
+import { isMainModule, parseCliArgs } from "./shared/cli";
 
-/** 챔피언·아이템 노트만 "엔티티"로 센다(시스템/기타 제외) — ST-08 entity-match.ts 블로킹 대상
- * 정의와 동일. `src/components/home/logic.ts`(ST-11)의 `countRelevantNoteEntities`와 규칙을
- * 통일한다(코디네이터 후속 지시, 2026-09-05) — 다만 그 파일은 동시에 다른 에이전트가 소유·수정
- * 중이라 import하지 않고 이 배치가 소유한 run-notify.ts에 로컬로 동일 규칙을 재구현한다. */
-const ENTITY_NOTE_SECTIONS: ReadonlySet<PatchNoteItem["section"]> = new Set(["champion", "item"]);
-
-/** section이 champion|item인 항목을 `${section}:${entity}` 키로 중복 제거해 몇 개의 서로 다른
- * 엔티티가 언급됐는지 센다(순수 함수 — `loadNoteCount`의 파일 I/O와 분리해 fixture로 단위
- * 테스트하기 위함). section을 키에 포함하는 이유는 챔피언명과 아이템명이 우연히 같은 문자열일
- * 가능성을 배제하기 위함(ST-11과 동일 근거). */
-export function countEntityNotes(items: readonly PatchNoteItem[]): number {
-  const keys = new Set<string>();
-  for (const item of items) {
-    if (!ENTITY_NOTE_SECTIONS.has(item.section)) continue;
-    keys.add(`${item.section}:${item.entity}`);
-  }
-  return keys.size;
-}
+/** `src/pipeline/shared/notes-count.ts`(ST-11 `home/logic.ts`의 `countRelevantNoteEntities`와
+ * 동일 규칙을 공용화, 2026-09-05 리팩토링)의 별칭 — 기존 export 이름을 그대로 유지한다(테스트가
+ * `countEntityNotes`로 import함). */
+export const countEntityNotes = countRelevantNoteEntities;
 
 /** README·SCOPE에 확정 도메인이 없어 둔 자리표시 기본값 — 실제 배포 도메인 확정 시 --site로
  * 넘기거나 이 상수를 갱신한다. */
@@ -43,39 +30,18 @@ export interface RunNotifyArgs {
 }
 
 export function parseArgs(argv: string[]): RunNotifyArgs {
-  let from: string | undefined;
-  let to: string | undefined;
-  let top = 5;
-  let site = DEFAULT_SITE_URL;
-  let dryRun = false;
+  const raw = parseCliArgs("run-notify", argv, [
+    { name: "from", type: "string", required: true },
+    { name: "to", type: "string", required: true },
+    { name: "top", type: "number", default: 5 },
+    { name: "site", type: "string", default: DEFAULT_SITE_URL },
+    { name: "dryRun", type: "boolean", default: false },
+  ]);
 
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    switch (arg) {
-      case "--from":
-        from = argv[++i];
-        break;
-      case "--to":
-        to = argv[++i];
-        break;
-      case "--top":
-        top = Number(argv[++i]);
-        break;
-      case "--site":
-        site = argv[++i];
-        break;
-      case "--dry-run":
-        dryRun = true;
-        break;
-      default:
-        throw new Error(`run-notify: unknown argument "${arg}"`);
-    }
-  }
+  const top = raw.top as number;
+  const site = raw.site as string;
 
-  if (!from || !to) {
-    throw new Error("run-notify: --from <PatchId> --to <PatchId> 필요 (예: --from 26.16 --to 26.17)");
-  }
-  if (!Number.isFinite(top) || top <= 0) {
+  if (top <= 0) {
     throw new Error(`run-notify: --top 값이 올바르지 않습니다: ${String(top)}`);
   }
   // 기본값(DEFAULT_SITE_URL)은 항상 이 검사를 통과하므로 --site 미지정 시엔 영향 없다 —
@@ -87,7 +53,7 @@ export function parseArgs(argv: string[]): RunNotifyArgs {
     throw new Error(`run-notify: --site 값은 http(s):// 스킴이 필요합니다: "${site}"`);
   }
 
-  return { from, to, top, site, dryRun };
+  return { from: raw.from as string, to: raw.to as string, top, site, dryRun: raw.dryRun as boolean };
 }
 
 /**
@@ -116,10 +82,10 @@ export function loadDiscordWebhookUrl(source: Partial<NodeJS.ProcessEnv> = proce
 
 /** data/aggregated/deltas/{from}_{to}.json 로드 — 없으면 run-match.ts 실행을 안내하는 에러로
  * 즉시 실패한다(delta.ts loadAggregatedPatch와 동일한 "애매하게 죽지 않기" 원칙). `dataRoot`는
- * 테스트 격리용 오버라이드(기본 DATA_ROOT) — delta.ts `loadAggregatedPatch`와 동일하게
- * `shared/paths.ts`(ST-01 소유, dataRoot 파라미터 없음)의 고정 헬퍼 대신 경로를 직접 조립한다. */
+ * 테스트 격리용 오버라이드(기본 DATA_ROOT) — `shared/paths.ts`의 `deltasFile` 헬퍼가 이제
+ * dataRoot를 직접 받으므로(2026-09-05 리팩토링) 경로를 로컬로 재조립하지 않는다. */
 export function loadDeltasFile(from: PatchId, to: PatchId, dataRoot: string = DATA_ROOT): DeltasFile {
-  const file = path.join(dataRoot, "aggregated", "deltas", `${from}_${to}.json`);
+  const file = deltasFile(from, to, dataRoot);
   if (!fs.existsSync(file)) {
     throw new Error(
       `run-notify: ${file} 없음 — 먼저 실행: npx tsx scripts/run-match.ts --from ${from} --to ${to}`
@@ -137,7 +103,7 @@ export function loadDeltasFile(from: PatchId, to: PatchId, dataRoot: string = DA
  * 0(유효한 실측값). `dataRoot`는 `loadDeltasFile`과 동일한 테스트 격리용 오버라이드.
  */
 export function loadNoteCount(patch: PatchId, dataRoot: string = DATA_ROOT): number | null {
-  const file = path.join(dataRoot, "aggregated", "notes", `${patch}.json`);
+  const file = notesFile(patch, dataRoot);
   if (!fs.existsSync(file)) return null;
   const parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { items?: PatchNoteItem[] };
   return countEntityNotes(parsed.items ?? []);
@@ -146,7 +112,7 @@ export function loadNoteCount(patch: PatchId, dataRoot: string = DATA_ROOT): num
 /** aggregated/{patch}/summary.json에서 매치 수를 읽는다(footer "n={nFrom}/{nTo}"용). 파일이
  * 없으면 null. `dataRoot`는 위와 동일한 테스트 격리용 오버라이드. */
 export function loadMatchCount(patch: PatchId, dataRoot: string = DATA_ROOT): number | null {
-  const file = path.join(dataRoot, "aggregated", patch, "summary.json");
+  const file = path.join(aggregatedDir(patch, dataRoot), "summary.json");
   if (!fs.existsSync(file)) return null;
   const parsed = JSON.parse(fs.readFileSync(file, "utf8")) as { data?: { matches?: number } };
   return typeof parsed.data?.matches === "number" ? parsed.data.matches : null;
@@ -257,12 +223,9 @@ export async function main(): Promise<void> {
   await runNotify(args);
 }
 
-// run-match.ts/run-aggregate.ts와 동일한 가드 — import만으로(예: parseArgs 단위 테스트) main()이
-// 실행되지 않게 한다.
-const isMainModule =
-  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (isMainModule) {
+// run-match.ts/run-aggregate.ts와 동일한 가드(scripts/shared/cli.ts) — import만으로(예: parseArgs
+// 단위 테스트) main()이 실행되지 않게 한다.
+if (isMainModule(import.meta.url)) {
   main().catch((error) => {
     console.error("run-notify 실패:", error instanceof Error ? error.message : error);
     process.exitCode = 1;

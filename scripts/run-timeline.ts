@@ -6,6 +6,7 @@
 import { loadEnv } from "../src/pipeline/shared/env";
 import { createRiotClient } from "../src/pipeline/collect/riot-client";
 import { collectTimelines } from "../src/pipeline/collect/timeline";
+import { isMainModule, parseCliArgs } from "./shared/cli";
 
 interface RunTimelineArgs {
   patch: string;
@@ -14,31 +15,18 @@ interface RunTimelineArgs {
 }
 
 function parseArgs(argv: string[]): RunTimelineArgs {
-  let patch: string | undefined;
-  let sample = 1500;
-  let dryRun = false;
+  const raw = parseCliArgs("run-timeline", argv, [
+    { name: "patch", type: "string", required: true },
+    { name: "sample", type: "number", default: 1500 },
+    { name: "dryRun", type: "boolean", default: false },
+  ]);
 
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === "--patch") {
-      patch = argv[++i];
-    } else if (arg === "--sample") {
-      const raw = argv[++i];
-      const parsed = raw ? Number(raw) : NaN;
-      if (Number.isNaN(parsed) || parsed <= 0) {
-        throw new Error(`run-timeline: --sample must be a positive number, got "${raw}"`);
-      }
-      sample = parsed;
-    } else if (arg === "--dry-run") {
-      dryRun = true;
-    }
+  const sample = raw.sample as number;
+  if (sample <= 0) {
+    throw new Error(`run-timeline: --sample must be a positive number, got "${sample}"`);
   }
 
-  if (!patch) {
-    throw new Error("run-timeline: --patch <PatchId> is required (예: --patch 26.17)");
-  }
-
-  return { patch, sample, dryRun };
+  return { patch: raw.patch as string, sample, dryRun: raw.dryRun as boolean };
 }
 
 async function main(): Promise<void> {
@@ -79,7 +67,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error) => {
-  console.error(`[run-timeline] fatal: ${error instanceof Error ? error.message : String(error)}`);
-  process.exitCode = 1;
-});
+if (isMainModule(import.meta.url)) {
+  main().catch((error) => {
+    console.error(`[run-timeline] fatal: ${error instanceof Error ? error.message : String(error)}`);
+    process.exitCode = 1;
+  });
+}

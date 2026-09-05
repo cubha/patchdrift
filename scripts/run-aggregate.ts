@@ -5,14 +5,14 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
-import type { MatchSlim, PatchId, TimelineSlim } from "../src/pipeline/types";
+import type { AggregateMeta, MatchSlim, PatchId, TimelineSlim } from "../src/pipeline/types";
 import { aggregatedDir, matchesJsonl, timelinesJsonl } from "../src/pipeline/shared/paths";
 import { aggregateChampions } from "../src/pipeline/aggregate/champions";
 import { aggregateItems } from "../src/pipeline/aggregate/items";
 import { aggregateLanes } from "../src/pipeline/aggregate/lanes";
 import { aggregateObjectives } from "../src/pipeline/aggregate/objectives";
 import { summarizePatch } from "../src/pipeline/aggregate/summary";
+import { isMainModule, parseCliArgs } from "./shared/cli";
 
 export interface RunAggregateArgs {
   patch: PatchId;
@@ -20,35 +20,12 @@ export interface RunAggregateArgs {
 }
 
 export function parseArgs(argv: string[]): RunAggregateArgs {
-  let patch: string | undefined;
-  let dataRoot: string | undefined;
+  const raw = parseCliArgs("run-aggregate", argv, [
+    { name: "patch", type: "string", required: true },
+    { name: "dataRoot", type: "string" },
+  ]);
 
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    if (arg === "--patch") {
-      patch = argv[++i];
-    } else if (arg === "--data-root") {
-      dataRoot = argv[++i];
-    }
-  }
-
-  if (!patch) {
-    throw new Error("run-aggregate: --patch <PatchId> is required (예: --patch 26.17)");
-  }
-
-  return { patch, dataRoot };
-}
-
-function resolveMatchesPath(patch: PatchId, dataRoot?: string): string {
-  return dataRoot ? path.join(dataRoot, "raw", patch, "matches.jsonl") : matchesJsonl(patch);
-}
-
-function resolveTimelinesPath(patch: PatchId, dataRoot?: string): string {
-  return dataRoot ? path.join(dataRoot, "raw", patch, "timelines.jsonl") : timelinesJsonl(patch);
-}
-
-function resolveAggregatedDir(patch: PatchId, dataRoot?: string): string {
-  return dataRoot ? path.join(dataRoot, "aggregated", patch) : aggregatedDir(patch);
+  return { patch: raw.patch as string, dataRoot: raw.dataRoot as string | undefined };
 }
 
 export interface JsonlLoadResult<T> {
@@ -88,9 +65,9 @@ function writeJson(filePath: string, value: unknown): void {
 export async function main(): Promise<void> {
   const { patch, dataRoot } = parseArgs(process.argv.slice(2));
 
-  const matchesPath = resolveMatchesPath(patch, dataRoot);
-  const timelinesPath = resolveTimelinesPath(patch, dataRoot);
-  const outDir = resolveAggregatedDir(patch, dataRoot);
+  const matchesPath = matchesJsonl(patch, dataRoot);
+  const timelinesPath = timelinesJsonl(patch, dataRoot);
+  const outDir = aggregatedDir(patch, dataRoot);
 
   const matchesLoad = loadJsonl<MatchSlim>(matchesPath);
   const timelinesLoad = loadJsonl<TimelineSlim>(timelinesPath);
@@ -101,13 +78,13 @@ export async function main(): Promise<void> {
       `timelines=${timelinesLoad.rows.length}(skip ${timelinesLoad.skipped})`
   );
 
-  const meta = {
+  const meta: AggregateMeta = {
     patch,
     generatedAt: new Date().toISOString(),
     nMatches: matchesLoad.rows.length,
     nParticipants,
     nTimelines: timelinesLoad.rows.length,
-    source: "riot-match-v5" as const,
+    source: "riot-match-v5",
   };
 
   const champions = aggregateChampions(matchesLoad.rows, patch);
@@ -136,10 +113,7 @@ export async function main(): Promise<void> {
   );
 }
 
-const isMainModule =
-  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (isMainModule) {
+if (isMainModule(import.meta.url)) {
   main().catch((error) => {
     console.error(`[run-aggregate] fatal: ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 1;

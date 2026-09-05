@@ -7,7 +7,6 @@
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { fetchPatchNotesHtml, parsePatchNotes } from "../src/pipeline/match/patchnotes-parser";
 import { notesFile } from "../src/pipeline/shared/paths";
 import { loadDdragon } from "../src/pipeline/match/ddragon";
@@ -17,6 +16,7 @@ import { matchDeterministic } from "../src/pipeline/match/entity-match";
 import { applyVerdicts, indexNotesById, sortDeltas, writeDeltas } from "../src/pipeline/match/verdict";
 import { inferIndirectCandidates, type LlmMatchOptions, type LlmRunSummary } from "../src/pipeline/match/llm-match";
 import type { DeltaRecord, MatchStatus, PatchId, PatchNoteItem, PatchNoteSection } from "../src/pipeline/types";
+import { isMainModule, parseCliArgs } from "./shared/cli";
 
 export interface RunMatchArgs {
   from: PatchId;
@@ -27,43 +27,26 @@ export interface RunMatchArgs {
 }
 
 export function parseArgs(argv: string[]): RunMatchArgs {
-  let from: string | undefined;
-  let to: string | undefined;
-  let llmMax = 50;
-  let noLlm = false;
-  let dryRun = false;
+  const raw = parseCliArgs("run-match", argv, [
+    { name: "from", type: "string", required: true },
+    { name: "to", type: "string", required: true },
+    { name: "llmMax", type: "number", default: 50 },
+    { name: "noLlm", type: "boolean", default: false },
+    { name: "dryRun", type: "boolean", default: false },
+  ]);
 
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    switch (arg) {
-      case "--from":
-        from = argv[++i];
-        break;
-      case "--to":
-        to = argv[++i];
-        break;
-      case "--llm-max":
-        llmMax = Number(argv[++i]);
-        break;
-      case "--no-llm":
-        noLlm = true;
-        break;
-      case "--dry-run":
-        dryRun = true;
-        break;
-      default:
-        throw new Error(`run-match: unknown argument "${arg}"`);
-    }
-  }
-
-  if (!from || !to) {
-    throw new Error("run-match: --from <PatchId> --to <PatchId> 필요 (예: --from 26.16 --to 26.17)");
-  }
-  if (!Number.isFinite(llmMax) || llmMax < 0) {
+  const llmMax = raw.llmMax as number;
+  if (llmMax < 0) {
     throw new Error(`run-match: --llm-max 값이 올바르지 않습니다: ${String(llmMax)}`);
   }
 
-  return { from, to, llmMax, noLlm, dryRun };
+  return {
+    from: raw.from as string,
+    to: raw.to as string,
+    llmMax,
+    noLlm: raw.noLlm as boolean,
+    dryRun: raw.dryRun as boolean,
+  };
 }
 
 /** notes/{patch}.json이 있으면 그대로 로드, 없으면 fetch+parse 후 저장(run-fetch-notes.ts와 동일 스키마). */
@@ -234,14 +217,11 @@ export async function main(): Promise<void> {
   console.log(`[run-match] 완료 — ${result.filePath} (${result.sorted.length}건)`);
 }
 
-// run-aggregate.ts/run-ddragon.ts와 동일한 가드 — 이 파일을 테스트가 import만 해도(예:
-// runMatchPipeline/parseArgs 단위 테스트) main()이 실행되지 않게 한다(가드 없으면 테스트 프로세스의
-// 실제 argv로 main()이 즉시 실행돼 --from/--to 누락 에러가 나고 process.exitCode=1이 세팅되는
-// 실측 결함이 있었다 — B4 후속 수정 중 발견).
-const isMainModule =
-  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (isMainModule) {
+// run-aggregate.ts/run-ddragon.ts와 동일한 가드(scripts/shared/cli.ts) — 이 파일을 테스트가
+// import만 해도(예: runMatchPipeline/parseArgs 단위 테스트) main()이 실행되지 않게 한다(가드
+// 없으면 테스트 프로세스의 실제 argv로 main()이 즉시 실행돼 --from/--to 누락 에러가 나고
+// process.exitCode=1이 세팅되는 실측 결함이 있었다 — B4 후속 수정 중 발견).
+if (isMainModule(import.meta.url)) {
   main().catch((error) => {
     console.error("run-match 실패:", error instanceof Error ? error.message : error);
     process.exitCode = 1;

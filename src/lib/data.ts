@@ -2,15 +2,16 @@
 // 빌드 타임 JSON 로더 — data/aggregated/**만 읽어 정적 페이지에 임베드한다(런타임 외부 API 0,
 // SCOPE §2 F7 "사전 인덱싱" 원칙). 서버 전용(fs 직접 사용) — 클라이언트 컴포넌트에서 import 금지.
 //
-// 경로 상수는 src/pipeline/shared/paths.ts와 같은 레이아웃을 따르되, 테스트 격리를 위해
-// dataRoot를 매개변수로 받는 로컬 헬퍼로 재구현한다(ST-06 run-aggregate.ts --data-root와 동일한
-// 선례 — shared/paths.ts는 다른 배치 소유라 건드리지 않는다).
+// 경로 상수는 shared/paths.ts 헬퍼(dataRoot를 마지막 선택 인자로 받는다, 2026-09-05 리팩토링)를
+// 그대로 재사용한다 — 이전엔 이 파일이 같은 레이아웃을 dataRoot-first 인자 순서로 로컬 재구현했다.
 
 import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import type {
+  AggregateMeta as PipelineAggregateMeta,
   ChampionStat,
+  DataFile as PipelineDataFile,
   DeltasFile as PipelineDeltasFile,
   ItemStat,
   LaneGoldStat,
@@ -18,29 +19,19 @@ import type {
   PatchId,
   PatchNoteItem,
   PatchSummary,
+  RowsFile as PipelineRowsFile,
 } from "@/pipeline/types";
+import { DATA_ROOT, aggregatedDir, deltasFile, notesFile } from "@/pipeline/shared/paths";
 
-/** run-aggregate.ts가 각 산출 파일에 공통으로 얹는 메타 블록. */
-export interface AggregateMeta {
-  patch: PatchId;
-  generatedAt: string;
-  nMatches: number;
-  nParticipants: number;
-  nTimelines: number;
-  source: string;
-}
+/** run-aggregate.ts가 각 산출 파일에 공통으로 얹는 메타 블록 — `src/pipeline/types.ts`의
+ * `AggregateMeta`를 그대로 재export한다(2026-09-05 리팩토링 — 원래 이 파일 로컬 정의였다). */
+export type AggregateMeta = PipelineAggregateMeta;
 
 /** 배열형 산출 파일({meta, rows: T[]}) 공통 래퍼 — champions/items/lanes.json. */
-export interface RowsFile<T> {
-  meta: AggregateMeta;
-  rows: T[];
-}
+export type RowsFile<T> = PipelineRowsFile<T>;
 
 /** 단일 객체형 산출 파일({meta, data: T}) 공통 래퍼 — objectives/summary.json. */
-export interface DataFile<T> {
-  meta: AggregateMeta;
-  data: T;
-}
+export type DataFile<T> = PipelineDataFile<T>;
 
 /** data/aggregated/notes/{patch}.json — ST-07 패치노트 파서 출력. */
 export interface NotesFile {
@@ -71,22 +62,6 @@ export interface PatchPair {
   to: PatchId;
 }
 
-function defaultDataRoot(): string {
-  return path.resolve(process.cwd(), "data");
-}
-
-function aggregatedPatchDir(dataRoot: string, patch: PatchId): string {
-  return path.join(dataRoot, "aggregated", patch);
-}
-
-function deltasDir(dataRoot: string): string {
-  return path.join(dataRoot, "aggregated", "deltas");
-}
-
-function notesFilePath(dataRoot: string, patch: PatchId): string {
-  return path.join(dataRoot, "aggregated", "notes", `${patch}.json`);
-}
-
 function readJsonFile<T>(filePath: string): T | null {
   if (!fs.existsSync(filePath)) return null;
   const raw = fs.readFileSync(filePath, "utf-8");
@@ -108,7 +83,7 @@ function comparePatchDesc(a: PatchId, b: PatchId): number {
 
 /** data/aggregated/{patch}/summary.json이 존재하는 패치 목록(내림차순 = 최신 우선). "deltas"·
  * "notes"는 패치 디렉토리가 아니라 별도 네임스페이스라 제외한다. */
-export function listPatches(dataRoot: string = defaultDataRoot()): PatchId[] {
+export function listPatches(dataRoot: string = DATA_ROOT): PatchId[] {
   const aggRoot = path.join(dataRoot, "aggregated");
   if (!fs.existsSync(aggRoot)) return [];
   const patches = fs
@@ -121,8 +96,10 @@ export function listPatches(dataRoot: string = defaultDataRoot()): PatchId[] {
 
 /** data/aggregated/deltas/*.json 파일명("{from}_{to}.json")에서 패치 쌍 목록을 뽑는다
  * (내림차순 = 최신 쌍 우선). 디렉토리가 없으면 빈 배열(빈 데이터 빌드 보장). */
-export function listPatchPairs(dataRoot: string = defaultDataRoot()): PatchPair[] {
-  const dir = deltasDir(dataRoot);
+export function listPatchPairs(dataRoot: string = DATA_ROOT): PatchPair[] {
+  // shared/paths.ts는 특정 {from}_{to}.json 파일 경로(deltasFile)만 제공하고 이 디렉토리
+  // 자체를 위한 헬퍼는 없다(readdir 대상은 여기뿐이라 승격할 만한 중복이 아니었다).
+  const dir = path.join(dataRoot, "aggregated", "deltas");
   if (!fs.existsSync(dir)) return [];
   const pairs: PatchPair[] = [];
   for (const file of fs.readdirSync(dir)) {
@@ -135,58 +112,39 @@ export function listPatchPairs(dataRoot: string = defaultDataRoot()): PatchPair[
 }
 
 /** 가장 최신 패치 쌍. 쌍이 하나도 없으면(ST-08 미착수·빈 빌드 등) null. */
-export function getDefaultPair(dataRoot: string = defaultDataRoot()): PatchPair | null {
+export function getDefaultPair(dataRoot: string = DATA_ROOT): PatchPair | null {
   return listPatchPairs(dataRoot)[0] ?? null;
 }
 
-export function loadSummary(
-  patch: PatchId,
-  dataRoot: string = defaultDataRoot()
-): DataFile<PatchSummary> | null {
-  return readJsonFile(path.join(aggregatedPatchDir(dataRoot, patch), "summary.json"));
+export function loadSummary(patch: PatchId, dataRoot: string = DATA_ROOT): DataFile<PatchSummary> | null {
+  return readJsonFile(path.join(aggregatedDir(patch, dataRoot), "summary.json"));
 }
 
-export function loadChampions(
-  patch: PatchId,
-  dataRoot: string = defaultDataRoot()
-): RowsFile<ChampionStat> | null {
-  return readJsonFile(path.join(aggregatedPatchDir(dataRoot, patch), "champions.json"));
+export function loadChampions(patch: PatchId, dataRoot: string = DATA_ROOT): RowsFile<ChampionStat> | null {
+  return readJsonFile(path.join(aggregatedDir(patch, dataRoot), "champions.json"));
 }
 
-export function loadItems(
-  patch: PatchId,
-  dataRoot: string = defaultDataRoot()
-): RowsFile<ItemStat> | null {
-  return readJsonFile(path.join(aggregatedPatchDir(dataRoot, patch), "items.json"));
+export function loadItems(patch: PatchId, dataRoot: string = DATA_ROOT): RowsFile<ItemStat> | null {
+  return readJsonFile(path.join(aggregatedDir(patch, dataRoot), "items.json"));
 }
 
-export function loadLanes(
-  patch: PatchId,
-  dataRoot: string = defaultDataRoot()
-): RowsFile<LaneGoldStat> | null {
-  return readJsonFile(path.join(aggregatedPatchDir(dataRoot, patch), "lanes.json"));
+export function loadLanes(patch: PatchId, dataRoot: string = DATA_ROOT): RowsFile<LaneGoldStat> | null {
+  return readJsonFile(path.join(aggregatedDir(patch, dataRoot), "lanes.json"));
 }
 
 export function loadObjectives(
   patch: PatchId,
-  dataRoot: string = defaultDataRoot()
+  dataRoot: string = DATA_ROOT
 ): DataFile<ObjectiveStat> | null {
-  return readJsonFile(path.join(aggregatedPatchDir(dataRoot, patch), "objectives.json"));
+  return readJsonFile(path.join(aggregatedDir(patch, dataRoot), "objectives.json"));
 }
 
-export function loadNotes(
-  patch: PatchId,
-  dataRoot: string = defaultDataRoot()
-): NotesFile | null {
-  return readJsonFile(notesFilePath(dataRoot, patch));
+export function loadNotes(patch: PatchId, dataRoot: string = DATA_ROOT): NotesFile | null {
+  return readJsonFile(notesFile(patch, dataRoot));
 }
 
 /** data/aggregated/deltas/{from}_{to}.json — 파일이 없으면 null(ST-08 미착수 구간·빈 데이터
  * 빌드 모두 이 경로로 안전하게 처리된다). */
-export function loadDeltas(
-  from: PatchId,
-  to: PatchId,
-  dataRoot: string = defaultDataRoot()
-): DeltasFile | null {
-  return readJsonFile(path.join(deltasDir(dataRoot), `${from}_${to}.json`));
+export function loadDeltas(from: PatchId, to: PatchId, dataRoot: string = DATA_ROOT): DeltasFile | null {
+  return readJsonFile(deltasFile(from, to, dataRoot));
 }

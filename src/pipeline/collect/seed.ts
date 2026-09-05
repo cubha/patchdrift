@@ -30,8 +30,7 @@ interface SeedCacheFile {
 }
 
 function seedCacheFile(patch: PatchId, dataRoot?: string): string {
-  const dir = dataRoot ? path.join(dataRoot, "raw", patch) : rawDir(patch);
-  return path.join(dir, "seed-puuids.json");
+  return path.join(rawDir(patch, dataRoot), "seed-puuids.json");
 }
 
 function readFreshCache(file: string, nowMsValue: number): SeedCacheFile | null {

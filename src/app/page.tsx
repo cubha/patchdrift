@@ -37,7 +37,7 @@ export default function Home() {
   const objectivesTo = pair ? loadObjectives(pair.to) : null;
   const objectivesFrom = pair ? loadObjectives(pair.from) : null;
 
-  const headline = computeHeadline(deltas, notesTo);
+  const headline = computeHeadline(deltas, notesTo, deltas?.meta.qAlpha);
   const unannouncedRows = selectTopUnannounced(deltas, 5);
   const announcedRows = selectAnnouncedPreview(deltas, 5);
   const notesById = indexNotesById(notesTo);

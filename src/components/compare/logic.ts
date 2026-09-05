@@ -9,8 +9,11 @@ import { fmtCiHalf, fmtDeltaInt, fmtDeltaSec, fmtInt, fmtPp } from "@/lib/format
 import { absDelta, countRelevantNoteEntities, metricKind } from "@/components/home/logic";
 
 /** 상태 필터 칩 5종(UX-BRIEF "02 대조표" 필터 바) — "no-change"는 칩이 없다(전체=필터 없음이라
- * no-change 행도 "전체"에서는 그대로 보인다, ST-11.md 구현 결정 참고). */
-export const STATUS_FILTERS: ReadonlyArray<{ key: string; label: string }> = [
+ * no-change 행도 "전체"에서는 그대로 보인다, ST-11.md 구현 결정 참고). `key`를 `MatchStatus |
+ * "all"`로 좁혀(2026-09-05 리팩토링) 오타로 존재하지 않는 상태값을 넣으면 컴파일 타임에 잡는다 —
+ * `filterByStatus`/`CompareExplorer.tsx`의 `statusFilter` 상태는 URL 해시에서도 올 수 있어 여전히
+ * `string`을 받는다(런타임 값이라 타입으로 좁힐 수 없음). */
+export const STATUS_FILTERS: ReadonlyArray<{ key: MatchStatus | "all"; label: string }> = [
   { key: "all", label: "전체" },
   { key: "announced-consistent", label: "공지-일치" },
   { key: "announced-inconsistent", label: "공지-불일치" },

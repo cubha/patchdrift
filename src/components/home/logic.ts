@@ -4,49 +4,40 @@
 // UX-BRIEF §3 "01 브리핑 홈" + 코디네이터 지시(ST-11 프롬프트) 기준.
 
 import type { DeltaKind } from "@/components/DeltaValue";
-import type { DeltaRecord, DeltasFile, LlmCause, PatchNoteItem } from "@/pipeline/types";
+import type { DeltaMetric, DeltaRecord, DeltasFile, LlmCause, PatchNoteItem } from "@/pipeline/types";
 import type { NotesFile } from "@/lib/data";
-import { fmtDeltaInt, fmtDeltaSec, fmtInt, fmtPct, fmtPp, fmtSec, metricLabel } from "@/lib/format";
-
-/** 좌·아이템 노트만 "엔티티 단위"로 묶는다(시스템/기타는 챔피언·아이템 엔티티가 아니라 제외 —
- * ST-08 entity-match.ts의 블로킹 대상 정의와 동일). */
-const ENTITY_NOTE_SECTIONS = new Set(["champion", "item"]);
+import { METRIC_KIND, fmtDeltaInt, fmtDeltaSec, fmtInt, fmtPct, fmtPp, fmtSec, metricLabel } from "@/lib/format";
+import { countRelevantNoteEntities as countRelevantNoteEntitiesInFile } from "@/pipeline/shared/notes-count";
+import { isSignificantDelta } from "@/pipeline/shared/significance";
+import { FDR_ALPHA } from "@/pipeline/aggregate/stats";
 
 /** 패치노트 항목(section champion|item)을 "entity" 단위로 묶어 몇 개의 서로 다른 엔티티가
  * 언급됐는지 센다 — ST-08 `matchedNoteIds`가 같은 엔티티의 노트 여러 줄을 한 묶음으로 취급하는
  * 기준과 일치시킨다(예: 아우렐리온 솔 스킬 2줄 변경 = 노트 항목 2건이지만 엔티티는 1개).
- * `section:entity`로 키를 만드는 이유: 이론상 챔피언명과 아이템명이 같은 문자열일 가능성을
- * 배제하기 위함(실제로 아직 충돌 사례는 없다 — ST-08 실측). */
+ * 실제 계산은 `pipeline/shared/notes-count.ts`(scripts/run-notify.ts의 `countEntityNotes`와도
+ * 공유하는 단일 구현, 2026-09-05 리팩토링)에 있다 — 이 함수는 `NotesFile | null` 래퍼를 벗겨
+ * items 배열만 넘기는 얇은 어댑터다. */
 export function countRelevantNoteEntities(notes: NotesFile | null): number {
   if (!notes) return 0;
-  const keys = new Set<string>();
-  for (const item of notes.items) {
-    if (!ENTITY_NOTE_SECTIONS.has(item.section)) continue;
-    keys.add(`${item.section}:${item.entity}`);
-  }
-  return keys.size;
+  return countRelevantNoteEntitiesInFile(notes.items);
 }
 
-/** CI [lo, hi]가 0을 포함하면 유의하지 않다(비중첩 판정과 동일한 관례 — ST-05 Newcombe CI가
- * 이 튜플을 만드는 방식과 일치). */
-function ciContainsZero(ci: DeltaRecord["ci"]): boolean {
-  return ci[0] <= 0 && ci[1] >= 0;
-}
-
-/** 델타 1건이 "통계적으로 유의한 변화"인지 — **상태 라벨이 아니라 q·CI를 직접 검사**한다
+/**
+ * 델타 1건이 "통계적으로 유의한 변화"인지 — **상태 라벨이 아니라 q·CI를 직접 검사**한다
  * (코디네이터 정정, 2026-09-05). `status`만으로 세면 `announced-inconsistent`가 "방향이
  * 다른 유의한 변화"와 "노트는 있지만 통계적으로 변화 없음"(ST-08 verdict.assignStatus 3번
  * 분기) 두 경우를 한데 묶어 M을 부풀린다 — 실측: 자기쌍(26.17→26.17) `announced-inconsistent`
  * 212건은 전부 후자(델타 그 자체가 없는 자기비교)인데, status 기준으로 세면 M=212로 잘못
  * 나온다. `insufficient-sample`(승률 n 게이트 미달)은 q·CI가 있어도 무조건 비유의로 친다 —
- * PLAN ②의 "미달=insufficient-sample"과 동일한 무조건 우선순위. */
-export function isSignificantDelta(record: DeltaRecord): boolean {
-  if (record.status === "insufficient-sample") return false;
-  if (record.q === null) return false;
-  if (record.q >= 0.1) return false;
-  if (ciContainsZero(record.ci)) return false;
-  return true;
-}
+ * PLAN ②의 "미달=insufficient-sample"과 동일한 무조건 우선순위.
+ *
+ * 실제 판정 로직은 `pipeline/shared/significance.ts`(`discord/webhook.ts`와 공유, 2026-09-05
+ * 리팩토링으로 단일화)에 있다 — 이 재export는 기존 호출부(`compare/logic.ts`·`page.tsx`·이
+ * 파일의 `computeHeadline`)의 import 경로를 그대로 보존한다. `qAlpha` 기본값은 `FDR_ALPHA`
+ * (0.1, 이전 하드코딩 값과 동일)이며, `computeHeadline`은 `deltas.meta.qAlpha`를 넘겨 실제 그
+ * 델타 파일이 만들어질 때 쓴 값을 재사용한다.
+ */
+export { isSignificantDelta };
 
 /** 요약 카드 헤드라인 3수치(+스탯 타일 3종이 그대로 이 수치를 쓴다 — 코디네이터 정정,
  * 2026-09-05: 타일 "공지된 변화"는 별도 델타 집계가 아니라 `noteItemCount`(N)를 그대로
@@ -61,17 +52,20 @@ export interface HeadlineStats {
 }
 
 /** deltas/notes가 아직 없으면(ST-08 미착수 구간·빈 데이터 빌드) 전부 0을 반환한다(throw 없음 —
- * 빈 상태 카드 렌더 보장, ST-11 완료 조건). */
+ * 빈 상태 카드 렌더 보장, ST-11 완료 조건). `qAlpha` 기본값은 `FDR_ALPHA` — 호출부(`page.tsx`)가
+ * `deltas?.meta.qAlpha`를 명시적으로 넘기면 그 값을 우선한다(2026-09-05 리팩토링, 기존엔
+ * `isSignificantDelta` 내부에 0.1이 하드코딩돼 있었다). */
 export function computeHeadline(
   deltas: DeltasFile | null,
-  notes: NotesFile | null
+  notes: NotesFile | null,
+  qAlpha: number = FDR_ALPHA
 ): HeadlineStats {
   const noteItemCount = countRelevantNoteEntities(notes);
   const rows = deltas?.rows ?? [];
   let statCount = 0;
   let unannouncedCount = 0;
   for (const row of rows) {
-    if (isSignificantDelta(row)) statCount++;
+    if (isSignificantDelta(row, qAlpha)) statCount++;
     if (row.status === "unannounced") unannouncedCount++;
   }
   return { noteItemCount, statCount, unannouncedCount };
@@ -151,17 +145,23 @@ export function formatNotePreviewText(
   return `${note.entity}${skillPart} — ${note.summary}${extra}`;
 }
 
-/** DeltaRecord.metric → DeltaValue의 kind 3종. ST-08이 산출하는 metric 어휘(픽률·밴률·승률·
- * 채택률=pp / 경기시간·오브젝트 첫 시각=sec / 라인 골드=gold) 기준 — format.ts METRIC_LABELS와
- * 동일한 문서화된 사례 집합을 따른다. 알려지지 않은 metric은 "gold"(정수 그대로 표기)로
- * 폴백한다(pp처럼 ×100 스케일링하면 임의 단위를 왜곡할 위험이 더 크기 때문). */
-const PP_METRICS = new Set(["pickRate", "banRate", "winRate", "adoptionRate"]);
-const SEC_METRICS = new Set(["avgDurationSec", "firstSec"]);
+/** `lib/format.ts`의 `"seconds"` → 이 파일(및 DeltaValue)이 쓰는 `"sec"` 표기로 옮긴다 — 하위
+ * 소비처(DeltaValue.tsx의 `DeltaKind`, compare/logic.ts 등)가 전부 "sec"를 쓰므로 여기서만
+ * 흡수한다(2026-09-05 리팩토링, `DeltaKind` 리네임은 범위 밖). */
+const SHARED_KIND_TO_UI: Record<"pp" | "seconds" | "gold", DeltaKind> = {
+  pp: "pp",
+  seconds: "sec",
+  gold: "gold",
+};
 
+/** DeltaRecord.metric → DeltaValue의 kind 3종. 분류 자체는 `lib/format.ts`의 `METRIC_KIND`
+ * (`DeltaMetric` 전수 `Record`, 2026-09-05 리팩토링으로 단일화)에 위임한다. 알려지지 않은
+ * metric은 "gold"(정수 그대로 표기)로 폴백한다(pp처럼 ×100 스케일링하면 임의 단위를 왜곡할
+ * 위험이 더 크기 때문) — `METRIC_KIND`는 `DeltaMetric` 전수라 폴백이 없으므로, 이 폴백은
+ * 여기 얇은 어댑터가 계속 책임진다. */
 export function metricKind(metric: string): DeltaKind {
-  if (PP_METRICS.has(metric)) return "pp";
-  if (SEC_METRICS.has(metric)) return "sec";
-  return "gold";
+  const shared = METRIC_KIND[metric as DeltaMetric] as "pp" | "seconds" | "gold" | undefined;
+  return shared ? SHARED_KIND_TO_UI[shared] : "gold";
 }
 
 /** 공지 대조 미리보기 ".note-observed" 텍스트 — "픽률 −1.8%p" 형태. delta===null이면 "관측

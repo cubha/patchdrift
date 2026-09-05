@@ -4,7 +4,8 @@
 // 네트워크·시간에 의존하지 않아 결정론적으로 테스트할 수 있다.
 
 import type { DeltaRecord, DeltasFile, LlmCause } from "../types";
-import { fmtCiHalf, fmtDeltaInt, fmtDeltaSec, fmtInt, fmtKst, fmtPct, fmtPp, fmtSec, itemHref, metricLabel, positionLabel } from "../../lib/format";
+import { fmtCiHalf, fmtDeltaInt, fmtDeltaSec, fmtInt, fmtKst, fmtPct, fmtPp, fmtSec, itemHref, metricKind, metricLabel, positionLabel } from "../../lib/format";
+import { isSignificantDelta } from "../shared/significance";
 
 // ─── 디스코드 embed 제한(공식 API 제약, PLAN F6 "embed(≤10·6,000자)") ────────────────────────
 const MAX_EMBEDS = 10;
@@ -66,33 +67,6 @@ export interface BuildBriefingOptions {
   matchCounts?: { from: number | null; to: number | null };
 }
 
-/** 비율(픽률·밴률·승률·채택률) / 골드(정수) / 초(시각·경기시간) — 표시 포맷이 갈리는 3종. */
-type MetricKind = "ratio" | "gold" | "seconds";
-
-function metricKind(metric: string): MetricKind {
-  switch (metric) {
-    case "pickRate":
-    case "banRate":
-    case "winRate":
-    case "adoptionRate":
-      return "ratio";
-    case "goldAt10":
-    case "goldAt14":
-      return "gold";
-    default:
-      // "firstSec"(오브젝트 첫 획득 시각) · "avgDurationSec"(평균 경기 시간).
-      return "seconds";
-  }
-}
-
-/** metricLabel(lib/format)은 "firstDragonSec" 등 오브젝트별 합성 키를 알지만, 이 파이프라인의
- * DeltaRecord.metric은 오브젝트에서 항상 "firstSec"(ST-08 확정, entityName이 용/전령/바론/포탑을
- * 구분)이라 여기서 로컬 매핑한다. */
-function metricKo(metric: string): string {
-  if (metric === "firstSec") return "첫 처치 시각";
-  return metricLabel(metric);
-}
-
 /** 챔피언 포지션별 행(id 4세그먼트: champion:{ddragonId}:{pos}:{metric})은 entityName에 포지션이
  * 없으므로 id에서 뽑아 붙인다. 그 외(전체 스코프 챔피언·아이템·라인·오브젝트·매치평균)는 entityName 그대로. */
 function entityLabel(d: DeltaRecord): string {
@@ -123,7 +97,7 @@ export function formatDeltaLine(d: DeltaRecord): string {
   }
 
   const kind = metricKind(d.metric);
-  if (kind === "ratio") {
+  if (kind === "pp") {
     const ciHalf = fmtCiHalf([d.ci[0] * 100, d.ci[1] * 100]);
     return `${fmtPct(d.before)} → ${fmtPct(d.after)} (${fmtPp(d.delta)}, CI ${ciHalf})`;
   }
@@ -142,7 +116,7 @@ function truncate(s: string, max: number): string {
 /** 미공지/공지-불일치 델타 1건 → embed 필드 1개. inconsistent=true면 이름 앞에 경고 표시를 붙여
  * 두 섹션(미공지 상위 N · 공지-불일치 상위 3)을 시각적으로 구분한다. */
 function buildField(d: DeltaRecord, siteUrl: string, inconsistent: boolean): DiscordEmbedField {
-  const name = `${inconsistent ? "⚠ " : ""}${entityLabel(d)} · ${metricKo(d.metric)}`;
+  const name = `${inconsistent ? "⚠ " : ""}${entityLabel(d)} · ${metricLabel(d.metric)}`;
   const url = `${siteUrl}${itemHref(d.id)}`;
   const cause = causeText(d.causes);
   const base = `${formatDeltaLine(d)} · [근거](${url})`;
@@ -160,21 +134,6 @@ function buildFooterText(
 }
 
 /**
- * 델타 1건이 "유의한 관측 변화"인지 판정한다(헤드라인 "유의 변화 M개" 계산용). `status`만으로는
- * 부족하다 — ST-08 assignStatus는 "유의 + 노트 짝(방향 불일치/중립)"과 "비유의 + 노트 짝 있음"을
- * 둘 다 `announced-inconsistent`로 합쳐 넣기 때문에(verdict.ts), status 대신 q/CI/게이트를 직접
- * 재판정한다: `insufficient-sample`은 무조건 제외(승률 n 게이트 미달), q가 없거나 FDR 임계 이상이면
- * 제외, CI가 0을 포함하면 제외.
- */
-function isSignificant(row: DeltaRecord, qAlpha: number): boolean {
-  if (row.status === "insufficient-sample") return false;
-  if (row.q === null || row.q >= qAlpha) return false;
-  const [lo, hi] = row.ci;
-  if (lo <= 0 && hi >= 0) return false;
-  return true;
-}
-
-/**
  * deltas 파일 → embed 배열(항상 1개 — 필드 ≤25·문자 ≤6,000 제한 안에서 미공지 상위 topN +
  * 공지-불일치 상위 3을 한 embed에 담는다. PLAN F6 "embed(≤10·6,000자)"의 ≤10은 이 구현이 embed를
  * 1개만 만들어 구조적으로 항상 만족한다).
@@ -189,7 +148,7 @@ export function buildBriefingEmbeds(deltas: DeltasFile, options: BuildBriefingOp
 
   const unannouncedRows = deltas.rows.filter((r) => r.status === "unannounced");
   const inconsistentRows = deltas.rows.filter((r) => r.status === "announced-inconsistent");
-  const significantCount = deltas.rows.filter((r) => isSignificant(r, qAlpha)).length;
+  const significantCount = deltas.rows.filter((r) => isSignificantDelta(r, qAlpha)).length;
 
   const topUnannounced = unannouncedRows.slice(0, topN);
   const topInconsistent = inconsistentRows.slice(0, INCONSISTENT_EXTRA_COUNT);

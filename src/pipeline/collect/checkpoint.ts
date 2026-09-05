@@ -1,8 +1,8 @@
 // src/pipeline/collect/checkpoint.ts
 // 파일 단위 idempotent 재개 체크포인트 — seen-ids 인덱스(재조회 방지) + collect-state.json(puuid
 // 순회 위치)을 fs로 로드/기록한다. 전부 동기 I/O(appendFileSync 등)로 원자성을 보장한다(PLAN F1).
-// paths.ts는 수정하지 않는다 — 테스트가 요구하는 dataRoot 오버라이드는 이 파일이 자체적으로
-// 흡수한다(crawler.ts와 동일한 패턴, timeline.ts도 동일 관례를 쓴다).
+// 테스트가 요구하는 dataRoot 오버라이드는 shared/paths.ts 헬퍼가 받는 선택적 dataRoot 인자를
+// 그대로 전달해 흡수한다(2026-09-05 리팩토링 — 이전엔 이 파일이 경로를 로컬로 재현했다).
 
 import fs from "node:fs";
 import path from "node:path";
@@ -35,15 +35,15 @@ export interface CollectState {
 }
 
 function resolveRawDir({ patch, dataRoot }: CheckpointPaths): string {
-  return dataRoot ? path.join(dataRoot, "raw", patch) : rawDir(patch);
+  return rawDir(patch, dataRoot);
 }
 
 export function resolveSeenIdsFile(paths: CheckpointPaths): string {
-  return paths.dataRoot ? path.join(resolveRawDir(paths), "seen-ids.txt") : seenIdsFile(paths.patch);
+  return seenIdsFile(paths.patch, paths.dataRoot);
 }
 
 export function resolveMatchesJsonl(paths: CheckpointPaths): string {
-  return paths.dataRoot ? path.join(resolveRawDir(paths), "matches.jsonl") : matchesJsonl(paths.patch);
+  return matchesJsonl(paths.patch, paths.dataRoot);
 }
 
 export function resolveCollectStateFile(paths: CheckpointPaths): string {

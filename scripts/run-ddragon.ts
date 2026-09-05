@@ -15,9 +15,9 @@
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { DATA_ROOT } from "../src/pipeline/shared/paths";
 import { loadDdragon } from "../src/pipeline/match/ddragon";
+import { isMainModule } from "./shared/cli";
 
 const VERSIONS_URL = "https://ddragon.leagueoflegends.com/api/versions.json";
 const PUBLIC_DD_DIR = path.resolve(process.cwd(), "public", "dd");
@@ -213,10 +213,7 @@ export async function main(): Promise<void> {
   }
 }
 
-const isMainModule =
-  process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href;
-
-if (isMainModule) {
+if (isMainModule(import.meta.url)) {
   main().catch((error) => {
     console.error(`[run-ddragon] fatal: ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 1;

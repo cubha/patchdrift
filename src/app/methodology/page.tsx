@@ -16,7 +16,7 @@ import SectionCard from "@/components/SectionCard";
 import { getDefaultPair, loadDeltas, loadNotes, loadSummary } from "@/lib/data";
 import { fmtKst } from "@/lib/format";
 import { FDR_ALPHA, WIN_RATE_MIN_N } from "@/pipeline/aggregate/stats";
-import { countRelevantNoteEntities } from "@/components/home/logic";
+import { countRelevantNoteEntities } from "@/pipeline/shared/notes-count";
 import DiscordEmbedPreview from "@/components/methodology/DiscordEmbedPreview";
 import GateGrid from "@/components/methodology/GateGrid";
 import PipelineDiagram from "@/components/methodology/PipelineDiagram";
@@ -61,7 +61,7 @@ export default function MethodologyPage() {
     // 코디네이터 정정(2026-09-05): 홈 헤드라인("패치노트는 N개 엔티티를 말했고")과 동일 기준
     // (champion/item 섹션 고유 엔티티 수)으로 세야 두 화면의 숫자가 일치한다 — 원문 항목 수
     // (`meta.itemCount`)는 참고용으로만 병기한다.
-    noteEntityCount: notes ? countRelevantNoteEntities(notes) : null,
+    noteEntityCount: notes ? countRelevantNoteEntities(notes.items) : null,
     noteItemCount: notes?.meta.itemCount ?? null,
     notesFetchedAt: notes?.meta.fetchedAt ?? null,
     matchedAt: deltas?.meta.generatedAt ?? null,

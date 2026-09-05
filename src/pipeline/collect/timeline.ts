@@ -209,11 +209,11 @@ export interface CollectTimelinesResult {
 }
 
 function resolveMatchesJsonlPath(patch: PatchId, dataRoot?: string): string {
-  return dataRoot ? path.join(dataRoot, "raw", patch, "matches.jsonl") : matchesJsonl(patch);
+  return matchesJsonl(patch, dataRoot);
 }
 
 function resolveTimelinesJsonlPath(patch: PatchId, dataRoot?: string): string {
-  return dataRoot ? path.join(dataRoot, "raw", patch, "timelines.jsonl") : timelinesJsonl(patch);
+  return timelinesJsonl(patch, dataRoot);
 }
 
 /**

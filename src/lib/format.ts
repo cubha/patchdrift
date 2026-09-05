@@ -3,7 +3,7 @@
 // 음수는 하이픈(-)이 아니라 유니코드 마이너스(U+2212, −)로 표기한다 — 타이포그래피 관례이자
 // 표에서 하이픈/마이너스 혼용을 없애기 위함(UX-BRIEF 델타 표기 전반에 일관 적용).
 
-import type { Interval, LanePosition, MatchStatus, TeamPosition } from "@/pipeline/types";
+import type { DeltaMetric, Interval, LanePosition, MatchStatus, TeamPosition } from "@/pipeline/types";
 
 const MINUS = "−";
 
@@ -102,22 +102,49 @@ export function statusLabel(status: string): string {
 
 /** DeltaRecord.metric(문자열 키) → 한글 라벨. 알려지지 않은 metric은 원본 문자열을 그대로
  * 반환한다(ST-08 산출 metric 어휘가 아직 확정되지 않았으므로 목록은 문서화된 사례 위주). */
-const METRIC_LABELS: Record<string, string> = {
+/**
+ * `DeltaMetric` 8종 전수 라벨(2026-09-05 리팩토링 — `types.ts`의 `DeltaMetric` 유니온을 키로
+ * 삼아 pipeline·web 양쪽이 이 하나만 참조한다. 이전엔 챔피언/아이템/라인 5종만 채워져 있었고
+ * "firstSec"(오브젝트 첫 획득 시각, 실제 생산되는 값)은 `discord/webhook.ts`가 로컬로
+ * "첫 처치 시각"을 따로 매핑했다 — 여기 흡수). */
+const METRIC_LABELS: Record<DeltaMetric, string> = {
   pickRate: "픽률",
   banRate: "밴률",
   winRate: "승률",
   adoptionRate: "채택률",
   goldAt10: "골드@10",
   goldAt14: "골드@14",
-  firstDragonSec: "첫 용 시각",
-  firstHeraldSec: "첫 전령 시각",
-  firstBaronSec: "첫 바론 시각",
-  firstTowerSec: "첫 포탑 시각",
+  firstSec: "첫 처치 시각",
   avgDurationSec: "경기 시간",
 };
 
 export function metricLabel(metric: string): string {
-  return METRIC_LABELS[metric] ?? metric;
+  return METRIC_LABELS[metric as DeltaMetric] ?? metric;
+}
+
+/**
+ * `DeltaMetric` → 값 표시 단위 종류(2026-09-05 리팩토링 — `discord/webhook.ts`의 로컬
+ * `MetricKind`("ratio"/"gold"/"seconds")와 `components/home/logic.ts`의 로컬 `metricKind`
+ * (Set 기반, "pp"/"sec"/"gold")를 이 하나의 `Record`로 통합했다. 유니온을 전수 커버하므로
+ * "알려지지 않은 metric" 폴백 분기가 없다 — 그런 폴백이 필요한 소비처(예: `home/logic.ts`가
+ * `"unknownMetric"` 같은 임의 문자열도 받아야 하는 기존 계약)는 자체적으로 얇은 어댑터를 둔다.
+ * `src/components/item/metricFormat.ts`(ST-12 소유, 별도 `MetricKind`="pp"/"sec"/"gold")는
+ * 의도적으로 이 함수를 쓰지 않는다 — 알려지지 않은 metric까지 "gold"로 안전하게 받는 별도 계약이라
+ * 통합하면 그 계약이 깨진다.
+ */
+export const METRIC_KIND: Record<DeltaMetric, "pp" | "seconds" | "gold"> = {
+  pickRate: "pp",
+  banRate: "pp",
+  winRate: "pp",
+  adoptionRate: "pp",
+  goldAt10: "gold",
+  goldAt14: "gold",
+  firstSec: "seconds",
+  avgDurationSec: "seconds",
+};
+
+export function metricKind(metric: DeltaMetric): "pp" | "seconds" | "gold" {
+  return METRIC_KIND[metric];
 }
 
 /** LanePosition(+빈 문자열 "미배정") → 한글 라벨. 알려지지 않은 값은 원본을 반환한다. */

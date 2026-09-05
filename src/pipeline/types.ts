@@ -212,6 +212,31 @@ export interface PatchSummary {
   timelineSamples: number;
 }
 
+/** `scripts/run-aggregate.ts`가 champions/items/lanes/objectives/summary.json 5종에 공통으로
+ * 얹는 메타 블록(2026-09-05 리팩토링 — 원래 `src/lib/data.ts` 로컬 정의를 여기로 승격, `data.ts`는
+ * re-export만 한다. `src/pipeline/match/delta.ts`의 `loadAggregatedPatch`는 이 필드들을 읽지 않고
+ * `rows`/`data`만 뽑아 쓰므로 이 타입으로 교체해도 영향이 없다). */
+export interface AggregateMeta {
+  patch: PatchId;
+  generatedAt: string;
+  nMatches: number;
+  nParticipants: number;
+  nTimelines: number;
+  source: string;
+}
+
+/** 배열형 산출 파일(`{meta, rows: T[]}`) 공통 래퍼 — champions/items/lanes.json. */
+export interface RowsFile<T> {
+  meta: AggregateMeta;
+  rows: T[];
+}
+
+/** 단일 객체형 산출 파일(`{meta, data: T}`) 공통 래퍼 — objectives/summary.json. */
+export interface DataFile<T> {
+  meta: AggregateMeta;
+  data: T;
+}
+
 /** 패치노트 항목 섹션 분류. */
 export type PatchNoteSection = "champion" | "item" | "system" | "other";
 
@@ -267,22 +292,26 @@ export interface LlmCause {
   confidence: "high" | "medium" | "low";
 }
 
-/**
- * 판정 근거. 무근거 문장은 sourceUrl=null·reasoning=null로 두어 프론트가 회색 처리한다.
- * DeltaRecord.status/evidence와 개념적으로 겹친다 — ST-08에서 verdict.ts가 이 타입을
- * DeltaRecord에 어떻게 매핑/통합할지 확정한다(미확인 사항, 아래 DeltaRecord 주석 참고).
- */
-export interface Verdict {
-  status: MatchStatus;
-  confidence: number | null;
-  sourceMatchIds: string[];
-  sourceUrl: string | null;
-  reasoning: string | null;
-}
-
 /** DeltaRecord.id가 가리키는 엔티티 종류. `"summary"`는 패치 단위 매치 평균 지표(ST-08 신규
  * — `summary:avgDurationSec` 등 PatchSummary 파생 델타)를 가리킨다. */
 export type DeltaEntityType = "champion" | "item" | "objective" | "lane" | "summary";
+
+/**
+ * `DeltaRecord.metric` 유니온 — `src/pipeline/match/delta.ts`(buildDeltas)가 실제로 생산하는
+ * 8개 값 그대로다(2026-09-05 리팩토링 시 delta.ts 전수 확인 — 챔피언 pickRate/banRate/winRate,
+ * 아이템 adoptionRate, 라인 goldAt10/goldAt14, 오브젝트 firstSec, 매치 평균 avgDurationSec).
+ * `src/lib/format.ts`의 `metricLabel`/`metricKind`가 이 유니온을 `Record`의 키로 삼아 단일
+ * 진실원(SSOT)을 이룬다 — 새 metric을 추가하려면 여기부터 갱신한다.
+ */
+export type DeltaMetric =
+  | "pickRate"
+  | "banRate"
+  | "winRate"
+  | "adoptionRate"
+  | "goldAt10"
+  | "goldAt14"
+  | "firstSec"
+  | "avgDurationSec";
 
 /** 판정에 첨부하는 원천 증거 — 모든 판정문은 이 링크를 가져야 한다(무근거=null 필드로 표시). */
 export interface DeltaEvidence {
@@ -304,7 +333,7 @@ export interface DeltaRecord {
   entityType: DeltaEntityType;
   entityKey: string;
   entityName: string;
-  metric: string;
+  metric: DeltaMetric;
   before: number | null;
   after: number | null;
   delta: number | null;

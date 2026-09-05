@@ -39,8 +39,10 @@ function erf(x: number): number {
   return sign * (2 / Math.sqrt(Math.PI)) * sum;
 }
 
-/** 표준정규 누적분포함수 Φ(x) — erf 기반. */
-function normalCdf(x: number): number {
+/** 표준정규 누적분포함수 Φ(x) — erf 기반. `src/pipeline/match/delta.ts`의 `meanDiffPValue`도
+ * 이 구현을 재사용한다(2026-09-05 리팩토링 — 이전엔 delta.ts가 동일한 erf 근사를 로컬로
+ * 중복 구현했다, `erfApprox`/`normalCdfApprox`). */
+export function normalCdf(x: number): number {
   return 0.5 * (1 + erf(x / Math.SQRT2));
 }
 

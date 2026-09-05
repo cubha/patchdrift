@@ -77,7 +77,8 @@ export interface CrawlPatchOptions {
   onProgress?: CrawlProgressCallback;
   /** 매치ID 조회 연속 실패 허용 횟수. 기본 10(테스트에서 낮춰 주입). */
   maxConsecutiveIdsFailures?: number;
-  /** 테스트 주입용 dataRoot 오버라이드 — shared/paths.ts는 수정하지 않는다. */
+  /** 테스트 주입용 dataRoot 오버라이드 — checkpoint.ts/seed.ts에 그대로 전달되며, 이들은
+   * shared/paths.ts 헬퍼의 선택적 dataRoot 인자로 흡수한다(2026-09-05 리팩토링). */
   dataRoot?: string;
   /** 테스트 주입용 시계. */
   nowMs?: () => number;

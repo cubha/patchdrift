@@ -5,16 +5,24 @@
 // `matchedNoteId`/`matchedNoteIds`/`causes`도 항상 비어있다.
 //
 // 통계 스택: stats.ts(ST-05)의 newcombeDiffInterval/twoProportionPValue/benjaminiHochberg/
-// meanDiffInterval/passesSampleGate를 그대로 쓴다. 단 "연속 지표(골드·초) 두 그룹 평균차 p값"은
-// stats.ts에 없다(meanDiffInterval은 CI만 반환) — ST-05 소유 파일을 이번 배치 범위 밖에서 건드리지
-// 않기 위해 se/z 계산을 이 파일에 로컬로 둔다(erf 근사는 stats.ts의 것과 동일한 방식, 의도적 중복
-// — 아래 `normalCdfApprox` 참고).
+// meanDiffInterval/passesSampleGate/normalCdf를 그대로 쓴다. "연속 지표(골드·초) 두 그룹 평균차
+// p값"은 stats.ts에 없다(meanDiffInterval은 CI만 반환) — se/z 계산 자체는 이 파일에 로컬로 두되,
+// 정규분포 누적함수(normalCdf/erf 근사)는 stats.ts export를 재사용한다(2026-09-05 리팩토링 —
+// 이전엔 이 파일이 동일한 erf 근사를 `erfApprox`/`normalCdfApprox`로 중복 구현했다).
+//
+// 2026-09-05 리팩토링: 415줄이던 단일 buildDeltas 함수를 엔티티 종류별 draft 생성 함수
+// (buildChampionDrafts/buildItemDrafts/buildLaneDrafts/buildObjectiveDrafts/buildSummaryDraft)로
+// 쪼갰다 — buildDeltas는 그 결과를 이어붙이고 BH-FDR 보정 + matchIds 표본 부착만 하는 오케스트레이션
+// 함수로 남는다. draft 배열을 만드는 순서(챔피언→아이템→라인→오브젝트→매치평균)는 기존과 동일하게
+// 유지해 출력 배열의 순서·id·값이 리팩토링 전후 바이트 단위로 같다(자기쌍 26.17→26.17 회귀 확인).
 
 import fs from "node:fs";
 import path from "node:path";
 import type {
   ChampionStat,
+  DataFile,
   DeltaEntityType,
+  DeltaMetric,
   DeltaRecord,
   Interval,
   ItemStat,
@@ -24,13 +32,15 @@ import type {
   ObjectiveStat,
   PatchId,
   PatchSummary,
+  RowsFile,
 } from "../types";
-import { DATA_ROOT } from "../shared/paths";
+import { DATA_ROOT, aggregatedDir, matchesJsonl } from "../shared/paths";
 import {
   FDR_ALPHA,
   benjaminiHochberg,
   meanDiffInterval,
   newcombeDiffInterval,
+  normalCdf,
   twoProportionPValue,
 } from "../aggregate/stats";
 import type { DdragonData } from "./ddragon";
@@ -43,13 +53,6 @@ export interface AggregatedPatch {
   lanes: LaneGoldStat[];
   objectives: ObjectiveStat;
   summary: PatchSummary;
-}
-
-interface RowsFile<T> {
-  rows: T[];
-}
-interface DataFile<T> {
-  data: T;
 }
 
 function readRowsFile<T>(filePath: string, patch: PatchId): T[] {
@@ -74,7 +77,7 @@ function readDataFile<T>(filePath: string, patch: PatchId): T {
  * run-aggregate를 안 돌린 패치) 정확한 복구 명령을 담은 에러로 즉시 실패한다(파이프라인 중간에서
  * 애매하게 죽지 않도록). */
 export function loadAggregatedPatch(patch: PatchId, dataRoot: string = DATA_ROOT): AggregatedPatch {
-  const dir = path.join(dataRoot, "aggregated", patch);
+  const dir = aggregatedDir(patch, dataRoot);
   return {
     patch,
     champions: readRowsFile<ChampionStat>(path.join(dir, "champions.json"), patch),
@@ -85,26 +88,7 @@ export function loadAggregatedPatch(patch: PatchId, dataRoot: string = DATA_ROOT
   };
 }
 
-// ─── 연속 지표(골드·초) 평균차 p값 — stats.ts erf 근사와 동일 방식(의도적 중복, 위 헤더 참고) ───
-
-function erfApprox(x: number): number {
-  if (x === 0) return 0;
-  const sign = x < 0 ? -1 : 1;
-  const ax = Math.abs(x);
-  if (ax > 4) return sign;
-  let term = ax;
-  let sum = term;
-  for (let n = 1; n < 300; n++) {
-    term *= (-ax * ax * (2 * n - 1)) / (n * (2 * n + 1));
-    sum += term;
-    if (Math.abs(term) < 1e-18) break;
-  }
-  return sign * (2 / Math.sqrt(Math.PI)) * sum;
-}
-
-function normalCdfApprox(x: number): number {
-  return 0.5 * (1 + erfApprox(x / Math.SQRT2));
-}
+// ─── 연속 지표(골드·초) 평균차 p값 — normalCdf는 stats.ts 재사용(위 헤더 참고) ───
 
 /** 두 그룹 평균차(mean2-mean1)의 양측 p값 — z = diff/se, se = sqrt(sd1²/n1 + sd2²/n2). */
 export function meanDiffPValue(
@@ -118,7 +102,7 @@ export function meanDiffPValue(
   const se = Math.sqrt((sd1 * sd1) / n1 + (sd2 * sd2) / n2);
   if (se === 0) return mean1 === mean2 ? 1 : 0;
   const z = (mean2 - mean1) / se;
-  return 2 * (1 - normalCdfApprox(Math.abs(z)));
+  return 2 * (1 - normalCdf(Math.abs(z)));
 }
 
 // ─── 원천 매치 ID 표본(엔티티별 최대 10개) — matches.jsonl 단일 스트리밍 패스 ───
@@ -207,13 +191,19 @@ const OBJECTIVE_KO_NAME: Record<"dragon" | "herald" | "baron" | "tower", string>
 const LANE_POSITIONS: readonly LanePosition[] = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"];
 const OBJECTIVE_NAMES = ["dragon", "herald", "baron", "tower"] as const;
 
-/** q 보정 전 원자료 1건 — buildDeltas 내부에서만 쓰는 중간 표현. */
+/** `total===0`이면 0(진짜 0%로 취급), 아니면 `n/total` — 분모 0 방어를 반복 표현식 대신 한
+ * 헬퍼로 모은다(2026-09-05 리팩토링). */
+function safeRate(n: number, total: number): number {
+  return total === 0 ? 0 : n / total;
+}
+
+/** q 보정 전 원자료 1건 — buildDeltas 내부(및 각 buildXDrafts 함수)에서만 쓰는 중간 표현. */
 interface RawDeltaDraft {
   id: string;
   entityType: DeltaEntityType;
   entityKey: string;
   entityName: string;
-  metric: string;
+  metric: DeltaMetric;
   before: number;
   after: number;
   delta: number;
@@ -231,28 +221,21 @@ export interface BuildDeltasOptions {
   dataRoot?: string;
 }
 
+interface ChampionDraftsResult {
+  drafts: RawDeltaDraft[];
+  relevantChampionIds: Set<number>;
+}
+
 /**
- * 두 패치 집계의 통계 델타를 계산한다. 반환 레코드는 아직 패치노트와 짝지어지지 않은 상태 —
- * `status`는 전부 `"no-change"`(자리표시자), `matchedNoteId(s)`/`causes`는 비어 있다. 실제 판정은
- * entity-match.ts(1단) → verdict.ts(assignStatus)가 채운다.
- *
- * 측정 불가 케이스는 레코드 자체를 생략한다(0으로 얼버무리지 않는다 — CLAUDE.md "무근거 문장은
- * 회색" 원칙의 연장): 라인 골드@14는 `n14===0`인 쪽이 있으면 스킵, 오브젝트는 `mean===null`인
- * 쪽이 있으면 스킵, 매치 평균은 `matches===0`인 쪽이 있으면 스킵. 반대로 픽률/밴률/채택률/승률은
- * 분모(totalMatches/totalParticipants)가 항상 존재해 n=0이어도 "진짜 0%"라는 유효한 값이므로
- * 항상 레코드를 만든다(승률의 표본 부족 여부는 verdict.assignStatus가 `insufficient-sample`로
- * 판정한다 — 여기서 생략하지 않는다).
+ * 챔피언 델타 — 전체(scope=all) 픽률/밴률/승률 + 명명된 포지션 5종의 포지션별 픽률/승률.
+ * 이전 패치에 아예 없던 챔피언(신규)이나 ddragon 매핑 실패 챔피언은 비교 기준이 없어 스킵한다.
  */
-export function buildDeltas(
+function buildChampionDrafts(
   before: AggregatedPatch,
   after: AggregatedPatch,
-  options: BuildDeltasOptions
-): DeltaRecord[] {
-  const { ddragon } = options;
-  const dataRoot = options.dataRoot ?? DATA_ROOT;
+  ddragon: DdragonData
+): ChampionDraftsResult {
   const drafts: RawDeltaDraft[] = [];
-
-  // ─── 챔피언 ───
   const beforeChampByKey = new Map<string, ChampionStat>();
   for (const row of before.champions) {
     beforeChampByKey.set(`${row.championId}:${row.scope}:${row.position}`, row);
@@ -360,17 +343,17 @@ export function buildDeltas(
       {
         const ci = newcombeDiffInterval(beforeN, beforeAll.totalMatches, afterN, afterAll.totalMatches);
         const p = twoProportionPValue(beforeN, beforeAll.totalMatches, afterN, afterAll.totalMatches);
+        const beforeRate = safeRate(beforeN, beforeAll.totalMatches);
+        const afterRate = safeRate(afterN, afterAll.totalMatches);
         drafts.push({
           id: `${posEntityKeyBase}:pickRate`,
           entityType: "champion",
           entityKey,
           entityName,
           metric: "pickRate",
-          before: beforeAll.totalMatches === 0 ? 0 : beforeN / beforeAll.totalMatches,
-          after: afterAll.totalMatches === 0 ? 0 : afterN / afterAll.totalMatches,
-          delta:
-            (afterAll.totalMatches === 0 ? 0 : afterN / afterAll.totalMatches) -
-            (beforeAll.totalMatches === 0 ? 0 : beforeN / beforeAll.totalMatches),
+          before: beforeRate,
+          after: afterRate,
+          delta: afterRate - beforeRate,
           ci,
           n: { before: beforeAll.totalMatches, after: afterAll.totalMatches },
           p,
@@ -412,7 +395,21 @@ export function buildDeltas(
     }
   }
 
-  // ─── 아이템(완성템만) ───
+  return { drafts, relevantChampionIds };
+}
+
+interface ItemDraftsResult {
+  drafts: RawDeltaDraft[];
+  relevantItemIds: Set<number>;
+}
+
+/** 아이템(완성템만) 채택률 델타 — 이전 패치에 등장 이력이 없으면 비교 기준이 없어 스킵. */
+function buildItemDrafts(
+  before: AggregatedPatch,
+  after: AggregatedPatch,
+  ddragon: DdragonData
+): ItemDraftsResult {
+  const drafts: RawDeltaDraft[] = [];
   const beforeItemById = new Map<number, ItemStat>();
   for (const row of before.items) beforeItemById.set(row.itemId, row);
 
@@ -457,7 +454,13 @@ export function buildDeltas(
     });
   }
 
-  // ─── 라인 골드 ───
+  return { drafts, relevantItemIds };
+}
+
+/** 라인 골드(goldAt10/goldAt14) 델타. goldAt14는 n14 게이트(한쪽이라도 0이면 스킵 — types.ts
+ * 경고: n14=0이면 goldAt14Avg가 실측 없는 0일 수 있음, 델타로 만들면 가짜 변화가 된다). */
+function buildLaneDrafts(before: AggregatedPatch, after: AggregatedPatch): RawDeltaDraft[] {
+  const drafts: RawDeltaDraft[] = [];
   const beforeLaneByPos = new Map<LanePosition, LaneGoldStat>();
   for (const row of before.lanes) beforeLaneByPos.set(row.position, row);
 
@@ -500,8 +503,7 @@ export function buildDeltas(
       });
     }
 
-    // goldAt14 — n14 게이트: 한쪽이라도 0이면 스킵(types.ts 경고: n14=0이면 goldAt14Avg가 실측
-    // 없는 0일 수 있음 — 델타로 만들면 가짜 변화가 된다).
+    // goldAt14 — n14 게이트: 한쪽이라도 0이면 스킵.
     if (beforeLane.n14 > 0 && afterLane.n14 > 0) {
       const ci = meanDiffInterval(
         beforeLane.goldAt14Avg,
@@ -537,7 +539,13 @@ export function buildDeltas(
     }
   }
 
-  // ─── 오브젝트 첫 획득 시각 ───
+  return drafts;
+}
+
+/** 오브젝트(용/전령/바론/포탑) 첫 획득 시각 델타. `mean===null`(실측 없음)이면 스킵. */
+function buildObjectiveDrafts(before: AggregatedPatch, after: AggregatedPatch): RawDeltaDraft[] {
+  const drafts: RawDeltaDraft[] = [];
+
   for (const name of OBJECTIVE_NAMES) {
     const beforeDetail = before.objectives[name];
     const afterDetail = after.objectives[name];
@@ -576,25 +584,32 @@ export function buildDeltas(
     });
   }
 
-  // ─── 매치 평균(경기 시간) ───
-  if (before.summary.matches > 0 && after.summary.matches > 0) {
-    const ci = meanDiffInterval(
-      before.summary.avgDurationSec,
-      before.summary.avgDurationSecSd,
-      before.summary.matches,
-      after.summary.avgDurationSec,
-      after.summary.avgDurationSecSd,
-      after.summary.matches
-    );
-    const p = meanDiffPValue(
-      before.summary.avgDurationSec,
-      before.summary.avgDurationSecSd,
-      before.summary.matches,
-      after.summary.avgDurationSec,
-      after.summary.avgDurationSecSd,
-      after.summary.matches
-    );
-    drafts.push({
+  return drafts;
+}
+
+/** 매치 평균(경기 시간) 델타 — 양쪽 다 matches>0일 때만(둘 중 하나라도 0이면 스킵), 항상
+ * 0건 또는 1건. */
+function buildSummaryDraft(before: AggregatedPatch, after: AggregatedPatch): RawDeltaDraft[] {
+  if (before.summary.matches === 0 || after.summary.matches === 0) return [];
+
+  const ci = meanDiffInterval(
+    before.summary.avgDurationSec,
+    before.summary.avgDurationSecSd,
+    before.summary.matches,
+    after.summary.avgDurationSec,
+    after.summary.avgDurationSecSd,
+    after.summary.matches
+  );
+  const p = meanDiffPValue(
+    before.summary.avgDurationSec,
+    before.summary.avgDurationSecSd,
+    before.summary.matches,
+    after.summary.avgDurationSec,
+    after.summary.avgDurationSecSd,
+    after.summary.matches
+  );
+  return [
+    {
       id: "summary:avgDurationSec",
       entityType: "summary",
       entityKey: "avgDurationSec",
@@ -608,8 +623,42 @@ export function buildDeltas(
       p,
       aggregatePath: aggPath(after.patch, "summary", "data.avgDurationSec"),
       sampleKey: null,
-    });
-  }
+    },
+  ];
+}
+
+/**
+ * 두 패치 집계의 통계 델타를 계산한다. 반환 레코드는 아직 패치노트와 짝지어지지 않은 상태 —
+ * `status`는 전부 `"no-change"`(자리표시자), `matchedNoteId(s)`/`causes`는 비어 있다. 실제 판정은
+ * entity-match.ts(1단) → verdict.ts(assignStatus)가 채운다.
+ *
+ * 측정 불가 케이스는 레코드 자체를 생략한다(0으로 얼버무리지 않는다 — CLAUDE.md "무근거 문장은
+ * 회색" 원칙의 연장): 라인 골드@14는 `n14===0`인 쪽이 있으면 스킵, 오브젝트는 `mean===null`인
+ * 쪽이 있으면 스킵, 매치 평균은 `matches===0`인 쪽이 있으면 스킵. 반대로 픽률/밴률/채택률/승률은
+ * 분모(totalMatches/totalParticipants)가 항상 존재해 n=0이어도 "진짜 0%"라는 유효한 값이므로
+ * 항상 레코드를 만든다(승률의 표본 부족 여부는 verdict.assignStatus가 `insufficient-sample`로
+ * 판정한다 — 여기서 생략하지 않는다).
+ *
+ * 오케스트레이션만 담당한다(엔티티별 draft 생성은 위 buildXDrafts 함수들, 2026-09-05 리팩토링):
+ * champion → item → lane → objective → summary 순서로 draft를 모으고, 전체에 걸쳐 BH-FDR
+ * 다중비교 보정을 한 번에 적용한 뒤, matches.jsonl 단일 스트리밍 패스로 챔피언/아이템 원천
+ * matchId 표본을 붙인다.
+ */
+export function buildDeltas(
+  before: AggregatedPatch,
+  after: AggregatedPatch,
+  options: BuildDeltasOptions
+): DeltaRecord[] {
+  const { ddragon } = options;
+  const dataRoot = options.dataRoot ?? DATA_ROOT;
+
+  const champion = buildChampionDrafts(before, after, ddragon);
+  const item = buildItemDrafts(before, after, ddragon);
+  const lane = buildLaneDrafts(before, after);
+  const objective = buildObjectiveDrafts(before, after);
+  const summary = buildSummaryDraft(before, after);
+
+  const drafts: RawDeltaDraft[] = [...champion.drafts, ...item.drafts, ...lane, ...objective, ...summary];
 
   // ─── BH-FDR 다중비교 보정(전체 델타 공통) ───
   const { q } = benjaminiHochberg(
@@ -618,11 +667,11 @@ export function buildDeltas(
   );
 
   // ─── 원천 매치 ID 표본(챔피언/아이템만 — 단일 스트리밍 패스) ───
-  const matchesPath = path.join(dataRoot, "raw", after.patch, "matches.jsonl");
+  const matchesPath = matchesJsonl(after.patch, dataRoot);
   const { championMatchIds, itemMatchIds } = sampleMatchIdsByEntity(
     matchesPath,
-    relevantChampionIds,
-    relevantItemIds
+    champion.relevantChampionIds,
+    item.relevantItemIds
   );
 
   return drafts.map((draft, index) => {

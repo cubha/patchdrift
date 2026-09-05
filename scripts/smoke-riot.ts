@@ -9,9 +9,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { loadEnv } from "../src/pipeline/shared/env";
 import { createRiotClient, type RiotMatchDto, type RiotMatchTimelineDto } from "../src/pipeline/collect/riot-client";
+import { isMainModule, parseCliArgs } from "./shared/cli";
 
 const SAMPLES_DIR = path.resolve(process.cwd(), "data", "raw", "samples");
-const REFRESH = process.argv.includes("--refresh");
+// main()이 시작할 때 채워진다 — import만으로 인자 파싱(및 잠재적 에러)이 실행되지 않도록 top
+// level에서 바로 계산하지 않는다(다른 run-*.ts 스크립트와 동일 관례).
+let REFRESH = false;
 
 function readCache<T>(name: string): T | null {
   const file = path.join(SAMPLES_DIR, name);
@@ -25,6 +28,10 @@ function writeCache(name: string, data: unknown): void {
 }
 
 async function main(): Promise<void> {
+  REFRESH = parseCliArgs("smoke-riot", process.argv.slice(2), [
+    { name: "refresh", type: "boolean", default: false },
+  ]).refresh as boolean;
+
   const env = loadEnv();
   const client = createRiotClient({
     apiKey: env.RIOT_API_KEY,
@@ -128,7 +135,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error) => {
-  console.error("smoke-riot 실패:", error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+if (isMainModule(import.meta.url)) {
+  main().catch((error) => {
+    console.error("smoke-riot 실패:", error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}

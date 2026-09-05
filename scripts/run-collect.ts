@@ -8,6 +8,7 @@ import { loadEnv } from "../src/pipeline/shared/env";
 import { createRiotClient, type LeagueTier } from "../src/pipeline/collect/riot-client";
 import { crawlPatch } from "../src/pipeline/collect/crawler";
 import { PATCH_CALENDAR } from "../src/pipeline/collect/patch-calendar";
+import { isMainModule, parseCliArgs } from "./shared/cli";
 
 const VALID_TIERS: readonly LeagueTier[] = ["challenger", "grandmaster", "master"];
 
@@ -34,48 +35,28 @@ function parseTiers(raw: string): LeagueTier[] {
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  let patch: string | undefined;
-  let target = 10000;
-  let tiers: LeagueTier[] | undefined;
-  let seedLimit: number | undefined;
-  let dryRun = false;
+  const raw = parseCliArgs("run-collect", argv, [
+    { name: "patch", type: "string", required: true },
+    { name: "target", type: "number", default: 10000 },
+    { name: "tiers", type: "string" },
+    { name: "seedLimit", type: "number" },
+    { name: "dryRun", type: "boolean", default: false },
+  ]);
 
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    switch (arg) {
-      case "--patch":
-        patch = argv[++i];
-        break;
-      case "--target": {
-        const value = Number(argv[++i]);
-        if (!Number.isFinite(value) || value <= 0) {
-          throw new Error(`run-collect: --target must be a positive number (got "${argv[i]}")`);
-        }
-        target = value;
-        break;
-      }
-      case "--tiers":
-        tiers = parseTiers(argv[++i] ?? "");
-        break;
-      case "--seed-limit": {
-        const value = Number(argv[++i]);
-        if (!Number.isFinite(value) || value <= 0) {
-          throw new Error(`run-collect: --seed-limit must be a positive number (got "${argv[i]}")`);
-        }
-        seedLimit = value;
-        break;
-      }
-      case "--dry-run":
-        dryRun = true;
-        break;
-      default:
-        throw new Error(`run-collect: unknown argument "${arg}"`);
-    }
-  }
+  const patch = raw.patch as string;
+  const target = raw.target as number;
+  const seedLimit = raw.seedLimit as number | undefined;
+  const tiersRaw = raw.tiers as string | undefined;
+  const dryRun = raw.dryRun as boolean;
 
-  if (!patch) {
-    throw new Error("run-collect: --patch <id> is required (예: --patch 26.17)");
+  if (target <= 0) {
+    throw new Error(`run-collect: --target must be a positive number (got "${target}")`);
   }
+  if (seedLimit !== undefined && seedLimit <= 0) {
+    throw new Error(`run-collect: --seed-limit must be a positive number (got "${seedLimit}")`);
+  }
+  const tiers = tiersRaw !== undefined ? parseTiers(tiersRaw) : undefined;
+
   if (!Object.prototype.hasOwnProperty.call(PATCH_CALENDAR, patch)) {
     throw new Error(
       `run-collect: --patch "${patch}" is not registered in PATCH_CALENDAR ` +
@@ -140,7 +121,9 @@ async function main(): Promise<void> {
   }
 }
 
-main().catch((error) => {
-  console.error("run-collect 실패:", error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+if (isMainModule(import.meta.url)) {
+  main().catch((error) => {
+    console.error("run-collect 실패:", error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}
