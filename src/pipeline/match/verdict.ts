@@ -1,18 +1,159 @@
 // src/pipeline/match/verdict.ts
-// F4: entity-match(1단) + llm-match(2단) 결과를 병합해 최종 판정(MatchStatus)을 산출한다.
-// 모든 판정문은 원천 링크를 가져야 하며, 근거 없는 판정은 verdict.reasoning=null·sourceUrl=null로
-// 남겨 프론트가 회색(--muted) 처리하게 한다. 산출물은 deltas/{from}_{to}.json에 기록된다.
-// TODO(F4): 병합 로직 구현
+// F4: entity-match(1단) 결과를 델타에 병합해 최종 MatchStatus를 산출하고, deltas/{from}_{to}.json에
+// 기록한다. LLM(2단, causes)은 이 단계 이후 run-match.ts가 별도로 채운다(verdict는 causes를
+// 건드리지 않는다 — assignStatus는 통계+1단 매칭만으로 status를 정한다).
+//
+// 상태 판정 순서(PLAN ③ ST-08 행 그대로, n 게이트를 유의성 표보다 먼저 확인 — PLAN ②는 "승률
+// 델타는 n>=200 게이트... 미달=insufficient-sample"을 무조건 조항으로 서술한다):
+//   1) metric==="winRate" && !passesSampleGate(n.before, n.after) → "insufficient-sample"(무조건).
+//   2) 유의(q<FDR_ALPHA && CI가 0을 포함하지 않음):
+//        노트 짝 있음 → 방향 일치("consistent") → "announced-consistent"
+//                       불일치/중립           → "announced-inconsistent"
+//        노트 짝 없음 → "unannounced"
+//   3) 비유의:
+//        노트 짝 있음 → "announced-inconsistent"(노트는 변경을 말했지만 관측 변화가 유의하지 않음)
+//        노트 짝 없음 → "no-change"(ST-08 신규 상태 — "잡음 델타"를 "미공지 변화"와 구분)
 
-import type { DeltaRecord } from "../types";
+import fs from "node:fs";
+import path from "node:path";
+import type { DeltaRecord, DeltasFileMeta, MatchStatus, PatchId, PatchNoteItem } from "../types";
+import { DATA_ROOT } from "../shared/paths";
+import { FDR_ALPHA, passesSampleGate } from "../aggregate/stats";
+import type { EntityMatchInfo, EntityMatchOutcome } from "./entity-match";
 
-export interface VerdictInput {
-  patchFrom: string;
-  patchTo: string;
+function isSignificant(delta: DeltaRecord): boolean {
+  if (delta.q === null) return false;
+  const [low, high] = delta.ci;
+  const ciExcludesZero = low > 0 || high < 0;
+  return delta.q < FDR_ALPHA && ciExcludesZero;
 }
 
-export function buildDeltaRecords(input: VerdictInput): DeltaRecord[] {
-  throw new Error(
-    `TODO(F4): buildDeltaRecords(${input.patchFrom}→${input.patchTo}) not implemented`
-  );
+/**
+ * 델타 1건 + (있으면) 1단 매칭 정보로 최종 MatchStatus를 정한다. 순수 함수 — delta 자체의
+ * q/ci/n/metric만 읽고 부수효과 없음.
+ */
+export function assignStatus(delta: DeltaRecord, match: EntityMatchInfo | null): MatchStatus {
+  if (delta.metric === "winRate" && !passesSampleGate(delta.n.before, delta.n.after)) {
+    return "insufficient-sample";
+  }
+
+  const hasNote = match !== null && match.noteIds.length > 0;
+
+  if (isSignificant(delta)) {
+    if (!hasNote) return "unannounced";
+    return match!.directionAgreement === "consistent" ? "announced-consistent" : "announced-inconsistent";
+  }
+
+  return hasNote ? "announced-inconsistent" : "no-change";
+}
+
+/**
+ * entity-match.ts의 매칭 결과를 델타 배열에 병합한다 — status/matchedNoteId/matchedNoteIds/
+ * evidence.noteAnchor를 채운 새 배열을 반환한다(입력 배열은 변경하지 않음). `notesById`는
+ * matchedNoteId의 anchorUrl을 evidence.noteAnchor에 채우기 위한 조회용.
+ */
+export function applyVerdicts(
+  deltas: readonly DeltaRecord[],
+  matchOutcome: EntityMatchOutcome,
+  notesById: ReadonlyMap<string, PatchNoteItem>
+): DeltaRecord[] {
+  return deltas.map((delta) => {
+    const match = matchOutcome.matches.get(delta.id) ?? null;
+    const status = assignStatus(delta, match);
+    const matchedNoteIds = match?.noteIds ?? [];
+    const matchedNoteId = matchedNoteIds.length > 0 ? matchedNoteIds[0] : null;
+    const noteAnchor = matchedNoteId ? (notesById.get(matchedNoteId)?.anchorUrl ?? null) : null;
+
+    return {
+      ...delta,
+      status,
+      matchedNoteId,
+      matchedNoteIds,
+      evidence: {
+        ...delta.evidence,
+        noteAnchor,
+      },
+    };
+  });
+}
+
+/** PatchNoteItem[] → id로 바로 찾는 Map. applyVerdicts의 noteAnchor 조회에 쓴다. */
+export function indexNotesById(notes: readonly PatchNoteItem[]): Map<string, PatchNoteItem> {
+  const map = new Map<string, PatchNoteItem>();
+  for (const note of notes) map.set(note.id, note);
+  return map;
+}
+
+/** deltas/{from}_{to}.json 정렬 우선순위 — 숫자가 작을수록 먼저(위쪽에 노출). */
+const STATUS_SORT_PRIORITY: Record<MatchStatus, number> = {
+  unannounced: 0,
+  "announced-inconsistent": 1,
+  "announced-consistent": 2,
+  "insufficient-sample": 3,
+  "no-change": 4,
+};
+
+/** status 우선순위 → |delta| 내림차순(PLAN ③ ST-08 행 정렬 규칙). delta===null은 맨 뒤로 민다. */
+export function sortDeltas(deltas: readonly DeltaRecord[]): DeltaRecord[] {
+  return [...deltas].sort((a, b) => {
+    const priorityDiff = STATUS_SORT_PRIORITY[a.status] - STATUS_SORT_PRIORITY[b.status];
+    if (priorityDiff !== 0) return priorityDiff;
+    const absA = a.delta === null ? -Infinity : Math.abs(a.delta);
+    const absB = b.delta === null ? -Infinity : Math.abs(b.delta);
+    return absB - absA;
+  });
+}
+
+/** run-match.ts가 LLM(2단) 실행 요약을 여기 채워 deltas.json meta.llm에 그대로 실린다(ST-09). */
+export interface DeltasLlmMeta {
+  calls: number;
+  cacheHits: number;
+  skipped: number;
+  usage: {
+    inputTokens: number;
+    cacheReadInputTokens: number;
+    cacheCreationInputTokens: number;
+    outputTokens: number;
+  };
+}
+
+export interface WriteDeltasParams {
+  from: PatchId;
+  to: PatchId;
+  deltas: readonly DeltaRecord[];
+  qAlpha?: number;
+  llm?: DeltasLlmMeta;
+  /** 테스트 격리용 — 기본은 shared/paths.ts의 DATA_ROOT. */
+  dataRoot?: string;
+}
+
+export interface WriteDeltasResult {
+  filePath: string;
+  sorted: DeltaRecord[];
+}
+
+/** deltas/{from}_{to}.json에 정렬된 델타 + meta를 기록한다(디렉토리 자동 생성). */
+export function writeDeltas(params: WriteDeltasParams): WriteDeltasResult {
+  const sorted = sortDeltas(params.deltas);
+  const counts: Partial<Record<MatchStatus, number>> = {};
+  for (const record of sorted) {
+    counts[record.status] = (counts[record.status] ?? 0) + 1;
+  }
+
+  const meta: DeltasFileMeta = {
+    from: params.from,
+    to: params.to,
+    generatedAt: new Date().toISOString(),
+    n: sorted.length,
+    counts,
+    qAlpha: params.qAlpha ?? FDR_ALPHA,
+  };
+  if (params.llm) meta.llm = params.llm;
+
+  const dataRoot = params.dataRoot ?? DATA_ROOT;
+  const filePath = path.join(dataRoot, "aggregated", "deltas", `${params.from}_${params.to}.json`);
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, `${JSON.stringify({ meta, rows: sorted }, null, 2)}\n`, "utf8");
+
+  return { filePath, sorted };
 }

@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "pipeline:collect": "tsx scripts/run-collect.ts",
     "pipeline:aggregate": "tsx scripts/run-aggregate.ts",
+    "pipeline:ddragon": "tsx scripts/run-ddragon.ts",
     "pipeline:fetch-notes": "tsx scripts/run-fetch-notes.ts",
     "pipeline:match": "tsx scripts/run-match.ts",
     "pipeline:notify": "tsx scripts/run-notify.ts",
@@ -25,6 +26,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.10.1",
+    "server-only": "^0.0.1",
     "zod": "^4.5.4"
   },
   "devDependencies": {

@@ -1,0 +1,63 @@
+{
+  "type": "item",
+  "format": "standAloneComplex",
+  "version": "16.17.1",
+  "data": {
+    "3095": {
+      "name": "폭풍갈퀴",
+      "into": null,
+      "from": ["1038", "1018", "3144"],
+      "gold": { "base": 700, "purchasable": true, "total": 3200, "sell": 2240 },
+      "tags": ["Damage", "CriticalStrike", "AttackSpeed", "NonbootsMovement"]
+    },
+    "223095": {
+      "name": "폭풍갈퀴",
+      "into": null,
+      "from": null,
+      "gold": { "base": 2500, "purchasable": true, "total": 2500, "sell": 1250 },
+      "tags": ["Damage", "CriticalStrike"]
+    },
+    "6610": {
+      "name": "갈라진 하늘",
+      "into": null,
+      "from": ["2021", "3133"],
+      "gold": { "base": 900, "purchasable": true, "total": 3100, "sell": 2170 },
+      "tags": ["Health", "Damage", "CooldownReduction", "AbilityHaste"]
+    },
+    "1018": {
+      "name": "구인수의 격노검",
+      "into": ["3095"],
+      "from": null,
+      "gold": { "base": 400, "purchasable": true, "total": 1600, "sell": 1120 },
+      "tags": ["CriticalStrike"]
+    },
+    "3006": {
+      "name": "광전사의 군화",
+      "into": null,
+      "from": null,
+      "gold": { "base": 1100, "purchasable": true, "total": 1700, "sell": 1190 },
+      "tags": ["Boots", "AttackSpeed"]
+    },
+    "2003": {
+      "name": "체력 물약",
+      "into": null,
+      "from": null,
+      "gold": { "base": 50, "purchasable": true, "total": 50, "sell": 0 },
+      "tags": ["Consumable"]
+    },
+    "3363": {
+      "name": "빛의 홍옥 목걸이",
+      "into": null,
+      "from": null,
+      "gold": { "base": 0, "purchasable": true, "total": 0, "sell": 0 },
+      "tags": ["Trinket"]
+    },
+    "1082": {
+      "name": "다트 부여 단검",
+      "into": ["3006"],
+      "from": null,
+      "gold": { "base": 400, "purchasable": true, "total": 400, "sell": 280 },
+      "tags": ["AttackSpeed"]
+    }
+  }
+}

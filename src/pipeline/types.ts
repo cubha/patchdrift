@@ -242,18 +242,29 @@ export interface PatchNoteItem {
   anchorKind: "entity" | "section" | "page";
 }
 
-/** 델타(관측 변화)의 판정 상태 — UX-BRIEF의 4개 상태 뱃지에 대응한다. */
+/**
+ * 델타(관측 변화)의 판정 상태 — UX-BRIEF의 4개 상태 뱃지 + `"no-change"`(ST-08 신규, 아래 참고).
+ * `"no-change"`: 비유의(q>=FDR_ALPHA 이거나 CI가 0 포함)이고 패치노트 짝도 없는 델타 — "노트도
+ * 없고 통계적으로도 변화가 없다"는 뜻으로, `unannounced`(짝 없음+유의)와는 구별해야 한다(그렇지
+ * 않으면 소음 델타가 전부 "미공지 변화"로 잘못 뜬다). 하류(UI)는 회색으로 표시한다.
+ */
 export type MatchStatus =
   | "announced-consistent"
   | "announced-inconsistent"
   | "unannounced"
-  | "insufficient-sample";
+  | "insufficient-sample"
+  | "no-change";
 
-/** F4 2단(LLM)이 제시하는 간접 영향 후보 원인 1건. candidateNoteId는 후보셋 검증(verified) 전까지 링크로 노출하지 않는다. */
+/**
+ * F4 2단(LLM)이 제시하는 간접 영향 후보 원인 1건. candidateNoteId는 후보셋 검증(verified) 전까지
+ * 링크로 노출하지 않는다(텍스트는 회색 표기용으로 보존). `confidence`는 ST-09가 LLM 출력 스키마에
+ * 맞춰 추가한 필드 — 하류(UI)가 신뢰도 배지를 달 때 쓴다.
+ */
 export interface LlmCause {
   text: string;
   candidateNoteId: string | null;
   verified: boolean;
+  confidence: "high" | "medium" | "low";
 }
 
 /**
@@ -269,8 +280,9 @@ export interface Verdict {
   reasoning: string | null;
 }
 
-/** DeltaRecord.id가 가리키는 엔티티 종류. */
-export type DeltaEntityType = "champion" | "item" | "objective" | "lane";
+/** DeltaRecord.id가 가리키는 엔티티 종류. `"summary"`는 패치 단위 매치 평균 지표(ST-08 신규
+ * — `summary:avgDurationSec` 등 PatchSummary 파생 델타)를 가리킨다. */
+export type DeltaEntityType = "champion" | "item" | "objective" | "lane" | "summary";
 
 /** 판정에 첨부하는 원천 증거 — 모든 판정문은 이 링크를 가져야 한다(무근거=null 필드로 표시). */
 export interface DeltaEvidence {
@@ -281,8 +293,11 @@ export interface DeltaEvidence {
 
 /**
  * 패치 간 관측 변화 1건 — 통계 델타 + 판정 + (있으면) 패치노트 짝짓기 + LLM 간접 후보.
- * id 포맷: `champion:{championKey}:{metric}` | `item:{itemId}:{metric}` | `objective:{name}`
- *         | `lane:{position}:{metric}`
+ * id 포맷(ST-08 확정, PLAN ③ ST-08 행 네임스페이스 그대로): `champion:{ddragonId}:{metric}`
+ * (scope="all" 행) | `champion:{ddragonId}:{pos}:{metric}`(scope="position" 행, 픽/승만 —
+ * 밴은 포지션이 없으므로 이 포맷에 등장하지 않는다) | `item:{itemId}:{metric}`
+ * | `lane:{position}:{metric}` | `objective:{name}`(metric은 항상 `"firstSec"`, name은
+ * `dragon`|`herald`|`baron`|`tower`) | `summary:{metric}`.
  */
 export interface DeltaRecord {
   id: string;
@@ -298,6 +313,70 @@ export interface DeltaRecord {
   q: number | null;
   status: MatchStatus;
   matchedNoteId: string | null;
+  /**
+   * ST-08 신규 — 같은 엔티티에 노트 항목이 여럿이면(예: 챔피언 스킬 변경 3줄) 그 전부를 여기
+   * 담는다. `matchedNoteId`는 이 배열의 대표(첫 항목)이며, 짝이 없으면 둘 다 `null`/`[]`.
+   */
+  matchedNoteIds: string[];
   causes: LlmCause[];
   evidence: DeltaEvidence;
+  /**
+   * ST-09 신규(optional) — LLM 2단 처리 진단 + 브리핑 한 줄 요약(S3). LLM이 이 델타를 대상으로
+   * 실제 호출됐을 때만 존재한다(2단 대상이 아니었던 델타 — 1단에서 이미 매칭됐거나 애초에
+   * unannounced/announced-inconsistent가 아니었던 델타 — 는 이 필드 자체가 없다).
+   * `skipped=true`면 세션 호출 상한 초과·API 예산 소진·응답 스키마 파싱 실패 등으로 이 델타를
+   * 끝내 처리하지 못했다는 뜻이고, 이때 `causes`는 항상 `[]`(회색 표기), `reason`에 사유,
+   * `summary`는 없음. `skipped=false`면 LLM이 정상 응답했다는 뜻이고 `summary`(S3 브리핑 1줄)가
+   * 채워진다(causes는 비어있을 수 있음 — LLM이 근거를 못 찾았다고 답한 경우).
+   * `summaryCites`/`summaryVerified`(B4 후속 수정, S3 인용 강제)는 `summary`가 근거로 인용한
+   * 후보 노트 id 목록과 그 구조적 검증 결과다 — `causes.verified`와 동일한 원칙: `summaryCites`의
+   * 모든 id가 입력 후보셋에 실제로 존재하면 `summaryVerified=true`, 하나라도 지어낸 id면
+   * `false`(이 경우도 `summary` 텍스트 자체는 지우지 않고 보존 — 하류가 회색 처리). 델타 수치만
+   * 근거로 쓴 요약문은 `summaryCites=[]`이며 이때는 인용할 후보가 없으므로 `summaryVerified=true`
+   * (빈 배열은 항상 검증 통과 — 아래 verifySummaryCites 참고).
+   */
+  llm?: {
+    skipped: boolean;
+    reason?: string;
+    summary?: string;
+    summaryCites?: string[];
+    summaryVerified?: boolean;
+  };
+}
+
+/** ST-09가 deltas 파일 meta.llm에 남기는 세션 단위 LLM 2단 실행 요약(개별 DeltaRecord.llm과는
+ * 별개 — 이쪽은 run 전체 집계치). verdict.ts writeDeltas의 WriteDeltasParams.llm과 동일 타입. */
+export interface DeltasRunLlmMeta {
+  calls: number;
+  cacheHits: number;
+  skipped: number;
+  usage: {
+    inputTokens: number;
+    cacheReadInputTokens: number;
+    cacheCreationInputTokens: number;
+    outputTokens: number;
+  };
+}
+
+/**
+ * data/aggregated/deltas/{from}_{to}.json의 meta — ST-06 5개 집계 파일의 `AggregateMeta`(patch·
+ * nMatches 등)와는 다른 별도 스키마다(verdict.ts writeDeltas 실제 산출 그대로, ST-08 확정).
+ * `counts`는 status별 건수 — 모든 MatchStatus가 항상 채워지지는 않으므로(0건인 상태는 키
+ * 자체가 없음) Partial이다.
+ */
+export interface DeltasFileMeta {
+  from: PatchId;
+  to: PatchId;
+  generatedAt: string;
+  n: number;
+  counts: Partial<Record<MatchStatus, number>>;
+  qAlpha: number;
+  llm?: DeltasRunLlmMeta;
+}
+
+/** data/aggregated/deltas/{from}_{to}.json 전체 구조 — verdict.ts writeDeltas가 기록하는
+ * `{meta, rows}`와 웹(data.ts loadDeltas)이 읽는 타입을 여기서 일치시킨다. */
+export interface DeltasFile {
+  meta: DeltasFileMeta;
+  rows: DeltaRecord[];
 }

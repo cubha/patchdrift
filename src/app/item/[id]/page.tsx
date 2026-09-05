@@ -5,8 +5,7 @@
 // `next build`가 즉시 실패한다("at least one route must be generated") — 그래서 F5 이전까지는
 // 자리표시자 1건만 반환한다. loadDeltas() 연결 후 이 자리표시자는 실제 ID 목록으로 교체한다.
 // TODO(F5): loadDeltas() 기반 params 생성 + 상세 렌더
-
-import Header from "@/components/Header";
+// 헤더는 ST-10부터 src/app/layout.tsx가 전역 렌더한다(여기서 다시 렌더하면 중복).
 
 interface ItemPageProps {
   params: Promise<{ id: string }>;
@@ -20,7 +19,6 @@ export default async function ItemDetailPage({ params }: ItemPageProps) {
   const { id } = await params;
   return (
     <div className="flex flex-1 flex-col bg-bg">
-      <Header />
       <main className="flex flex-1 items-center justify-center text-muted">
         TODO: 항목 상세 ({id})
       </main>

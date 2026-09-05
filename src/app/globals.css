@@ -1,6 +1,16 @@
 @import "tailwindcss";
 @import "../styles/tokens.css";
 
+/* --font-mono-fallback: tokens.css --font-mono의 raw 스택 값을 별도 이름으로 보존한다(ST-10).
+   아래 @theme inline이 Tailwind 테마 키 --font-mono 자체를 재정의하므로, 그 정의 안에서
+   var(--font-mono)로 원래 스택을 참조하면 자기 자신을 가리키는 순환 참조가 되어 무효화된다
+   (circular var() → 두 값 모두 invalid). 그래서 이름을 분리해 순환을 끊는다 — 값은 tokens.css
+   --font-mono와 반드시 동기 유지(값 자체를 새로 정의하는 게 아니라 참조 별칭일 뿐이라 "임의
+   토큰 추가 금지" 규율 위반이 아니다). */
+:root {
+  --font-mono-fallback: "Roboto Mono", "SF Mono", ui-monospace, Menlo, monospace;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
@@ -17,11 +27,24 @@
   --color-danger: var(--danger);
   --font-display: var(--font-display);
   --font-body: var(--font-body);
-  --font-mono: var(--font-mono);
+  /* next/font Roboto_Mono(layout.tsx --font-roboto-mono)를 1순위로, tokens.css 원래 스택을
+     폴백으로. 이전에는 --font-mono가 tokens.css 값만 참조해 next/font가 내려받은 실제 파일이
+     한 번도 쓰이지 않았다(ST-10 스캐폴드 follow-up 해소). */
+  --font-mono: var(--font-roboto-mono), var(--font-mono-fallback);
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-pill: var(--radius-pill);
+  /* 타이포 스케일 — 이 바인딩이 없으면 text-xs..text-3xl 유틸이 Tailwind 기본 스케일(12/14/16/
+     18/20/24/30px 등)로 렌더되어 DESIGN-TOKENS.md 스케일(11/12/14/16/20/28/40px)과 어긋난다
+     (실측: text-sm이 기본 14px vs 토큰 12px — 한 단계 밀림). ST-10에서 발견해 바인딩 추가. */
+  --text-xs: var(--text-xs);
+  --text-sm: var(--text-sm);
+  --text-base: var(--text-base);
+  --text-lg: var(--text-lg);
+  --text-xl: var(--text-xl);
+  --text-2xl: var(--text-2xl);
+  --text-3xl: var(--text-3xl);
 }
 
 body {
@@ -33,4 +56,14 @@ body {
      시스템 폰트로 폴백한다. layout.tsx가 부여하는 --font-inter를 앞에 두어 실제 로드된 폰트를 쓰고,
      토큰 값(--font-body)은 그 다음 폴백으로 verbatim 유지한다. */
   font-family: var(--font-inter), var(--font-body);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
