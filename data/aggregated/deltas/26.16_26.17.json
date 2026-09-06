@@ -2,7 +2,7 @@
   "meta": {
     "from": "26.16",
     "to": "26.17",
-    "generatedAt": "2026-09-06T02:33:20.512Z",
+    "generatedAt": "2026-09-06T09:42:13.628Z",
     "n": 1966,
     "counts": {
       "unannounced": 277,
@@ -11,7 +11,18 @@
       "insufficient-sample": 585,
       "no-change": 862
     },
-    "qAlpha": 0.1
+    "qAlpha": 0.1,
+    "llm": {
+      "calls": 50,
+      "cacheHits": 0,
+      "skipped": 0,
+      "usage": {
+        "inputTokens": 6289,
+        "cacheReadInputTokens": 1012732,
+        "cacheCreationInputTokens": 20668,
+        "outputTokens": 30977
+      }
+    }
   },
   "rows": [
     {
@@ -35,11 +46,58 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "미스 포츈 Q 피해량 상승으로 라인전 파워가 강화되어 바텀 라인의 골드 획득이 늘었을 수 있습니다.",
+          "candidateNoteId": "note:26.17:champion:미스-포츈:6d438477",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "미스 포츈 E 총피해량 증가가 바텀 라인 전투력을 높여 골드 우위로 이어졌을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:미스-포츈:8267908f",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "애쉬 W 피해량 및 사거리 증가로 바텀 라인전 성능이 강화되어 골드 획득에 기여했을 수 있습니다.",
+          "candidateNoteId": "note:26.17:champion:애쉬:7d7ed661",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "폭풍갈퀴 공격 속도 강화(20%→25%)가 원거리 딜러 아이템 파워를 높여 바텀 라인 골드 성장에 영향을 줬을 수 있습니다.",
+          "candidateNoteId": "note:26.17:item:stormrazor:0a1d6b43",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "활력증진의 펜던트 계열 아이템(리글의 랜턴 등)의 공격 속도 강화가 원거리 딜러의 초반 성장에 영향을 줬을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:8f360fb2",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "이즈리얼 R 주문력 계수 상승이 하이브리드 빌드를 강화해 바텀 라인 골드에 영향을 줬을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:이즈리얼:9152ff5a",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [],
         "aggregatePath": "data/aggregated/26.17/lanes.json#rows[position=BOTTOM]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "바텀 라인의 14분 골드가 소폭 상승(약 +71.9, 95% CI가 0을 포함하지 않아 유의미)한 것은 미스 포츈의 Q/E 피해량 상승과 애쉬 W 강화 등 원거리 딜러 챔피언 버프가 라인전 파워를 높여 간접적으로 골드 성장에 기여했을 가능성이 있습니다.",
+        "summaryCites": [
+          "note:26.17:champion:미스-포츈:6d438477",
+          "note:26.17:champion:미스-포츈:8267908f",
+          "note:26.17:champion:애쉬:7d7ed661"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -63,11 +121,46 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "미스 포츈 Q 피해량 증가 및 마나 소모량 감소, E 총피해량/둔화 지속시간 증가 등 다수의 버프로 바텀 라인 챔피언의 초반 전투력과 성장 속도가 상승했을 수 있습니다.",
+          "candidateNoteId": "note:26.17:champion:미스-포츈:6d438477",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "애쉬 W 피해량 및 사거리 버프로 라인전 스킬 견제력이 강화되어 바텀 라인의 골드 획득이 증가했을 수 있습니다.",
+          "candidateNoteId": "note:26.17:champion:애쉬:7d7ed661",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "폭풍갈퀴 공격 속도 증가(20%→25%)로 원거리 딜러의 웨이브 클리어 및 CS 수급이 개선되어 바텀 라인 골드 획득에 간접적으로 기여했을 수 있습니다.",
+          "candidateNoteId": "note:26.17:item:stormrazor:0a1d6b43",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "트런들 W 공격 속도 버프가 바텀 라인(서포터 포함) 조합에서 라인전 강화로 이어졌을 가능성이 있습니다.",
+          "candidateNoteId": null,
+          "verified": false,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [],
         "aggregatePath": "data/aggregated/26.17/lanes.json#rows[position=BOTTOM]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "바텀 라인 goldAt10이 소폭 상승(+43, 95% CI가 0을 넘지 않음)한 것은 미스 포츈와 애쉬 등 원거리 딜러 챔피언의 다수 버프, 그리고 폭풍갈퀴 공격 속도 상향이 복합적으로 라인전 및 웨이브 클리어 효율을 높여 간접적으로 초반 골드 수급을 개선했을 가능성이 있습니다.",
+        "summaryCites": [
+          "note:26.17:champion:미스-포츈:6d438477",
+          "note:26.17:champion:애쉬:7d7ed661",
+          "note:26.17:item:stormrazor:0a1d6b43"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -107,6 +200,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=805,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "로크(Locke)는 후보 패치노트 목록에 해당 챔피언 또는 직접적으로 연관될 만한 시스템/아이템 변경 항목이 존재하지 않아, 밴율 -0.1302(95% CI [-0.1437, -0.1167], n=10000/10000) 하락을 설명할 간접 영향 후보를 찾을 수 없습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -146,6 +245,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=34,scope=position,position=TOP]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "애니비아는 26.17 패치노트에서 직접 변경되지 않았으며, 승률이 57.3%에서 44.4%로 급락(n=220→225, 95% CI[-0.218,-0.035])했지만 이를 설명할 만한 간접적 아이템·시스템 변경 후보를 찾지 못했습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -185,6 +290,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=164,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "카밀에 대한 직접 밸런스 변경 노트가 후보 목록에 없어, 이번 밴율 급락(0.3157→0.1994, 95% CI [-0.1283,-0.1043])을 설명할 만한 간접 영향 후보를 찾을 수 없습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -208,7 +319,26 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "나서스의 영혼의 포식자 생명력 흡수 너프(12/18/24%→10/15/20%)로 라인전에서 강력한 탑 라이너 상대가 약화되어, 럼블의 상대적 라인전 승률이 간접적으로 상승했을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:nasus:0915ac64",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "잭스 Q(도약 공격)의 피해 유형이 물리에서 마법으로 변경되어 방어력 위주로 대응하던 탑 라이너들의 상대 구도가 변하면서, 마법 저항 방어구를 활용하는 럼블에게 간접적으로 유리해졌을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:잭스:95dc6321",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "갈라진 하늘(AP 브루저용 아이템)의 공격력·체력 너프로 경쟁 브루저 챔피언들의 성능이 소폭 하락하며, 이와 유사한 역할을 수행하는 럼블이 상대적으로 이득을 봤을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:item:sundered-sky:0aec77fe",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8366970663",
@@ -224,6 +354,15 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=68,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "럼블에 대한 직접 패치노트가 없는 상태에서(unannounced) 승률이 42.98%→52.91%로 크게 상승했는데(n=477/499, 95% CI [0.037, 0.161]), 이는 나서스 생명력 흡수 너프나 잭스 Q 피해 유형 변경, 갈라진 하늘 너프와 같은 탑 라인 메타 변화로 인한 간접적 영향일 가능성이 있으나 근거는 약합니다.",
+        "summaryCites": [
+          "note:26.17:champion:nasus:0915ac64",
+          "note:26.17:champion:잭스:95dc6321"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -263,6 +402,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=68,scope=position,position=TOP]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "럼블에 대한 직접 패치노트가 없고, 후보 목록에서도 럼블의 빌드/역할에 명확히 연결되는 간접 변경(정글, 탑, 관련 아이템)을 찾지 못해 이번 승률 상승(0.442→0.536, 95% CI [0.028, 0.159], n=432/446)의 원인을 설명할 근거가 부족합니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -286,7 +431,20 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "가렌의 공격력·방어력 증가 등 전반적 상향으로 탑 라인 지분이 늘며 뽀삐와의 매치업 구도가 변화했을 가능성이 있음",
+          "candidateNoteId": "note:26.17:champion:가렌:0f074cfc",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "크산테 W 재사용 대기시간 감소 등 상향으로 탑 챔피언 선택지가 늘어나 뽀삐 밴율에 간접 영향을 줬을 가능성이 있음",
+          "candidateNoteId": "note:26.17:other:크산테:963736ea",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8369164782",
@@ -302,6 +460,15 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=78,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "뽀삐 자체에 대한 직접 패치노트가 없어 밴율 급감(-8.18%p, 95% CI [-0.095, -0.068])의 원인은 명확하지 않으며, 가렌·크산테 등 탑 라인 챔피언들의 전반적 상향이 상대 구도를 바꿔 간접적으로 영향을 줬을 가능성이 낮은 신뢰도로 추정됨.",
+        "summaryCites": [
+          "note:26.17:champion:가렌:0f074cfc",
+          "note:26.17:other:크산테:963736ea"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -341,6 +508,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=804,scope=position,position=BOTTOM]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "유나라(Yunara) 관련 직접 변경 노트가 후보 목록에 전혀 없고, 픽률 급등(0.1601→0.2216)을 설명할 만한 간접 영향 후보도 확인되지 않아 원인 불명 상태입니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -380,6 +553,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=804,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "유나라(Yunara)에 대한 직접 패치노트 항목이나 간접적으로 픽률 상승을 설명할 만한 다른 챔피언/아이템/시스템 변경 후보가 목록에 존재하지 않아, 이 픽률 급증(0.1603→0.2217, 95% CI [0.0505, 0.0723])을 뒷받침할 근거를 찾을 수 없습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -403,7 +582,20 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "정글 아이템 계열인 활력증진의 펜던트(및 리글의 랜턴 등 연계 아이템)의 체력·공격속도·조합식 개편이 정글 챔피언인 탈리야의 성장 곡선과 정글링 효율에 간접적으로 영향을 주었을 수 있습니다.",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:51b5b58f",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "꽃피는 새벽의 검 등 마법공학 계열 아이템의 주문력 계수 상향이 AP 챔피언인 탈리야의 스노우볼링 및 딜링에 간접적 이득을 주었을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:other:불타는-향로:d8a7c7d5",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8363824812",
@@ -419,6 +611,15 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=163,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "탈리야는 이번 패치에서 직접적인 챔피언 밸런스 변경이 없었지만(승률 48.7%→54.5%, 95% CI [0.012, 0.103], n=860/960), 그녀가 자주 사용하는 정글 및 AP 아이템 계열(활력증진의 펜던트, 꽃피는 새벽의 검 등)의 간접적 개편이 승률 상승에 영향을 주었을 가능성이 있습니다.",
+        "summaryCites": [
+          "note:26.17:item:활력증진의-펜던트:51b5b58f",
+          "note:26.17:other:불타는-향로:d8a7c7d5"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -442,7 +643,26 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "폭풍갈퀴(스톰레이저)의 공격 속도 증가량이 20%→25%로 상향되어, 제리의 핵심 코어 아이템 성능이 강화되며 간접적으로 승률 상승에 기여했을 수 있습니다.",
+          "candidateNoteId": "note:26.17:item:stormrazor:0a1d6b43",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "활력증진의 펜던트 계열(리글의 랜턴/야생의 섬광 조합) 아이템에 공격 속도 30%가 신규 부여되어, 제리가 자주 사용하는 지속 공격형 아이템 트리가 강화된 것이 간접 영향을 줬을 수 있습니다.",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:8f360fb2",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "활력증진의 펜던트의 신경 자극 효과(체력/마나 회복량 상승)가 강화되어 원거리 지속 딜러인 제리의 지속력이 간접적으로 향상됐을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:fda607e4",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8362136253",
@@ -458,6 +678,15 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=221,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "제리 자체에 대한 직접 변경 노트는 없지만, 제리의 핵심 빌드 아이템인 폭풍갈퀴(공격 속도 20%→25%)와 활력증진의 펜던트 계열(공격 속도 30% 신규 부여, 신경 자극 회복량 상승)이 상향되어 아이템 파급 효과로 승률이 50.7%→56.4%로 상승했을 가능성이 있습니다(95% CI [0.012, 0.103], n=797/1111).",
+        "summaryCites": [
+          "note:26.17:item:stormrazor:0a1d6b43",
+          "note:26.17:item:활력증진의-펜던트:8f360fb2"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -497,6 +726,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=76,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "니달리는 이번 패치 후보 목록에 직접 변경 사항이 없어 밴율 0.2796→0.3246 상승(Δ+0.045, 95% CI [0.032, 0.058])을 설명할 만한 간접 영향 후보를 찾을 수 없습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -520,7 +755,26 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "미스 포츈 Q 피해량 증가 등 다수의 버프로 인해 룰루가 자주 픽되는 원거리 딜러 조합의 강세가 룰루 지원 픽률 상승에 간접적으로 기여했을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:미스-포츈:6d438477",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "애쉬 W 피해량 및 사거리 버프로 애쉬 픽률이 상승하며, 룰루와 자주 함께 픽되는 조합이 늘어나 룰루 픽률에도 간접적 영향을 주었을 수 있습니다.",
+          "candidateNoteId": "note:26.17:champion:애쉬:7d7ed661",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "폭풍갈퀴 공격 속도 강화로 원거리 딜러 메타가 강화되면서 이들과 시너지가 좋은 룰루의 지원 픽률이 간접적으로 상승했을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:item:stormrazor:0a1d6b43",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8367245341",
@@ -536,6 +790,16 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=117,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "룰루 자체에 대한 직접 패치 변경 사항은 없으나(픽률 +0.0439, 95% CI [0.0347, 0.0531], n=10000/10000), 미스 포츈·애쉬 등 룰루와 자주 조합되는 원거리 딜러들의 강력한 버프와 폭풍갈퀴 강화가 원거리 딜러 메타를 활성화시켜 룰루의 지원 픽률 상승에 간접적으로 기여했을 가능성이 있습니다.",
+        "summaryCites": [
+          "note:26.17:champion:미스-포츈:6d438477",
+          "note:26.17:champion:애쉬:7d7ed661",
+          "note:26.17:item:stormrazor:0a1d6b43"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -575,6 +839,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=117,scope=position,position=UTILITY]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "룰루에 대한 직접 밸런스 변경 노트가 없고, 인챈터 지원 아이템(구원·흐르는 물의 지팡이 등)은 오히려 효과가 감소(12~14%→10%)했으므로 해당 픽률 상승(10.29%→14.6%, 95% CI [3.40%p, 5.22%p])을 설명할 만한 간접 요인을 찾을 수 없습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -598,7 +868,32 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "카이사가 자주 사용하는 신경 자극(구 에센스 리버) 계열 아이템의 조합 가격이 인상되고(750→350은 인하지만 관련 하위 아이템 재구성) 공격력 옵션이 사라지는 등 아이템 경로가 변경되어, 카이사의 코어 빌드 효율이 간접적으로 저하되었을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:5400a762",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "미스 포츈의 Q, E, 기본 능력치 전반에 걸친 큰 버프로 봇라인 원거리 딜러 경쟁에서 미스 포츈의 매력도가 상승하면서, 상대적으로 카이사의 픽률이 잠식되었을 수 있습니다.",
+          "candidateNoteId": "note:26.17:champion:미스-포츈:6d438477",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "애쉬 W의 사거리·피해량 버프로 애쉬의 유틸리티/딜 효율이 상승해 원거리 딜러 픽 경쟁에서 카이사의 상대적 매력이 낮아졌을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:애쉬:7d7ed661",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "이즈리얼 R 계수 버프(70%→100%)로 이즈리얼의 후반 캐리력이 강화되어, 원거리 딜러 포지션에서 카이사와 픽 경쟁을 벌이며 카이사 픽률을 잠식했을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:이즈리얼:9152ff5a",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8367245341",
@@ -614,6 +909,16 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=145,scope=position,position=BOTTOM]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "카이사에 대한 직접 패치 노트가 없는 상태에서 픽률이 27.7%→23.85%로 유의미하게 하락한 것은, 미스 포츈·애쉬·이즈리얼 등 경쟁 원거리 딜러들의 버프와 신경 자극류 아이템 개편으로 인한 간접적 파급 효과로 추정되며, 이는 unannounced 판정과 부합합니다.",
+        "summaryCites": [
+          "note:26.17:champion:미스-포츈:6d438477",
+          "note:26.17:champion:애쉬:7d7ed661",
+          "note:26.17:champion:이즈리얼:9152ff5a"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -637,7 +942,26 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "카이사의 핵심 아이템 계열(리글의 랜턴과 야생의 섬광 등)에 쓰이는 활력증진의 펜던트 조합 레시피에서 공격력이 25에서 0으로 삭제되어, 온힛/공속 기반 카이사 빌드의 초반~중반 공격력이 약화되며 선호도가 낮아졌을 가능성이 있음",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:5400a762",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "동일 아이템 계열에서 공격 속도가 0%에서 30%로 상향되었지만 공격력 손실을 완전히 상쇄하지 못해 순수 공격력 스케일링에 의존하는 카이사 빌드의 효율이 떨어졌을 수 있음",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:8f360fb2",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "카이사가 일부 빌드에서 활용하는 갈라진 하늘의 공격력과 체력이 각각 45→40, 450→400으로 너프되어 관련 빌드의 전투력이 소폭 감소했을 가능성이 있음",
+          "candidateNoteId": "note:26.17:item:sundered-sky:0aec77fe",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8367245341",
@@ -653,6 +977,15 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=145,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "카이사 자체에 대한 직접 패치노트는 없으나, 공속형 온힛 빌드의 핵심 재료인 활력증진의 펜던트 계열 아이템에서 공격력이 삭제되고(25→0) 공격 속도만 보완되는 조정(note:26.17:item:활력증진의-펜던트:5400a762, note:26.17:item:활력증진의-펜던트:8f360fb2)이 이루어져 관련 빌드의 초반 딜 손실이 발생했고, 이것이 픽률 하락(27.86%→24.10%, 95% CI [-0.0497, -0.0254])의 간접적 원인일 가능성이 있음.",
+        "summaryCites": [
+          "note:26.17:item:활력증진의-펜던트:5400a762",
+          "note:26.17:item:활력증진의-펜던트:8f360fb2"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -692,6 +1025,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=112,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "빅토르에 대한 직접 패치노트가 없고, 후보 목록에서도 빅토르의 밴율 하락을 설명할 만한 간접 연관 변경(아이템, 시스템, 타 챔피언 변경)을 찾을 수 없어 원인 불명으로 판단됩니다(밴율 0.1246→0.0913, 95% CI [-0.0419, -0.0247], n=10000/10000).",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -715,7 +1054,14 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "제리는 폭풍갈퀴를 핵심 아이템으로 사용하는 원거리 딜러로, 폭풍갈퀴의 공격 속도가 20%에서 25%로 상향되면서 제리의 성능이 간접적으로 강화되어 픽률 상승에 기여했을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:item:stormrazor:0a1d6b43",
+          "verified": true,
+          "confidence": "medium"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8362136253",
@@ -731,6 +1077,14 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=221,scope=position,position=BOTTOM]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "제리에 대한 직접 패치 변경 사항은 없지만, 제리가 주로 사용하는 폭풍갈퀴의 공격 속도가 20%에서 25%로 상향(note:26.17:item:stormrazor:0a1d6b43)되면서 픽률이 0.0743에서 0.1061로 약 3.18%p 상승(95% CI [0.0239, 0.0397], n=10000)한 것으로 추정됩니다.",
+        "summaryCites": [
+          "note:26.17:item:stormrazor:0a1d6b43"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -754,7 +1108,26 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "폭풍갈퀴의 공격 속도가 20%→25%로 강화되어 케이틀린과 같은 원거리 딜러의 초반 파워가 상승, 밴율 상승에 간접적으로 기여했을 수 있습니다.",
+          "candidateNoteId": "note:26.17:item:stormrazor:0a1d6b43",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "경쟁 원거리 딜러 베인의 W 최소 피해량 및 고정 피해 너프로 상대적으로 케이틀린의 픽/밴 매력이 상승했을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:vayne:02ad4f34",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "또 다른 경쟁 원거리 딜러 트위치의 기본 능력치 너프(공속·체력 감소)로 메타 내 원거리 딜러 구도가 케이틀린에 유리하게 재편되었을 수 있습니다.",
+          "candidateNoteId": "note:26.17:champion:트위치:f9629eb2",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8363755873",
@@ -770,6 +1143,16 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=51,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "케이틀린 자신에 대한 직접 변경 노트는 없지만, 경쟁 원거리 딜러(베인, 트위치)의 너프와 폭풍갈퀴 강화 등 메타 전반의 간접적 변화가 밴율을 0.0791에서 0.1108로 끌어올렸을 가능성이 있습니다.",
+        "summaryCites": [
+          "note:26.17:champion:vayne:02ad4f34",
+          "note:26.17:champion:트위치:f9629eb2",
+          "note:26.17:item:stormrazor:0a1d6b43"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -809,6 +1192,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=221,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "제리에 대한 직접 패치노트가 후보 목록에 없으며, 관련 아이템(폭풍갈퀴 등)이나 시스템 변경 중 제리의 픽률 급등(7.97%→11.11%)을 설명할 만한 간접 요인을 찾을 수 없어 원인 미상(unannounced) 상태로 남습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -832,7 +1221,20 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "제라스 Q 피해량 및 체력 너프로 탈론이 자주 상대하는 미드 메이지 챔피언의 라인전 압박력이 줄어들어 탈론의 픽률 상승에 간접적으로 기여했을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:xerath:43a6f4aa",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "녹턴의 체력·방어력 너프로 유사한 올인형 정글 암살자 포지션에서 상대적으로 탈론의 매력이 높아졌을 수 있습니다.",
+          "candidateNoteId": "note:26.17:champion:nocturne:9c41fff1",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8367044760",
@@ -848,6 +1250,15 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=91,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "탈론의 픽률이 0.0997에서 0.1302로 통계적으로 유의미하게(95% CI [0.0217, 0.0393]) 상승했지만 탈론 자체에 대한 직접 밸런스 변경 노트는 없어, 제라스 약화(note:26.17:champion:xerath:43a6f4aa)나 녹턴 약화(note:26.17:champion:nocturne:9c41fff1) 같은 경쟁 챔피언의 간접적 메타 변화가 원인일 가능성이 있으나 근거는 약합니다.",
+        "summaryCites": [
+          "note:26.17:champion:xerath:43a6f4aa",
+          "note:26.17:champion:nocturne:9c41fff1"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -887,6 +1298,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=800,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "멜(Mel)에 대한 직접 패치노트 항목이 후보 목록에 존재하지 않으며, 밴율 급락(-2.95%p, 95% CI [-3.51%p, -2.40%p])을 설명할 만한 간접 영향(아이템/시스템 변경) 후보도 확인되지 않아 원인 불명(unannounced) 상태로 유지됩니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -910,7 +1327,26 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "미스 포츈 Q 피해량 강화 등 다수의 버프로 룰루와의 바텀 시너지(강력한 원거리 딜러 보호)가 부각되어 밴율 상승에 간접적으로 기여했을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:미스-포츈:6d438477",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "애쉬 W 피해량 및 사거리 버프로 룰루-애쉬 조합의 위력이 커지면서 룰루 밴율 상승에 간접 영향을 미쳤을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:애쉬:7d7ed661",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "베인 기본 능력치 조정(체력/공속 재조정)으로 룰루가 자주 보호하는 하이퍼캐리 챔피언의 안정성이 변화하며 룰루 픽/밴 가치에 영향을 줬을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:vayne:e3f52a3c",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8367245341",
@@ -926,6 +1362,15 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=117,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "룰루에 대한 직접 변경 노트는 없으며(0.0366→0.0655, 델타 +0.0289, 95% CI [0.0228, 0.0350]로 통계적으로 유의미한 상승), 미스 포츈·애쉬 등 룰루와 시너지가 강한 원거리 딜러들의 버프가 간접적으로 룰루의 밴율 상승에 기여했을 가능성이 낮은 신뢰도로 제기됩니다.",
+        "summaryCites": [
+          "note:26.17:champion:미스-포츈:6d438477",
+          "note:26.17:champion:애쉬:7d7ed661"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -965,6 +1410,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=804,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "유나라(Yunara)에 대한 직접 패치노트 항목이 후보 목록에 없어 간접 영향 요인을 특정할 수 없으며, 밴율이 0.0265에서 0.0553으로 증가(델타 +0.0288, 95% CI [0.0233, 0.0343])한 원인은 노트로 설명되지 않는 미발표(unannounced) 변화로 보입니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1004,6 +1455,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=112,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "빅토르에 대한 직접 패치노트 변경이나 후보 목록 내 간접 영향을 줄 만한 관련 챔피언/아이템/시스템 변경 사항을 찾을 수 없어, pickRate 하락(-0.0267, 95% CI [-0.0359,-0.0175], n=10000/10000)의 원인을 이 패치노트 후보들로는 설명할 수 없습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1043,6 +1500,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=112,scope=position,position=BOTTOM]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "빅토르(Viktor)에 대한 직접 밸런스 변경 노트가 후보 목록에 없고, 픽률 하락(-0.0264)을 설명할 만한 간접 영향 요인(예: 상대 라인전 챔피언 버프, 관련 아이템 변경 등)도 목록에서 발견되지 않아 원인을 특정할 수 없음.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1082,6 +1545,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=98,scope=position,position=UTILITY]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "쉔에 대한 직접 변경 노트가 없고 후보 목록에서도 쉔의 픽률 하락(-2.63%p)을 설명할 만한 간접 영향 요인(예: 쉔과 자주 함께 픽되는 챔피언이나 쉔이 상대하는 라이너의 큰 버프 등)을 찾을 수 없어 원인 불명으로 남습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1105,7 +1574,32 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "이블린이 Q 기본 피해량, 이동 W 마나 소모/재사용 대기시간 등 다수 항목에서 약화되며 정글 암살자 메타에서 대체픽으로 탈론이 선택되었을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:이블린:7340a85b",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "이블린 W 재사용 대기시간 증가(15→20초)로 인한 정글 이동성 저하가 경쟁 정글 암살자인 탈론의 픽률 상승에 간접적으로 기여했을 수 있습니다.",
+          "candidateNoteId": "note:26.17:champion:이블린:8bf47559",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "녹턴의 방어력·체력 감소로 경쟁 정글 암살자군의 입지가 약해지며 탈론이 반사이익을 얻었을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:nocturne:9c41fff1",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "제라스 체력 및 Q 피해량 너프로 미드 라인에서 탈론과 같은 근접 암살자에게 유리한 환경이 조성되었을 수 있습니다.",
+          "candidateNoteId": "note:26.17:champion:xerath:080e761c",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8367044760",
@@ -1121,6 +1615,15 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=91,scope=position,position=JUNGLE]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "탈론 픽률이 0.0538에서 0.0793로 통계적으로 유의미하게 상승했으나(95% CI가 0을 포함하지 않음) 탈론 자체에 대한 직접 변경 노트는 없어, 이블린·녹턴 등 경쟁 정글/미드 암살자군의 연쇄 너프가 간접적으로 탈론 픽률 상승에 기여했을 가능성이 있습니다.",
+        "summaryCites": [
+          "note:26.17:champion:이블린:7340a85b",
+          "note:26.17:champion:nocturne:9c41fff1"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -1160,6 +1663,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=84,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "아칼리에 대한 직접 변경 사항이 패치노트에 없고, 후보 목록에서도 아칼리의 밴율 하락(-2.55%p, 95% CI [-0.0342, -0.0168])을 설명할 만한 간접적 연관 변경(상대 챔피언·아이템 등)을 찾을 수 없어 원인 불명으로 판단됩니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1199,6 +1708,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=142,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "조이(Zoe)에 대한 직접 패치노트 항목이 후보 목록에 존재하지 않으며, 밴율 감소(-2.36%p)를 설명할 만한 간접 영향(상대 챔피언 버프/너프나 아이템·시스템 변경) 후보도 확인되지 않아 원인 불명으로 판단됩니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1238,6 +1753,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=80,scope=position,position=UTILITY]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "판테온에 대한 직접 밸런스 변경 노트가 없고, 후보 목록에서도 판테온의 픽률 감소를 설명할 만한 간접 연관 항목(예: 판테온이 주로 활용하는 아이템이나 상성 챔피언 변경)을 찾을 수 없어 이번 델타(픽률 0.0798→0.0562, 95% CI [-0.0306, -0.0166])의 원인은 패치노트로 설명되지 않는 것으로 보입니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1261,7 +1782,26 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "폭풍갈퀴의 공격 속도가 20%→25%로 상승해 온힛/급성장 자객형 원거리 챔피언인 칼리스타의 아이템 파워가 간접적으로 강화되었을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:item:stormrazor:0a1d6b43",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "활력증진의 펜던트 계열(리글의 랜턴/야생의 섬광) 조합이 공격 속도 0%→30%로 크게 buff되어 원거리 딜러 코어템 경로가 강화되면서 칼리스타의 체감 성능과 인기가 상승했을 수 있습니다.",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:8f360fb2",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "활력증진의 펜던트 자체 체력 증가(430→500)로 원거리 딜러들의 초반 생존력이 늘어나 칼리스타 등 스노우볼형 챔피언의 선호도가 올랐을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:51b5b58f",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8367044760",
@@ -1277,6 +1817,15 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=429,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "칼리스타는 직접 패치 노트가 없음에도 밴율이 0.0131→0.0359로 크게 상승했으며(95% CI [0.0186, 0.0271]), 이는 원거리 딜러 코어 아이템인 폭풍갈퀴와 활력증진의 펜던트 계열의 공격 속도 강화가 간접적으로 그녀의 성능 체감을 높였기 때문일 수 있습니다.",
+        "summaryCites": [
+          "note:26.17:item:stormrazor:0a1d6b43",
+          "note:26.17:item:활력증진의-펜던트:8f360fb2"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -1316,6 +1865,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=59,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "자르반 4세에 대한 직접 패치 노트가 없고 후보 목록에서도 정글/성장 아이템 관련 간접 영향을 뒷받침할 근거를 찾을 수 없어, pickRate 하락(0.0872→0.0657, 95% CI [-0.0289, -0.0141])의 원인을 현재 후보로 설명할 수 없습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1339,7 +1894,26 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "정글 아이템인 리글의 랜턴(활력증진의 펜던트 계열) 조합식이 마드레드의 갈퀴손+곡궁으로 변경되고 공격력이 삭제되며 공격속도가 30% 추가되는 등 정글 아이템 전반의 성능이 재조정되어, 이 아이템에 의존하던 리 신의 초반 정글 클리어/전투 효율이 간접적으로 영향을 받았을 수 있습니다.",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:3f4d7db5",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "경쟁 정글러인 트런들의 W 공격 속도가 큰 폭으로 상향되어 정글 픽률 경쟁에서 리 신의 상대적 선택 비중이 줄어들었을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:champion:trundle:85be03ea",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "녹턴의 체력·방어력 하향으로 인해 정글 메타 내 픽 구성이 변화하면서 리 신의 픽률에도 간접적 파급 효과가 있었을 수 있습니다.",
+          "candidateNoteId": "note:26.17:champion:nocturne:9c41fff1",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8366970663",
@@ -1355,6 +1929,15 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=64,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "리 신은 이번 패치에서 직접적인 챔피언 변경 사항이 없음에도 픽률이 25.93%→23.8%(약 -2.1%p, 95% CI 모두 음수)로 유의미하게 감소했는데, 이는 정글 아이템(리글의 랜턴 계열) 리워크와 트런들·녹턴 등 경쟁 정글러 밸런스 변화가 겹쳐 나타난 간접 효과로 추정됩니다.",
+        "summaryCites": [
+          "note:26.17:item:활력증진의-펜던트:3f4d7db5",
+          "note:26.17:champion:trundle:85be03ea"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -1394,6 +1977,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=69,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "카시오페아에 대한 직접 패치노트가 없고, 후보 목록에서도 카시오페아와 상호작용할 만한 간접 요인(관련 아이템·시스템·상대 챔피언 변경)을 찾을 수 없어 이 밴율 하락(-2.11%p, 95% CI [-0.0318, -0.0104])의 원인을 설명할 근거가 부족함.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1433,6 +2022,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=805,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "로크(Locke)는 후보 패치노트 목록에 해당 챔피언 및 관련 시스템/아이템 변경 사항이 존재하지 않아, 픽률 하락(-0.0211, 95% CI [-0.0302, -0.0120])을 설명할 간접 영향 후보를 찾을 수 없습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1472,6 +2067,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=111,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "노틸러스에 대한 직접 변경 노트가 없고, 후보 목록에서도 노틸러스의 밴율 상승(7.4%→9.5%)을 설명할 만한 간접 연관 챔피언/아이템 변경을 찾을 수 없어 원인 불명으로 판단됩니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1511,6 +2112,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=59,scope=position,position=JUNGLE]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "자르반 4세에 대한 직접 밸런스 변경 노트가 후보 목록에 없으며, 정글/상대 챔피언 변경 중에서도 자르반의 픽률 하락(-2.05%p, 95% CI [-2.77%p, -1.34%p])을 설명할 만한 간접 영향 후보를 찾을 수 없어 원인 불명 상태입니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1534,7 +2141,26 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "정글 아이템(리글의 랜턴/야생의 섬광) 조합식과 능력치가 크게 변경되어(공격력 삭제, 공속 30% 추가 등) 정글 아이템 선택 및 정글러 픽 밸런스에 파급 영향을 줬을 수 있어, 리 신 같은 초반 공격형 정글러의 매력도가 상대적으로 감소했을 가능성이 있음",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:3f4d7db5",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "그라가스 Q 재사용 대기시간 증가 등 정글 클리어 관련 전반 너프가 있었으나, 동시에 서비스 시간(정글 몬스터 처치 보너스) 쿨다운이 감소하여 정글 메타 내 경쟁 구도가 변화, 리 신의 상대적 픽률에 간접 영향을 줬을 가능성",
+          "candidateNoteId": "note:26.17:champion:그라가스:ee3208b9",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "나서스의 생명력 흡수 너프로 정글 나서스의 안정성이 낮아지며 정글 픽 풀 내 경쟁 구도가 변화했을 가능성이 있으나 직접적 연관성은 약함",
+          "candidateNoteId": "note:26.17:champion:nasus:0915ac64",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8366970663",
@@ -1550,6 +2176,14 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=64,scope=position,position=JUNGLE]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "리 신의 픽률이 25.6%에서 23.6%로 유의미하게 하락(95% CI가 0을 포함하지 않음)했는데, 이는 패치노트에 리 신 자체에 대한 직접 변경이 없는 상태에서 정글 아이템(리글의 랜턴/야생의 섬광) 조합식·능력치 개편과 같은 정글 생태계 전반의 변화가 간접적으로 영향을 미쳤을 가능성이 있음을 시사한다.",
+        "summaryCites": [
+          "note:26.17:item:활력증진의-펜던트:3f4d7db5"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -1589,6 +2223,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=134,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "신드라의 밴율 감소(-2.01%p, 95% CI [-3.13%p, -0.89%p])를 직접적으로 설명할 수 있는 신드라 관련 패치노트 항목이나 그와 연관된 간접 영향 후보가 후보 목록에서 발견되지 않았습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1612,7 +2252,14 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "칼리스타는 공격속도 기반 마크스맨으로 폭풍갈퀴를 자주 선택하는데, 해당 아이템의 공격 속도가 20%에서 25%로 상향되어 간접적으로 챔피언 선호도가 상승했을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:item:stormrazor:0a1d6b43",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8367044760",
@@ -1628,6 +2275,14 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=429,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "칼리스타 자체에 대한 직접 패치 항목은 없으나, 픽률이 0.0657→0.0856(Δ0.0199, 95% CI [0.0126, 0.0272])로 유의미하게 상승한 것은 마크스맨 아이템인 폭풍갈퀴의 공격 속도 상향(20%→25%)이 간접적으로 영향을 미쳤을 가능성이 있습니다.",
+        "summaryCites": [
+          "note:26.17:item:stormrazor:0a1d6b43"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -1651,7 +2306,20 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "폭풍갈퀴 공격 속도가 20%→25%로 상향되어 칼리스타를 포함한 원거리 딜러 전반의 딜링 효율이 개선되며 픽률 상승에 간접적으로 기여했을 가능성이 있습니다.",
+          "candidateNoteId": "note:26.17:item:stormrazor:0a1d6b43",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "활력증진의 펜던트 계열(리글의 랜턴/야생의 섬광) 아이템에 공격 속도 30%가 신규 부여되어 원거리 딜러의 후반 아이템 선택지가 늘어난 점이 칼리스타 픽률에 간접 영향을 주었을 수 있습니다.",
+          "candidateNoteId": "note:26.17:item:활력증진의-펜던트:8f360fb2",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8367044760",
@@ -1667,6 +2335,15 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=429,scope=position,position=BOTTOM]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "칼리스타의 픽률이 0.0648에서 0.0843으로 유의미하게 상승(95% CI [0.0122, 0.0268])했는데, 이는 챔피언 자체 직접 변경 없이 원거리 딜러 전반의 딜링 효율을 높인 폭풍갈퀴 공격 속도 상향(note:26.17:item:stormrazor:0a1d6b43)과 활력증진의 펜던트 계열 아이템의 공격 속도 신규 부여(note:26.17:item:활력증진의-펜던트:8f360fb2) 같은 간접 아이템 버프가 원인일 가능성이 있습니다.",
+        "summaryCites": [
+          "note:26.17:item:stormrazor:0a1d6b43",
+          "note:26.17:item:활력증진의-펜던트:8f360fb2"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -1690,7 +2367,14 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "폭풍갈퀴의 공격 속도 증가(20%→25%)가 진의 핵심 코어 아이템 성능을 강화해 픽률 상승에 간접적으로 기여했을 수 있음",
+          "candidateNoteId": "note:26.17:item:stormrazor:0a1d6b43",
+          "verified": true,
+          "confidence": "medium"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8367245341",
@@ -1706,6 +2390,14 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=202,scope=position,position=BOTTOM]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "진에 대한 직접 변경 노트는 없으나, 폭풍갈퀴 공격 속도 상향(20%→25%)이 진의 코어 아이템 효율을 높여 픽률이 0.1863→0.2052(+0.0189, 95% CI [0.0079, 0.0299])로 상승하는 데 간접적으로 영향을 주었을 가능성이 있다.",
+        "summaryCites": [
+          "note:26.17:item:stormrazor:0a1d6b43"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -1729,7 +2421,32 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "쉔이 자주 채용하는 탱커형 아이템 '갈라진 하늘'의 공격력이 45→40으로 감소해 아이템 효율이 낮아지면서 쉔의 빌드 파워 및 픽률에 부정적 영향을 줄 수 있음",
+          "candidateNoteId": "note:26.17:item:sundered-sky:0aec77fe",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "동일 아이템 '갈라진 하늘'의 체력이 450→400으로 감소해 탱커 챔피언인 쉔의 핵심 아이템 가치가 하락, 상대적으로 픽률 감소에 기여했을 가능성",
+          "candidateNoteId": "note:26.17:item:sundered-sky:4c4f025e",
+          "verified": true,
+          "confidence": "medium"
+        },
+        {
+          "text": "탑 라인 경쟁 챔피언인 가렌이 방어력 증가량, 공격력, E 피해량, W 보호막 등 전방위적으로 강력한 버프를 받아 탑 라인에서 쉔 대신 가렌을 선택하는 빈도가 늘어나며 쉔의 픽률이 간접적으로 감소했을 가능성이 있음",
+          "candidateNoteId": "note:26.17:champion:가렌:d2cf5f23",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "트런들의 W 공격 속도 버프로 인해 탑/정글 포지션에서 쉔과 경쟁하는 탱커형 챔피언의 매력이 상승, 쉔의 상대적 픽률 감소에 기여했을 가능성",
+          "candidateNoteId": null,
+          "verified": false,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8360332325",
@@ -1745,6 +2462,16 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=98,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "쉔 자체에 대한 직접 변경 노트는 없으나, 쉔이 주로 채용하는 '갈라진 하늘' 아이템의 공격력과 체력 너프, 그리고 경쟁 탑 라이너인 가렌의 대규모 버프가 픽률 하락(-0.0189, 95% CI [-0.0262, -0.0116])의 간접 원인으로 추정된다.",
+        "summaryCites": [
+          "note:26.17:item:sundered-sky:0aec77fe",
+          "note:26.17:item:sundered-sky:4c4f025e",
+          "note:26.17:champion:가렌:d2cf5f23"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -1784,6 +2511,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=55,scope=position,position=MIDDLE]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "카타리나 관련 직접 패치 노트가 없고, 후보 목록에서도 카타리나의 픽률 급증(0.0335→0.0523, 95% CI [0.0132, 0.0244])을 설명할 만한 간접 연관 변경 사항을 찾을 수 없어 원인 불명(unannounced) 상태로 판단됩니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1807,7 +2540,26 @@
       "status": "unannounced",
       "matchedNoteId": null,
       "matchedNoteIds": [],
-      "causes": [],
+      "causes": [
+        {
+          "text": "르블랑이 W와 RW 피해량 계수가 상향되며 미드 메이지 티어가 오르면 오리아나와 같은 미드 마법사 챔피언의 픽률을 잠식할 수 있음",
+          "candidateNoteId": "note:26.17:champion:leblanc:76a8a16c",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "애니의 Q/W 피해량과 기절 지속시간 상향으로 미드 마법사 경쟁이 심화되어 오리아나 픽률이 분산되었을 가능성",
+          "candidateNoteId": "note:26.17:champion:애니:04d73af9",
+          "verified": true,
+          "confidence": "low"
+        },
+        {
+          "text": "아우렐리온 솔의 마나 소모량 감소 및 W 재사용 대기시간 감소로 미드 마법사 픽 경쟁이 심화되어 오리아나 픽률에 영향을 주었을 가능성",
+          "candidateNoteId": "note:26.17:champion:aurelionsol:7b32ba55",
+          "verified": true,
+          "confidence": "low"
+        }
+      ],
       "evidence": {
         "matchIds": [
           "KR_8360568505",
@@ -1823,6 +2575,16 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=61,scope=position,position=MIDDLE]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "오리아나에 대한 직접 밸런스 변경 노트가 없으므로, 르블랑·애니·아우렐리온 솔 등 경쟁 미드 마법사 챔피언들의 버프로 인한 간접적 픽 경쟁 심화가 픽률 하락(0.0861→0.0676)의 원인일 가능성이 있으나 근거는 약함.",
+        "summaryCites": [
+          "note:26.17:champion:leblanc:76a8a16c",
+          "note:26.17:champion:애니:04d73af9",
+          "note:26.17:champion:aurelionsol:7b32ba55"
+        ],
+        "summaryVerified": true
       }
     },
     {
@@ -1862,6 +2624,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=134,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "신드라에 대한 직접 변경 노트가 없고, 후보 목록에서도 신드라의 픽률 하락(-1.83%p)을 설명할 만한 간접 영향(상대 챔피언 버프나 관련 아이템/시스템 변경)을 찾을 수 없어 원인 불명으로 판단됩니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1901,6 +2669,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=432,scope=all]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "바드에 대한 직접 패치노트가 없고 후보 목록에서도 바드의 픽률 하락(-1.83%p)을 설명할 만한 간접 연관 변경(연계 챔피언, 아이템, 룬 등)을 찾을 수 없어 원인 불명 상태로 남습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
@@ -1940,6 +2714,12 @@
         ],
         "aggregatePath": "data/aggregated/26.17/champions.json#rows[championId=432,scope=position,position=UTILITY]",
         "noteAnchor": null
+      },
+      "llm": {
+        "skipped": false,
+        "summary": "바드 픽률이 14.57%에서 12.75%로 유의미하게 감소했으나(95% CI가 0을 포함하지 않음), 후보 목록에서 바드에게 간접적으로 영향을 줄 만한 서포트 아이템이나 시스템 변경(예: 로밍/시야 관련 변경)이 확인되지 않아 뚜렷한 간접 원인 후보를 찾기 어렵습니다.",
+        "summaryCites": [],
+        "summaryVerified": true
       }
     },
     {
