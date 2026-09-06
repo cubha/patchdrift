@@ -91,8 +91,13 @@ export function newcombeDiffInterval(
  * 풀드(pooled) z검정 양측 p-value — 두 독립 비율이 같다는 귀무가설 검정.
  * pooled 비율의 분산이 0(두 그룹 다 100% 또는 0%)이면 se=0 → 비율이 같으면 p=1, 다르면
  * (귀무가설상 불가능한 관측이므로) p=0으로 처리한다.
+ * n1===0 또는 n2===0이면 해당 쪽 비율(s/n)이 0/0=NaN으로 정의되지 않는다 — 검정 불가이므로
+ * 비유의(p=1)로 고정한다(실측 결함: 26.16→26.17 실데이터 게이트에서 포지션별 승률 n=0인
+ * 챔피언 102건이 이 경로로 NaN을 냈고, benjaminiHochberg의 정렬·누적-min 단계에서 나머지
+ * 1,857건의 q까지 연쇄 오염시켰다 — 챔피언 행 전부 q=null로 깨진 원인).
  */
 export function twoProportionPValue(s1: number, n1: number, s2: number, n2: number): number {
+  if (n1 === 0 || n2 === 0) return 1;
   const p1 = s1 / n1;
   const p2 = s2 / n2;
   const pooled = (s1 + s2) / (n1 + n2);
@@ -107,27 +112,38 @@ export function twoProportionPValue(s1: number, n1: number, s2: number, n2: numb
  * Benjamini-Hochberg FDR 보정 — p-value 배열 → 보정된 q-value + 기각 여부(동일 순서로 반환).
  * 표준 절차: p 오름차순 정렬 → q_(i) = p_(i)*m/i → 뒤에서부터 누적최소로 단조화 → [0,1] 클램프
  * → 원래 순서로 환원. rejected[i] = q[i] <= alpha.
+ *
+ * 비유한(NaN/±Infinity) p는 검정 집합에서 제외한다(m=유한 개수만) — 정렬 기반 누적최소 절차라
+ * NaN 하나가 섞이면 비교(`a.p - b.p`)가 전부 무의미해져 정렬 위치가 흔들리고, 그 이웃 순위의
+ * q까지 NaN으로 전파된다(실측 결함: p 배열에 NaN 1건이 섞이자 델타 1,966건 중 1,859건의 q가
+ * null로 깨졌다 — twoProportionPValue/meanDiffPValue 쪽 근본 원인은 별도로 고쳤지만, 이 함수도
+ * 방어적으로 NaN을 격리해야 향후 유사 결함이 다시 전체를 오염시키지 않는다). 비유한 위치의 q는
+ * "검정 미수행"을 뜻하는 `null`을 반환한다(DeltaRecord.q가 이미 `number | null` 계약 — 호출부
+ * 변경 불필요). 유한 p들의 q값은 NaN이 아예 없을 때와 완전히 동일해야 한다(테스트로 고정).
  */
 export function benjaminiHochberg(
   pValues: number[],
   alpha = FDR_ALPHA
-): { q: number[]; rejected: boolean[] } {
+): { q: (number | null)[]; rejected: boolean[] } {
   const m = pValues.length;
   if (m === 0) return { q: [], rejected: [] };
 
-  const indexed = pValues.map((p, i) => ({ p, i }));
-  indexed.sort((a, b) => a.p - b.p);
+  const finiteIndexed = pValues
+    .map((p, i) => ({ p, i }))
+    .filter(({ p }) => Number.isFinite(p));
+  finiteIndexed.sort((a, b) => a.p - b.p);
 
-  const qSorted = indexed.map(({ p }, k) => (p * m) / (k + 1));
-  for (let k = m - 2; k >= 0; k--) {
+  const mFinite = finiteIndexed.length;
+  const qSorted = finiteIndexed.map(({ p }, k) => (p * mFinite) / (k + 1));
+  for (let k = mFinite - 2; k >= 0; k--) {
     qSorted[k] = Math.min(qSorted[k], qSorted[k + 1]);
   }
 
-  const q = new Array<number>(m);
-  for (let k = 0; k < m; k++) {
-    q[indexed[k].i] = Math.min(1, qSorted[k]);
+  const q = new Array<number | null>(m).fill(null);
+  for (let k = 0; k < mFinite; k++) {
+    q[finiteIndexed[k].i] = Math.min(1, qSorted[k]);
   }
-  const rejected = q.map((qi) => qi <= alpha);
+  const rejected = q.map((qi) => qi !== null && qi <= alpha);
   return { q, rejected };
 }
 

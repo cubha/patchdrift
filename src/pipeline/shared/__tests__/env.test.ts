@@ -40,6 +40,10 @@ describe("loadEnv (source 주입 — .env 파일 미의존)", () => {
     expect(env.RIOT_API_KEY).toBe("RGAPI-test");
   });
 
+  it("PATCH_FROM/PATCH_TO가 패치 ID 형식(예: 26.17)이 아니면 throw한다", () => {
+    expect(() => loadEnv({ RIOT_API_KEY: "RGAPI-test", PATCH_FROM: "../etc" })).toThrow(/PATCH_FROM/);
+  });
+
   it("실패 메시지에 수신값(빈 문자열 등)을 로그하지 않는다 — 필드 경로만 노출", () => {
     try {
       loadEnv({ RIOT_API_KEY: "" });

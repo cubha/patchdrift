@@ -16,7 +16,7 @@ interface RunTimelineArgs {
 
 function parseArgs(argv: string[]): RunTimelineArgs {
   const raw = parseCliArgs("run-timeline", argv, [
-    { name: "patch", type: "string", required: true },
+    { name: "patch", type: "patch", required: true },
     { name: "sample", type: "number", default: 1500 },
     { name: "dryRun", type: "boolean", default: false },
   ]);

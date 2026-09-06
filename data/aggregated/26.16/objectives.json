@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "patch": "26.16",
+    "generatedAt": "2026-09-06T02:13:40.347Z",
+    "nMatches": 10000,
+    "nParticipants": 100000,
+    "nTimelines": 1500,
+    "source": "riot-match-v5"
+  },
+  "data": {
+    "patch": "26.16",
+    "n": 1500,
+    "firstDragonSecAvg": 527.0542372881356,
+    "firstHeraldSecAvg": 991.6153232242617,
+    "firstBaronSecAvg": 1368.715010141988,
+    "firstTowerSecAvg": 788.6653005464481,
+    "dragon": {
+      "n": 1475,
+      "mean": 527.0542372881356,
+      "sd": 150.66998645222913,
+      "occurrenceRate": 0.9833333333333333
+    },
+    "herald": {
+      "n": 1253,
+      "mean": 991.6153232242617,
+      "sd": 66.66630808752521,
+      "occurrenceRate": 0.8353333333333334
+    },
+    "baron": {
+      "n": 986,
+      "mean": 1368.715010141988,
+      "sd": 126.77231245796129,
+      "occurrenceRate": 0.6573333333333333
+    },
+    "tower": {
+      "n": 1464,
+      "mean": 788.6653005464481,
+      "sd": 97.75270456098308,
+      "occurrenceRate": 0.976
+    }
+  }
+}

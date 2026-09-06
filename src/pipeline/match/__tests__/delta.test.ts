@@ -189,6 +189,12 @@ describe("meanDiffPValue", () => {
     expect(meanDiffPValue(10, 0, 5, 10, 0, 5)).toBe(1);
     expect(meanDiffPValue(10, 0, 5, 20, 0, 5)).toBe(0);
   });
+
+  it("실결함 회귀: n1=0(또는 n2=0)이면 NaN/Infinity 대신 비유의(p=1)로 고정한다", () => {
+    expect(meanDiffPValue(100, 10, 0, 120, 10, 50)).toBe(1);
+    expect(meanDiffPValue(100, 10, 50, 120, 10, 0)).toBe(1);
+    expect(meanDiffPValue(100, 0, 0, 120, 0, 50)).toBe(1); // sd=0·n=0 동시(0/0) 케이스
+  });
 });
 
 describe("buildDeltas — 챔피언", () => {
@@ -352,6 +358,35 @@ describe("buildDeltas — BH-FDR q값", () => {
     const deltas = buildDeltas(before, after, { ddragon: makeDdragon(), dataRoot: tmpRoot });
     for (const d of deltas) {
       expect(d.q).not.toBeNull();
+      expect(d.q!).toBeGreaterThanOrEqual(0);
+      expect(d.q!).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("실결함 회귀: n=0 승률 행(포지션 한쪽만 등장)이 섞여도 다른 행의 q는 유한하다 — " +
+      "twoProportionPValue의 NaN이 benjaminiHochberg 정렬·누적-min을 타고 전체 q를 null로 오염시키던 결함", () => {
+    const before = makeAggregatedPatch("26.16", {
+      // TOP 포지션 행 없음 → beforeN=0 → winsBefore=0 → 과거엔 twoProportionPValue(0,0,...)가 NaN
+      champions: [champAllRow({ patch: "26.16", n: 300, winRate: 0.5 })],
+    });
+    const after = makeAggregatedPatch("26.17", {
+      champions: [
+        champAllRow({ patch: "26.17", n: 320, winRate: 0.55 }),
+        champPosRow({ patch: "26.17", position: "TOP", n: 40, winRate: 0.6 }),
+      ],
+    });
+    const deltas = buildDeltas(before, after, { ddragon: makeDdragon(), dataRoot: tmpRoot });
+
+    // n=0이 섞인 그 행 자체도 q는 유한(null 아님) — 검정은 p=1로 수행됨
+    const topWin = deltas.find((d) => d.id === "champion:Aatrox:TOP:winRate");
+    expect(topWin).toBeDefined();
+    expect(topWin!.n.before).toBe(0);
+    expect(topWin!.q).not.toBeNull();
+
+    // 나머지(scope=all pickRate/banRate/winRate 등) 모든 행의 q도 유한 — 오염 없음
+    for (const d of deltas) {
+      expect(d.q).not.toBeNull();
+      expect(Number.isFinite(d.q!)).toBe(true);
       expect(d.q!).toBeGreaterThanOrEqual(0);
       expect(d.q!).toBeLessThanOrEqual(1);
     }

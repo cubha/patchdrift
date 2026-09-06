@@ -18,7 +18,13 @@ export function isMainModule(importMetaUrl: string): boolean {
   return process.argv[1] !== undefined && importMetaUrl === pathToFileURL(process.argv[1]).href;
 }
 
-export type CliOptionType = "string" | "number" | "boolean";
+export type CliOptionType = "string" | "number" | "boolean" | "patch";
+
+/** 패치 ID 형식(예: "26.17") — 두 자리 메이저 + 1~2자리 마이너. `type: "patch"` 옵션이 이 형식을
+ * 강제한다(경로 조작·셸 메타문자 등 임의 문자열이 그대로 이 값을 소비하는 GH Actions run: 블록·
+ * 파일 경로 조합(data/aggregated/{patch}/...)으로 흘러드는 것을 원천 차단 — security-auditor
+ * Warning 대응, 2026-09-06). */
+const PATCH_ID_PATTERN = /^\d{2}\.\d{1,2}$/;
 
 export interface CliOptionSpec {
   /** camelCase 필드명. CLI 플래그는 이 이름을 kebab-case로 바꾼 `--{kebab}` 형태로 자동 유도한다
@@ -76,6 +82,11 @@ export function parseCliArgs(
         throw new Error(`${scriptName}: ${toFlag(opt.name)} must be a number (got "${raw}")`);
       }
       values[opt.name] = num;
+    } else if (opt.type === "patch") {
+      if (!PATCH_ID_PATTERN.test(raw)) {
+        throw new Error(`${scriptName}: ${toFlag(opt.name)} must look like 26.17`);
+      }
+      values[opt.name] = raw;
     } else {
       values[opt.name] = raw;
     }

@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "patch": "26.16",
+    "generatedAt": "2026-09-06T02:13:40.347Z",
+    "nMatches": 10000,
+    "nParticipants": 100000,
+    "nTimelines": 1500,
+    "source": "riot-match-v5"
+  },
+  "data": {
+    "patch": "26.16",
+    "matches": 10000,
+    "avgDurationSec": 1473.5692,
+    "avgDurationSecSd": 402.69037977775895,
+    "firstDragonSecAvg": 527.0542372881356,
+    "firstHeraldSecAvg": 991.6153232242617,
+    "firstBaronSecAvg": 1368.715010141988,
+    "firstTowerSecAvg": 788.6653005464481,
+    "queueDistribution": {
+      "420": 10000
+    },
+    "gameCreationMsRange": {
+      "min": 1786544635263,
+      "max": 1787686645090
+    },
+    "timelineSamples": 1500
+  }
+}

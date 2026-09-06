@@ -8,12 +8,17 @@ import { z } from "zod";
 // process.env는 수백 개 키를 가진 실제 환경이라 z.object 기본(strip) 모드로 둔다 — 미지정 키를
 // 에러로 취급하지 않는다(.strict() 금지). RIOT_PERSONAL_KEY/RIOT_DEV_KEY 같은 이 프로젝트의
 // 추가 키도 그대로 통과한다.
+// 패치 ID 형식(예: "26.17") — scripts/shared/cli.ts의 `type: "patch"` 검증과 동일 패턴. 경로
+// 조작·셸 메타문자 등 임의 문자열이 PATCH_FROM/PATCH_TO를 통해 파일 경로 조합·GH Actions
+// run: 블록으로 흘러드는 것을 막는다(security-auditor Warning 대응, 2026-09-06).
+const PATCH_ID_PATTERN = /^\d{2}\.\d{1,2}$/;
+
 const envSchema = z.object({
   RIOT_API_KEY: z.string().min(1, "RIOT_API_KEY is required"),
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   DISCORD_WEBHOOK_URL: z.string().min(1).optional(),
-  PATCH_FROM: z.string().min(1).default("26.16"),
-  PATCH_TO: z.string().min(1).default("26.17"),
+  PATCH_FROM: z.string().regex(PATCH_ID_PATTERN, "PATCH_FROM must look like 26.17").default("26.16"),
+  PATCH_TO: z.string().regex(PATCH_ID_PATTERN, "PATCH_TO must look like 26.17").default("26.17"),
 });
 
 export interface Env {

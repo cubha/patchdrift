@@ -90,7 +90,11 @@ export function loadAggregatedPatch(patch: PatchId, dataRoot: string = DATA_ROOT
 
 // ─── 연속 지표(골드·초) 평균차 p값 — normalCdf는 stats.ts 재사용(위 헤더 참고) ───
 
-/** 두 그룹 평균차(mean2-mean1)의 양측 p값 — z = diff/se, se = sqrt(sd1²/n1 + sd2²/n2). */
+/** 두 그룹 평균차(mean2-mean1)의 양측 p값 — z = diff/se, se = sqrt(sd1²/n1 + sd2²/n2).
+ * n1===0 또는 n2===0이면 sd/n 항이 0/0(sd=0인 경우 NaN) 또는 x/0(Infinity)이 되어 se가
+ * NaN/Infinity로 무너진다 — 호출부(buildLaneDrafts/buildObjectiveDrafts/buildSummaryDraft)는
+ * 구조적으로 n>0을 보장한다는 전제(주석 참고)이지만, twoProportionPValue와 동일한 결함 패턴을
+ * 막기 위해 이 함수도 방어적으로 n=0을 검정 불가(p=1)로 고정한다. */
 export function meanDiffPValue(
   mean1: number,
   sd1: number,
@@ -99,6 +103,7 @@ export function meanDiffPValue(
   sd2: number,
   n2: number
 ): number {
+  if (n1 === 0 || n2 === 0) return 1;
   const se = Math.sqrt((sd1 * sd1) / n1 + (sd2 * sd2) / n2);
   if (se === 0) return mean1 === mean2 ? 1 : 0;
   const z = (mean2 - mean1) / se;

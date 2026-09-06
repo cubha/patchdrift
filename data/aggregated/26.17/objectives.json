@@ -1,42 +1,42 @@
 {
   "meta": {
     "patch": "26.17",
-    "generatedAt": "2026-09-05T10:04:40.469Z",
-    "nMatches": 6283,
-    "nParticipants": 62830,
-    "nTimelines": 0,
+    "generatedAt": "2026-09-06T02:13:41.643Z",
+    "nMatches": 10000,
+    "nParticipants": 100000,
+    "nTimelines": 1500,
     "source": "riot-match-v5"
   },
   "data": {
     "patch": "26.17",
-    "n": 0,
-    "firstDragonSecAvg": null,
-    "firstHeraldSecAvg": null,
-    "firstBaronSecAvg": null,
-    "firstTowerSecAvg": null,
+    "n": 1500,
+    "firstDragonSecAvg": 527.526031102096,
+    "firstHeraldSecAvg": 992.0278440731902,
+    "firstBaronSecAvg": 1363.6291666666666,
+    "firstTowerSecAvg": 790.3069641649763,
     "dragon": {
-      "n": 0,
-      "mean": null,
-      "sd": 0,
-      "occurrenceRate": 0
+      "n": 1479,
+      "mean": 527.526031102096,
+      "sd": 145.1363894683353,
+      "occurrenceRate": 0.986
     },
     "herald": {
-      "n": 0,
-      "mean": null,
-      "sd": 0,
-      "occurrenceRate": 0
+      "n": 1257,
+      "mean": 992.0278440731902,
+      "sd": 67.24498907205286,
+      "occurrenceRate": 0.838
     },
     "baron": {
-      "n": 0,
-      "mean": null,
-      "sd": 0,
-      "occurrenceRate": 0
+      "n": 960,
+      "mean": 1363.6291666666666,
+      "sd": 132.82346545442002,
+      "occurrenceRate": 0.64
     },
     "tower": {
-      "n": 0,
-      "mean": null,
-      "sd": 0,
-      "occurrenceRate": 0
+      "n": 1479,
+      "mean": 790.3069641649763,
+      "sd": 100.43170899688967,
+      "occurrenceRate": 0.986
     }
   }
 }

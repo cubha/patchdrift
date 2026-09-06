@@ -1,11 +1,62 @@
 {
   "meta": {
     "patch": "26.17",
-    "generatedAt": "2026-09-05T10:04:40.469Z",
-    "nMatches": 6283,
-    "nParticipants": 62830,
-    "nTimelines": 0,
+    "generatedAt": "2026-09-06T02:13:41.643Z",
+    "nMatches": 10000,
+    "nParticipants": 100000,
+    "nTimelines": 1500,
     "source": "riot-match-v5"
   },
-  "rows": []
+  "rows": [
+    {
+      "patch": "26.17",
+      "position": "TOP",
+      "n": 2966,
+      "goldAt10Avg": 3613.9770734996628,
+      "goldAt10Sd": 565.0502218993151,
+      "goldAt14Avg": 5236.326468602296,
+      "goldAt14Sd": 928.9715592094012,
+      "n14": 2962
+    },
+    {
+      "patch": "26.17",
+      "position": "JUNGLE",
+      "n": 2966,
+      "goldAt10Avg": 4193.694875252866,
+      "goldAt10Sd": 627.3285738610163,
+      "goldAt14Avg": 6075.983794733288,
+      "goldAt14Sd": 924.4343110326646,
+      "n14": 2962
+    },
+    {
+      "patch": "26.17",
+      "position": "MIDDLE",
+      "n": 2966,
+      "goldAt10Avg": 3849.395144976399,
+      "goldAt10Sd": 562.4717448073342,
+      "goldAt14Avg": 5564.860567184335,
+      "goldAt14Sd": 885.5366010150767,
+      "n14": 2962
+    },
+    {
+      "patch": "26.17",
+      "position": "BOTTOM",
+      "n": 2966,
+      "goldAt10Avg": 4002.326365475388,
+      "goldAt10Sd": 675.8397696886614,
+      "goldAt14Avg": 6210.95611073599,
+      "goldAt14Sd": 1112.671510072061,
+      "n14": 2962
+    },
+    {
+      "patch": "26.17",
+      "position": "UTILITY",
+      "n": 2966,
+      "goldAt10Avg": 2953.541807147674,
+      "goldAt10Sd": 455.767930916503,
+      "goldAt14Avg": 4215.801147873059,
+      "goldAt14Sd": 616.1343829096681,
+      "n14": 2962
+    }
+  ]
 }

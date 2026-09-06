@@ -56,3 +56,24 @@ describe("parseCliArgs", () => {
     expect(values.target).toBe(0);
   });
 });
+
+describe("parseCliArgs — type: 'patch' (패치 ID 형식 강제, security-auditor Warning 대응)", () => {
+  const patchSpec = [{ name: "patch", type: "patch" as const, required: true }];
+
+  it("정상 형식(26.17)은 그대로 통과한다", () => {
+    const values = parseCliArgs("run-x", ["--patch", "26.17"], patchSpec);
+    expect(values).toEqual({ patch: "26.17" });
+  });
+
+  it("경로 조작 문자열(../etc)은 거부한다", () => {
+    expect(() => parseCliArgs("run-x", ["--patch", "../etc"], patchSpec)).toThrow(
+      /run-x: --patch must look like 26.17/
+    );
+  });
+
+  it("마이너 버전이 없는 형식(26)은 거부한다", () => {
+    expect(() => parseCliArgs("run-x", ["--patch", "26"], patchSpec)).toThrow(
+      /run-x: --patch must look like 26.17/
+    );
+  });
+});

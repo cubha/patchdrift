@@ -183,26 +183,34 @@ jobs:
 
       - name: Collect matches (F1)
         if: steps.determine.outputs.should_run == 'true'
+        env:
+          PATCH: ${{ steps.determine.outputs.patch }}
+          TARGET: ${{ github.event.inputs.target || '10000' }}
         run: |
           npx tsx scripts/run-collect.ts \
-            --patch "${{ steps.determine.outputs.patch }}" \
-            --target "${{ github.event.inputs.target || '10000' }}"
+            --patch "$PATCH" \
+            --target "$TARGET"
 
       - name: Collect timeline sample (F8)
         if: steps.determine.outputs.should_run == 'true'
+        env:
+          PATCH: ${{ steps.determine.outputs.patch }}
+          TIMELINE_SAMPLE: ${{ github.event.inputs.timeline_sample || '1500' }}
         run: |
           npx tsx scripts/run-timeline.ts \
-            --patch "${{ steps.determine.outputs.patch }}" \
-            --sample "${{ github.event.inputs.timeline_sample || '1500' }}"
+            --patch "$PATCH" \
+            --sample "$TIMELINE_SAMPLE"
 
       - name: Aggregate (F2/F8)
         if: steps.determine.outputs.should_run == 'true'
+        env:
+          PATCH_TO: ${{ steps.determine.outputs.to }}
         run: |
           # from 패치는 이 워크플로우가 자동화되기 전(로컬/도그푸딩) 이미 집계·커밋된 상태를
           # 전제한다(SCOPE §3 "로컬(초기·도그푸딩) → GH Actions cron(9/19~)") — data/raw가 로컬
           # 전용(gitignore)이라 여기서 from을 재집계하려 해도 원본이 없다. 오늘 새로 수집한
           # to 패치만 집계한다.
-          npx tsx scripts/run-aggregate.ts --patch "${{ steps.determine.outputs.to }}"
+          npx tsx scripts/run-aggregate.ts --patch "$PATCH_TO"
 
       - name: Update Data Dragon assets
         if: steps.determine.outputs.should_run == 'true'
@@ -210,11 +218,15 @@ jobs:
 
       - name: Match + verdict (F3/F4, LLM 2단 포함)
         if: steps.determine.outputs.should_run == 'true'
+        env:
+          PATCH_FROM: ${{ steps.determine.outputs.from }}
+          PATCH_TO: ${{ steps.determine.outputs.to }}
+          LLM_MAX: ${{ github.event.inputs.llm_max || '50' }}
         run: |
           npx tsx scripts/run-match.ts \
-            --from "${{ steps.determine.outputs.from }}" \
-            --to "${{ steps.determine.outputs.to }}" \
-            --llm-max "${{ github.event.inputs.llm_max || '50' }}"
+            --from "$PATCH_FROM" \
+            --to "$PATCH_TO" \
+            --llm-max "$LLM_MAX"
 
       - name: Discord briefing (F6, 웹훅 시크릿이 있을 때만)
         if: steps.determine.outputs.should_run == 'true' && env.DISCORD_WEBHOOK_URL != ''
@@ -228,6 +240,8 @@ jobs:
         # "필요 secrets·variables" 표에 "배포 후 필수"로 명시.
         env:
           SITE_URL: ${{ vars.PATCHDRIFT_SITE_URL }}
+          PATCH_FROM: ${{ steps.determine.outputs.from }}
+          PATCH_TO: ${{ steps.determine.outputs.to }}
         run: |
           set -e
           SITE_ARGS=()
@@ -237,14 +251,17 @@ jobs:
             echo "[collect.yml] PATCHDRIFT_SITE_URL 미설정 — run-notify.ts DEFAULT_SITE_URL(자리표시) 사용"
           fi
           npx tsx scripts/run-notify.ts \
-            --from "${{ steps.determine.outputs.from }}" \
-            --to "${{ steps.determine.outputs.to }}" \
+            --from "$PATCH_FROM" \
+            --to "$PATCH_TO" \
             --top 5 \
             "${SITE_ARGS[@]}"
         continue-on-error: true
 
       - name: Commit + push generated data
         if: steps.determine.outputs.should_run == 'true'
+        env:
+          PATCH_FROM: ${{ steps.determine.outputs.from }}
+          PATCH_TO: ${{ steps.determine.outputs.to }}
         run: |
           git config user.name "patchdrift-bot"
           git config user.email "patchdrift-bot@users.noreply.github.com"
@@ -252,7 +269,7 @@ jobs:
           if git diff --cached --quiet; then
             echo "변경분 없음 — 커밋 생략"
           else
-            git commit -m "chore(data): auto-collect ${{ steps.determine.outputs.from }} -> ${{ steps.determine.outputs.to }}
+            git commit -m "chore(data): auto-collect ${PATCH_FROM} -> ${PATCH_TO}
 
             GitHub Actions collect.yml(run_id=${{ github.run_id }})가 생성."
             # [skip ci]를 넣지 않는다 — Vercel git 연동이 이 커밋을 감지해 재빌드해야 한다(PLAN ④).

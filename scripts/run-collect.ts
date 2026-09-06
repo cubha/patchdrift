@@ -36,7 +36,7 @@ function parseTiers(raw: string): LeagueTier[] {
 
 function parseArgs(argv: string[]): CliArgs {
   const raw = parseCliArgs("run-collect", argv, [
-    { name: "patch", type: "string", required: true },
+    { name: "patch", type: "patch", required: true },
     { name: "target", type: "number", default: 10000 },
     { name: "tiers", type: "string" },
     { name: "seedLimit", type: "number" },

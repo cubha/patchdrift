@@ -89,6 +89,12 @@ describe("twoProportionPValue", () => {
     expect(p).toBeGreaterThan(0);
     expect(p).toBeLessThan(0.05);
   });
+
+  it("실결함 회귀: n1=0(또는 n2=0)이면 0/0 NaN 대신 비유의(p=1)로 고정한다", () => {
+    expect(twoProportionPValue(0, 0, 5, 10)).toBe(1);
+    expect(twoProportionPValue(5, 10, 0, 0)).toBe(1);
+    expect(Number.isFinite(twoProportionPValue(0, 0, 5, 10))).toBe(true);
+  });
 });
 
 describe("benjaminiHochberg", () => {
@@ -108,7 +114,7 @@ describe("benjaminiHochberg", () => {
     // q는 p-value 순위를 그대로 따르는 단조 비감소 함수여야 한다(오름차순 정렬 후 확인)
     const sortedByP = [0.005, 0.01, 0.03, 0.04].map((p) => {
       const idx = [0.01, 0.04, 0.03, 0.005].indexOf(p);
-      return q[idx];
+      return q[idx]!; // 전부 유한 p라 null이 아님을 알고 있음(NaN 격리 케이스는 별도 테스트)
     });
     for (let i = 1; i < sortedByP.length; i++) {
       expect(sortedByP[i]).toBeGreaterThanOrEqual(sortedByP[i - 1] - 1e-9);
@@ -128,6 +134,30 @@ describe("benjaminiHochberg", () => {
       expect(qi).toBeLessThanOrEqual(1);
       expect(qi).toBeGreaterThanOrEqual(0);
     }
+  });
+
+  it("실결함 회귀: NaN p 1건이 섞여도 나머지 유한 p의 q는 NaN 없이 계산한 것과 완전히 동일하다", () => {
+    const withNaN = benjaminiHochberg([0.001, NaN, 0.5, 1e-7]);
+    const withoutNaN = benjaminiHochberg([0.001, 0.5, 1e-7]);
+    // NaN 위치(index 1)는 검정 미수행 → null(NaN 아님 — JSON 직렬화 시 null로 떨어져야 한다)
+    expect(withNaN.q[1]).toBeNull();
+    expect(withNaN.rejected[1]).toBe(false);
+    // 유한 p 3개(index 0,2,3)의 q는 NaN이 아예 없는 3원소 배열([0.001,0.5,1e-7])과 값이 같다
+    expect(withNaN.q[0]).toBeCloseTo(withoutNaN.q[0]!, 12);
+    expect(withNaN.q[2]).toBeCloseTo(withoutNaN.q[1]!, 12);
+    expect(withNaN.q[3]).toBeCloseTo(withoutNaN.q[2]!, 12);
+  });
+
+  it("실결함 회귀: ±Infinity p도 검정 집합에서 제외되고 이웃 유한 q를 오염시키지 않는다", () => {
+    const { q, rejected } = benjaminiHochberg([0.01, Infinity, -Infinity, 0.02]);
+    expect(q[1]).toBeNull();
+    expect(q[2]).toBeNull();
+    expect(rejected[1]).toBe(false);
+    expect(rejected[2]).toBe(false);
+    expect(q[0]).not.toBeNull();
+    expect(q[3]).not.toBeNull();
+    expect(Number.isFinite(q[0]!)).toBe(true);
+    expect(Number.isFinite(q[3]!)).toBe(true);
   });
 });
 

@@ -18,7 +18,7 @@ interface CliArgs {
 
 function parseArgs(argv: string[]): CliArgs {
   const raw = parseCliArgs("run-fetch-notes", argv, [
-    { name: "patch", type: "string", required: true },
+    { name: "patch", type: "patch", required: true },
     { name: "force", type: "boolean", default: false },
     { name: "locale", type: "string" },
   ]);

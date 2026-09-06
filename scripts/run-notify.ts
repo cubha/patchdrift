@@ -31,8 +31,8 @@ export interface RunNotifyArgs {
 
 export function parseArgs(argv: string[]): RunNotifyArgs {
   const raw = parseCliArgs("run-notify", argv, [
-    { name: "from", type: "string", required: true },
-    { name: "to", type: "string", required: true },
+    { name: "from", type: "patch", required: true },
+    { name: "to", type: "patch", required: true },
     { name: "top", type: "number", default: 5 },
     { name: "site", type: "string", default: DEFAULT_SITE_URL },
     { name: "dryRun", type: "boolean", default: false },

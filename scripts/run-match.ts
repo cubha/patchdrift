@@ -28,8 +28,8 @@ export interface RunMatchArgs {
 
 export function parseArgs(argv: string[]): RunMatchArgs {
   const raw = parseCliArgs("run-match", argv, [
-    { name: "from", type: "string", required: true },
-    { name: "to", type: "string", required: true },
+    { name: "from", type: "patch", required: true },
+    { name: "to", type: "patch", required: true },
     { name: "llmMax", type: "number", default: 50 },
     { name: "noLlm", type: "boolean", default: false },
     { name: "dryRun", type: "boolean", default: false },

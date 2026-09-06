@@ -21,7 +21,7 @@ export interface RunAggregateArgs {
 
 export function parseArgs(argv: string[]): RunAggregateArgs {
   const raw = parseCliArgs("run-aggregate", argv, [
-    { name: "patch", type: "string", required: true },
+    { name: "patch", type: "patch", required: true },
     { name: "dataRoot", type: "string" },
   ]);
 
