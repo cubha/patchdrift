@@ -94,6 +94,9 @@ export function listPatches(dataRoot: string = DATA_ROOT): PatchId[] {
   return patches.sort(comparePatchDesc);
 }
 
+/** 델타 산출 파일명만 매치한다 — "{from}_{to}.json"(PatchId = "{숫자}.{숫자}"). */
+const DELTAS_FILE_PATTERN = /^(\d+\.\d+)_(\d+\.\d+)\.json$/;
+
 /** data/aggregated/deltas/*.json 파일명("{from}_{to}.json")에서 패치 쌍 목록을 뽑는다
  * (내림차순 = 최신 쌍 우선). 디렉토리가 없으면 빈 배열(빈 데이터 빌드 보장). */
 export function listPatchPairs(dataRoot: string = DATA_ROOT): PatchPair[] {
@@ -103,10 +106,14 @@ export function listPatchPairs(dataRoot: string = DATA_ROOT): PatchPair[] {
   if (!fs.existsSync(dir)) return [];
   const pairs: PatchPair[] = [];
   for (const file of fs.readdirSync(dir)) {
-    if (!file.endsWith(".json")) continue;
-    const [from, to] = file.replace(/\.json$/, "").split("_");
-    if (!from || !to) continue;
-    pairs.push({ from, to });
+    // 확장자만 보고 통과시키면 안 된다 — 같은 디렉토리에 run-notify.ts가 전송 로그
+    // "{from}_{to}.notify.json"을 남기므로(gitignore 대상이지만 로컬·워크플로 실행 후에는 존재),
+    // to = "26.17.notify" 같은 가짜 쌍이 만들어지고 loadDeltas가 rows 없는 그 로그를 그대로
+    // 반환해 빌드가 `a.rows is not iterable`로 죽는다(실측 2026-09-09). PatchId 표기
+    // "{숫자}.{숫자}" 두 개만으로 이루어진 파일명만 델타로 인정한다.
+    const match = DELTAS_FILE_PATTERN.exec(file);
+    if (!match) continue;
+    pairs.push({ from: match[1], to: match[2] });
   }
   return pairs.sort((a, b) => comparePatchDesc(a.to, b.to) || comparePatchDesc(a.from, b.from));
 }

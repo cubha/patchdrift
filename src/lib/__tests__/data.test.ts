@@ -129,6 +129,27 @@ describe("data.ts (dataRoot 주입 테스트)", () => {
       ]);
       expect(getDefaultPair(tmpDir)).toEqual({ from: "26.16", to: "26.17" });
     });
+
+    it("run-notify.ts 전송 로그({from}_{to}.notify.json)를 패치 쌍으로 오인하지 않는다", () => {
+      // 실측 2026-09-09: 확장자만 검사하던 시절 to="26.17.notify" 가짜 쌍이 생겼고,
+      // loadDeltas가 rows 없는 전송 로그를 반환해 /item/[id] 정적 생성이
+      // `a.rows is not iterable`로 죽었다.
+      writeJson(path.join(tmpDir, "aggregated", "deltas", "26.16_26.17.json"), { meta: META, rows: [] });
+      writeJson(path.join(tmpDir, "aggregated", "deltas", "26.16_26.17.notify.json"), {
+        sentAt: "2026-09-09T12:00:00.000Z",
+        status: 204,
+      });
+
+      expect(listPatchPairs(tmpDir)).toEqual([{ from: "26.16", to: "26.17" }]);
+    });
+
+    it("델타 파일명 형식이 아닌 파일은 무시한다", () => {
+      writeJson(path.join(tmpDir, "aggregated", "deltas", "README.json"), {});
+      writeJson(path.join(tmpDir, "aggregated", "deltas", "26.16_.json"), {});
+      writeJson(path.join(tmpDir, "aggregated", "deltas", "_26.17.json"), {});
+
+      expect(listPatchPairs(tmpDir)).toEqual([]);
+    });
   });
 
   describe("로더 — {meta, rows|data} 래퍼를 그대로 반환한다", () => {

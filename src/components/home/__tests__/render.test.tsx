@@ -1,7 +1,7 @@
 // src/components/home/__tests__/render.test.tsx
 // 브리핑 홈 컴포넌트 빈 상태 렌더 검증(ST-11 완료 조건 "빈 상태 렌더"). 프로젝트 관례대로
 // jest-dom 매처 없이 render()의 container를 직접 querying한다(src/__tests__/components.test.tsx
-// 참고 — vitest.config.ts에 setupFiles가 없다).
+// 참고 — setupFiles는 RTL cleanup 등록에만 쓰고 매처는 붙이지 않는다, vitest.setup.ts).
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import HeroSummary from "../HeroSummary";
