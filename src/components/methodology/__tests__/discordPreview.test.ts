@@ -48,8 +48,8 @@ describe("buildDiscordPreview", () => {
     expect(preview.fields).toHaveLength(2);
     expect(preview.fields[0].label).toContain("B");
     expect(preview.fields[1].label).toContain("D");
-    expect(preview.title).toBe("patchdrift · 26.16 → 26.17");
-    expect(preview.footer).toBe("patchdrift · 26.16→26.17 · n=10240/10118");
+    expect(preview.title).toBe("patchgap · 26.16 → 26.17");
+    expect(preview.footer).toBe("patchgap · 26.16→26.17 · n=10240/10118");
   });
 
   it("kind별로 값 포맷이 다르다(pp/sec/gold)", () => {

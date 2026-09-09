@@ -1,7 +1,7 @@
-# patchdrift 범위·스택 확정서
+# patchgap 범위·스택 확정서
 
 > 생성일: 2026-09-05
-> 기반 리서치: docs/research/RESEARCH-patchdrift-2026-09-05.md
+> 기반 리서치: docs/research/RESEARCH-patchgap-2026-09-05.md
 > 상태: 확정 (스택 사용자 승인 완료 2026-09-05 — 타임라인 표본 Must 승격, LLM=Claude Sonnet 5)
 
 ---

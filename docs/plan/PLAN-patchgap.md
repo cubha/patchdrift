@@ -1,7 +1,7 @@
-# PLAN — patchdrift 구현 계획
+# PLAN — patchgap 구현 계획
 
 > 생성일: 2026-09-05 · 소비자: /mvp Phase 3 TODO 루프(sh-dev-loop --auto, 구현=sonnet 서브에이전트) · acceptance-critic 기준선
-> 입력: docs/scope/SCOPE-patchdrift-2026-09-05.md · docs/research/RESEARCH-patchdrift-2026-09-05.md · docs/design/UX-BRIEF.md · docs/design/DESIGN-TOKENS.md · docs/design/prototype/01~04.html
+> 입력: docs/scope/SCOPE-patchgap-2026-09-05.md · docs/research/RESEARCH-patchgap-2026-09-05.md · docs/design/UX-BRIEF.md · docs/design/DESIGN-TOKENS.md · docs/design/prototype/01~04.html
 > TDD 포스처: null(`--auto` 단독 → 전부 test-after). `[TDD]` 태그 없음
 
 ## ① 사용자 요구사항 원문 (SCOPE Must/Should — 요약 금지)

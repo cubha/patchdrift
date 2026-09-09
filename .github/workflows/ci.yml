@@ -10,7 +10,7 @@ on:
   pull_request:
 
 concurrency:
-  group: patchdrift-ci-${{ github.ref }}
+  group: patchgap-ci-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:

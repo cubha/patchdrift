@@ -39,7 +39,7 @@ function deltasFile(rows: DeltaRecord[], counts: Partial<Record<MatchStatus, num
   };
 }
 
-const SITE = "https://patchdrift.vercel.app";
+const SITE = "https://patchgap.vercel.app";
 
 describe("formatDeltaLine", () => {
   it("비율 지표는 %/%%p로 포맷한다", () => {
@@ -198,7 +198,7 @@ describe("sendWebhook", () => {
 
   it("204 즉시 성공", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response(null, { status: 204 }));
-    const result = await sendWebhook(URL, { username: "patchdrift", embeds: [] }, { fetchImpl });
+    const result = await sendWebhook(URL, { username: "patchgap", embeds: [] }, { fetchImpl });
     expect(result).toEqual({ status: 204, retries: 0 });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
@@ -212,7 +212,7 @@ describe("sendWebhook", () => {
       )
       .mockResolvedValueOnce(new Response(null, { status: 204 }));
 
-    const result = await sendWebhook(URL, { username: "patchdrift", embeds: [] }, { fetchImpl, sleepImpl });
+    const result = await sendWebhook(URL, { username: "patchgap", embeds: [] }, { fetchImpl, sleepImpl });
     expect(result).toEqual({ status: 204, retries: 1 });
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(sleepImpl).toHaveBeenCalledWith(250);
@@ -223,7 +223,7 @@ describe("sendWebhook", () => {
     const fetchImpl = vi.fn().mockResolvedValue(new Response("server error", { status: 500 }));
 
     await expect(
-      sendWebhook(URL, { username: "patchdrift", embeds: [] }, { fetchImpl, sleepImpl })
+      sendWebhook(URL, { username: "patchgap", embeds: [] }, { fetchImpl, sleepImpl })
     ).rejects.toThrow(/5xx/);
     expect(fetchImpl).toHaveBeenCalledTimes(3);
   });
@@ -232,12 +232,12 @@ describe("sendWebhook", () => {
     const fetchImpl = vi.fn().mockImplementation(async () => new Response("bad request", { status: 400 }));
 
     await expect(
-      sendWebhook(URL, { username: "patchdrift", embeds: [] }, { fetchImpl })
+      sendWebhook(URL, { username: "patchgap", embeds: [] }, { fetchImpl })
     ).rejects.toThrow(/status=400/);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
 
     try {
-      await sendWebhook(URL, { username: "patchdrift", embeds: [] }, { fetchImpl });
+      await sendWebhook(URL, { username: "patchgap", embeds: [] }, { fetchImpl });
       expect.unreachable("sendWebhook은 400에서 반드시 throw해야 한다");
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -253,7 +253,7 @@ describe("sendWebhook", () => {
       .mockResolvedValueOnce(new Response("not json", { status: 429, headers: { "Retry-After": "2" } }))
       .mockResolvedValueOnce(new Response(null, { status: 200 }));
 
-    const result = await sendWebhook(URL, { username: "patchdrift", embeds: [] }, { fetchImpl, sleepImpl });
+    const result = await sendWebhook(URL, { username: "patchgap", embeds: [] }, { fetchImpl, sleepImpl });
     expect(result.status).toBe(200);
     expect(sleepImpl).toHaveBeenCalledWith(2000);
   });

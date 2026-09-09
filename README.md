@@ -1,6 +1,6 @@
-# patchdrift
+# patchgap
 
-**패치노트는 12줄인데 통계는 37개가 바뀐다.** patchdrift는 LoL 공식 패치노트가 *말한 것*과
+**패치노트는 12줄인데 통계는 37개가 바뀐다.** patchgap는 LoL 공식 패치노트가 *말한 것*과
 매치 통계가 *실제로 말하는 것* 사이의 괴리 — 미공지 변화·간접 메타 이동 — 를 통계 게이트를
 통과한 원천 매치 링크와 함께 24~72h 안에 보여주는 정적 브리핑 사이트다.
 
@@ -8,8 +8,8 @@
 - **1차 완성 기준**: ① 패치노트 항목 ↔ 관측 델타 자동 대조표 ② 통계 게이트를 통과한 미공지 변화
   ≥1건(원천 매치 링크 첨부) ③ 브리핑 화면이 Vercel에 정적 배포되어 외부 API 호출 0으로 상시 작동
   ④ 동일 브리핑을 디스코드 웹훅으로 전송
-- 근거 문서: `docs/scope/SCOPE-patchdrift-2026-09-05.md` · `docs/research/RESEARCH-patchdrift-2026-09-05.md`
-  · `docs/plan/PLAN-patchdrift.md`
+- 근거 문서: `docs/scope/SCOPE-patchgap-2026-09-05.md` · `docs/research/RESEARCH-patchgap-2026-09-05.md`
+  · `docs/plan/PLAN-patchgap.md`
 
 ## 아키텍처
 
@@ -112,7 +112,7 @@ CLI 인자 전체 목록은 각 `scripts/run-*.ts` 상단 주석 참고. `--dry-
 | Secret | `RIOT_API_KEY` | **필수** | Riot Developer Portal Personal Key |
 | Secret | `ANTHROPIC_API_KEY` | 선택 | 없으면 LLM 2단 매칭이 캐시 폴백/스킵으로 떨어짐 |
 | Secret | `DISCORD_WEBHOOK_URL` | 선택 | 없으면 Discord briefing 스텝 자체를 건너뜀 |
-| Variable | `PATCHDRIFT_SITE_URL` | **배포 후 필수** | Vercel 배포 URL(현재 확정값 `https://patchdrift-three.vercel.app` — `patchdrift.vercel.app`은 타인 소유라 Vercel이 `-three` 접미사를 배정했다). 미등록 상태로는 `run-notify.ts`의 자리표시 기본값이 그대로 브리핑 embed 링크에 쓰여 실제 도메인과 어긋날 수 있다 — 배포 전에는 비워둬도 워크플로우가 깨지지 않지만(자체 기본값으로 폴백), **첫 Vercel 배포 직후 반드시 등록**한다 |
+| Variable | `PATCHGAP_SITE_URL` | **배포 후 필수** | Vercel 배포 URL(현재 확정값 `https://patchgap.vercel.app`). 미등록 상태로는 `run-notify.ts`의 자리표시 기본값이 그대로 브리핑 embed 링크에 쓰여 실제 도메인과 어긋날 수 있다 — 배포 전에는 비워둬도 워크플로우가 깨지지 않지만(자체 기본값으로 폴백), **첫 Vercel 배포 직후 반드시 등록**한다 |
 
 ### GitHub Actions 수동 트리거
 
@@ -200,7 +200,7 @@ CLI 인자 전체 목록은 각 `scripts/run-*.ts` 상단 주석 참고. `--dry-
 동작하며, 고정 레이트 리밋(20req/1s, 100req/120s) 안에서만 호출한다. Riot Games의 지식재산
 (챔피언·아이템 명칭·이미지, Data Dragon 정적 자산 등)을 표시 목적으로만 사용하며, **재판매·유료화
 기능은 포함하지 않는다**. 아레나·무작위 총력전 모드의 승률 통계는 생성하지 않는다(Riot API 이용
-약관 준수, SCOPE §2 Won't). patchdrift는 Riot Games와 제휴하거나 Riot Games의 보증을 받지
+약관 준수, SCOPE §2 Won't). patchgap는 Riot Games와 제휴하거나 Riot Games의 보증을 받지
 않았으며, Riot Games는 League of Legends 및 Riot Games가 소유한 모든 관련 자산의 저작권자다.
 
 ## 라이선스·저작권

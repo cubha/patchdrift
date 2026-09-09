@@ -108,7 +108,7 @@ export default function MethodologyPage() {
               <SectionCard title="고지">
                 <div className="flex flex-col gap-3 p-5">
                   <p className="text-xs leading-relaxed text-muted">
-                    patchdrift isn&apos;t endorsed by Riot Games and doesn&apos;t reflect the views
+                    patchgap isn&apos;t endorsed by Riot Games and doesn&apos;t reflect the views
                     or opinions of Riot Games or anyone officially involved in producing or
                     managing Riot Games properties. Riot Games, and all associated properties are
                     trademarks or registered trademarks of Riot Games, Inc.

@@ -1,5 +1,5 @@
 // src/components/Header.tsx
-// 헤더 — 로고 점 + "patchdrift" + 내비 3개(브리핑/대조표/방법론) + 우측 스냅샷 캡션.
+// 헤더 — 로고 점 + "patchgap" + 내비 3개(브리핑/대조표/방법론) + 우측 스냅샷 캡션.
 // 프로토타입 `.site-header`/`.brand`/`.site-nav`/`.snapshot-caption` 1:1
 // (docs/design/prototype/01-briefing-home.html). 현재 경로 강조에 usePathname이 필요해
 // 클라이언트 컴포넌트로 둔다 — snapshotCaption은 서버(layout.tsx)가 data.ts로 미리 계산해
@@ -34,7 +34,7 @@ export default function Header({ snapshotCaption = null }: HeaderProps) {
       <Container className="flex items-center gap-6 py-4">
         <Link href="/" className="flex items-center gap-2">
           <span className="h-2 w-2 rounded-pill bg-accent" aria-hidden="true" />
-          <span className="font-display text-lg font-bold tracking-tight text-fg">patchdrift</span>
+          <span className="font-display text-lg font-bold tracking-tight text-fg">patchgap</span>
         </Link>
         <nav className="flex gap-5" aria-label="주요 내비게이션">
           {NAV_ITEMS.map((item) => {

@@ -1,4 +1,4 @@
-# Claude Code 운영 규칙: patchdrift
+# Claude Code 운영 규칙: patchgap
 
 > 전역 공통 규칙은 `~/.claude/CLAUDE.md`를 따른다.
 > 이 파일은 프로젝트 고유 내용만 기술한다.
@@ -29,7 +29,7 @@
 - 배포·모니터링: Vercel(정적) + UptimeRobot 5분
 - 테스트·품질: vitest + eslint + tsc + `verify.sh`
 
-> 근거: `docs/scope/SCOPE-patchdrift-2026-09-05.md` §3. 대안 채택 금지 — 바꾸려면 SCOPE 문서를 먼저 갱신한다.
+> 근거: `docs/scope/SCOPE-patchgap-2026-09-05.md` §3. 대안 채택 금지 — 바꾸려면 SCOPE 문서를 먼저 갱신한다.
 
 ## 📁 프로젝트 핵심 구조
 
@@ -80,8 +80,8 @@ public/dd/          Data Dragon 정적 자산(챔피언/아이템 아이콘) —
 
 ## 📚 참조 (구현 Ground Truth)
 
-- `docs/scope/SCOPE-patchdrift-2026-09-05.md` — 범위·스택·일정 확정
-- `docs/research/RESEARCH-patchdrift-2026-09-05.md` — 기반 리서치
+- `docs/scope/SCOPE-patchgap-2026-09-05.md` — 범위·스택·일정 확정
+- `docs/research/RESEARCH-patchgap-2026-09-05.md` — 기반 리서치
 - `docs/design/UX-BRIEF.md` — 화면 맵·스토리보드·구현 준수 원칙
 - `docs/design/DESIGN-TOKENS.md` / `docs/design/seed/catalog-tokens.css` — 토큰 값
 - `docs/design/prototype/*.html` — 화면 4장 프로토타입(픽셀 단위 참조)

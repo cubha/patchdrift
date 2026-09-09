@@ -45,7 +45,7 @@ function note(overrides: Partial<PatchNoteItem>): PatchNoteItem {
 function useTmpDataRoot(): { dir: () => string } {
   let tmpDir = "";
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "patchdrift-run-notify-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "patchgap-run-notify-"));
   });
   afterEach(() => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -239,7 +239,7 @@ describe("run-notify: runNotify (전송 경로 포함 — 임시 dataRoot로 격
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "patchdrift-run-notify-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "patchgap-run-notify-"));
   });
 
   afterEach(() => {

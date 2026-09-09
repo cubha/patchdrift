@@ -19,7 +19,7 @@ let dataRoot: string;
 let paths: CheckpointPaths;
 
 beforeEach(() => {
-  dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "patchdrift-checkpoint-"));
+  dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "patchgap-checkpoint-"));
   paths = { patch: "26.17", dataRoot };
 });
 

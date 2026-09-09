@@ -26,7 +26,7 @@ describe("run-aggregate: loadJsonl", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "patchdrift-run-aggregate-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "patchgap-run-aggregate-"));
   });
 
   afterEach(() => {

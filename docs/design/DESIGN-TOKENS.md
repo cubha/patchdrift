@@ -1,4 +1,4 @@
-# Design Tokens — patchdrift
+# Design Tokens — patchgap
 
 > 생성일: 2026-09-05
 > 출처: docs/design/prototype/*.html (4장) ← docs/design/seed/catalog-tokens.css
@@ -70,7 +70,7 @@
 <!-- /design-lint:tokens -->
 
 ## Color
-| 토큰 | 값 | 용도(patchdrift 문법) | 사용 |
+| 토큰 | 값 | 용도(patchgap 문법) | 사용 |
 |---|---|---|---|
 | `--bg` | #070b12 | 페이지 배경 | ✓ |
 | `--surface` | #101826 | 카드·패널·테이블 표면 | ✓ |

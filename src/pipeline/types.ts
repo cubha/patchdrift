@@ -1,7 +1,7 @@
 // src/pipeline/types.ts
 // 파이프라인 핵심 도메인 타입. 구현은 각 모듈(collect/aggregate/match)에서 채운다 — 여기는
 // 계약(contract)만 정의한다. SCOPE §2 F1~F4 참고. ST-01 확정본 — 다른 배치가 그대로 소비한다.
-// 변경 시 반드시 docs/plan/PLAN-patchdrift.md ⑥을 함께 갱신한다.
+// 변경 시 반드시 docs/plan/PLAN-patchgap.md ⑥을 함께 갱신한다.
 
 /** 패치 번호. 정규형은 패치노트 표기(예: "26.17") — shared/patches.ts의 canonicalPatch()가 보장한다. */
 export type PatchId = string;

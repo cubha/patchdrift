@@ -12,7 +12,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // patchdrift: 데이터·문서 산출물은 린트 대상 아님
+    // patchgap: 데이터·문서 산출물은 린트 대상 아님
     "data/**",
     "docs/**",
   ]),

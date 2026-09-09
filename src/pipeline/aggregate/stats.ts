@@ -2,8 +2,8 @@
 // 통계 게이트 — Wilson CI, Newcombe 차이 CI, BH-FDR 다중비교 보정, beta-binomial 축소.
 // 외부 통계 라이브러리 의존 0 (SCOPE §3 "통계" 채택 근거: 함수 규모, 판정 로직 투명성).
 // 전부 순수 함수 — 부수효과 없음. 소비처(ST-06 집계기·ST-08 verdict)는 이 파일이 export하는
-// 시그니처만 본다. 근거: docs/research/RESEARCH-patchdrift-2026-09-05.md §3-2,
-// docs/plan/PLAN-patchdrift.md ①F2·②제약("n≥200 게이트 + Newcombe CI 비중첩 + BH-FDR q<0.10").
+// 시그니처만 본다. 근거: docs/research/RESEARCH-patchgap-2026-09-05.md §3-2,
+// docs/plan/PLAN-patchgap.md ①F2·②제약("n≥200 게이트 + Newcombe CI 비중첩 + BH-FDR q<0.10").
 
 import type { Interval } from "../types";
 

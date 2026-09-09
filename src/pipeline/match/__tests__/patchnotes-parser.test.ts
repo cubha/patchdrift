@@ -312,7 +312,7 @@ describe("fetchPatchNotesHtml", () => {
   let cacheDir: string;
 
   beforeEach(() => {
-    cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), "patchdrift-notes-cache-"));
+    cacheDir = fs.mkdtempSync(path.join(os.tmpdir(), "patchgap-notes-cache-"));
   });
 
   afterEach(() => {

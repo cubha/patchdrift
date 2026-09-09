@@ -17,12 +17,11 @@ import { isMainModule, parseCliArgs } from "./shared/cli";
  * `countEntityNotes`로 import함). */
 export const countEntityNotes = countRelevantNoteEntities;
 
-/** 확정된 프로덕션 도메인(2026-09-09 Vercel 배포). `patchdrift.vercel.app`은 **타인 소유의
- * 별개 프로젝트**라 Vercel이 우리 프로젝트에 `-three` 접미사를 붙여 배정했다(실측: 그 도메인은
- * "Shopify breaks something every 90 days" 사이트를 서빙한다) — 자리표시로도 쓰면 브리핑
- * 링크가 남의 사이트를 가리킨다. 도메인이 바뀌면 이 상수와 GH Actions Variable
- * `PATCHDRIFT_SITE_URL`을 함께 갱신한다. */
-const DEFAULT_SITE_URL = "https://patchdrift-three.vercel.app";
+/** 확정된 프로덕션 도메인(2026-09-09 Vercel 배포). 자리표시가 아니라 실제 배포처이므로
+ * `--site` 미지정 시에도 브리핑 embed 링크가 정상 동작한다. 도메인이 바뀌면 이 상수와
+ * GH Actions Variable `PATCHGAP_SITE_URL`을 **함께** 갱신한다 — 한쪽만 바꾸면 로컬 실행과
+ * 워크플로 실행이 서로 다른 도메인을 가리킨다. */
+const DEFAULT_SITE_URL = "https://patchgap.vercel.app";
 
 export interface RunNotifyArgs {
   from: PatchId;
@@ -192,7 +191,7 @@ export async function runNotify(args: RunNotifyArgs, deps: RunNotifyDeps = {}): 
     noteCount,
     matchCounts,
   });
-  const payload = { username: "patchdrift", embeds };
+  const payload = { username: "patchgap", embeds };
 
   console.log(
     `[run-notify] embeds=${embeds.length} fields=${embeds[0]?.fields.length ?? 0} (본문 ${countEmbedChars(embeds)}/6000자)`

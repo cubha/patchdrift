@@ -49,14 +49,14 @@ export function buildDiscordPreview(params: DiscordPreviewParams): DiscordPrevie
   const { from, to, rows, nBefore, nAfter, limit = 5 } = params;
   const unannounced = (rows ?? []).filter((r) => r.status === "unannounced");
 
-  const title = from && to ? `patchdrift · ${from} → ${to}` : "patchdrift · {from} → {to}";
+  const title = from && to ? `patchgap · ${from} → ${to}` : "patchgap · {from} → {to}";
   const footerPair = from && to ? `${from}→${to}` : "{from}→{to}";
   const footerN =
     nBefore !== null && nAfter !== null ? `n=${nBefore}/${nAfter}` : "n={before}/{after}";
-  const footer = `patchdrift · ${footerPair} · ${footerN}`;
+  const footer = `patchgap · ${footerPair} · ${footerN}`;
 
   if (unannounced.length === 0) {
-    return { title: "patchdrift · 26.16 → 26.17", fields: EXAMPLE_FIELDS, footer: "patchdrift · 26.16→26.17 · n=10,240/10,118", isExample: true };
+    return { title: "patchgap · 26.16 → 26.17", fields: EXAMPLE_FIELDS, footer: "patchgap · 26.16→26.17 · n=10,240/10,118", isExample: true };
   }
 
   const sorted = [...unannounced].sort((a, b) => (a.q ?? 1) - (b.q ?? 1));

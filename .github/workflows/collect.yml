@@ -19,9 +19,9 @@ name: collect
 # 필요 secrets(Settings → Secrets and variables → Actions → Secrets): RIOT_API_KEY(필수),
 # ANTHROPIC_API_KEY(선택 — 없으면 run-match.ts가 LLM 2단을 캐시 폴백/스킵), DISCORD_WEBHOOK_URL
 # (선택 — 없으면 Discord briefing 스텝 자체를 건너뜀).
-# 필요 variables(Settings → Secrets and variables → Actions → Variables): PATCHDRIFT_SITE_URL —
+# 필요 variables(Settings → Secrets and variables → Actions → Variables): PATCHGAP_SITE_URL —
 # **Vercel 배포 URL이 확정된 뒤에는 반드시 등록한다.** 미등록 상태로는 run-notify.ts가 자체
-# 자리표시 기본값(DEFAULT_SITE_URL="https://patchdrift.vercel.app")으로 브리핑 embed 링크를
+# 자리표시 기본값(DEFAULT_SITE_URL="https://patchgap.vercel.app")으로 브리핑 embed 링크를
 # 만들어 실제 배포 도메인과 어긋날 수 있다(R5 — 배포 전엔 optional, 배포 후엔 required).
 
 on:
@@ -67,7 +67,7 @@ on:
 # 수동 백업 실행을 걸면 앞선 실행이 끝날 때까지 대기시킨다(취소하지 않음 — 진행 중인 3시간대
 # 수집을 잃지 않기 위해 cancel-in-progress: false).
 concurrency:
-  group: patchdrift-collect
+  group: patchgap-collect
   cancel-in-progress: false
 
 permissions:
@@ -177,9 +177,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: data/raw
-          key: patchdrift-raw-${{ steps.determine.outputs.patch }}-${{ github.run_id }}
+          key: patchgap-raw-${{ steps.determine.outputs.patch }}-${{ github.run_id }}
           restore-keys: |
-            patchdrift-raw-${{ steps.determine.outputs.patch }}-
+            patchgap-raw-${{ steps.determine.outputs.patch }}-
 
       - name: Collect matches (F1)
         if: steps.determine.outputs.should_run == 'true'
@@ -232,14 +232,14 @@ jobs:
         if: steps.determine.outputs.should_run == 'true' && env.DISCORD_WEBHOOK_URL != ''
         # run-notify.ts CLI 인자(--from --to --top --site)는 이제 확정된 시그니처다(scripts/run-notify.ts
         # 실물 확인). `--site`는 **미지정 시 스크립트 자체 기본값**(DEFAULT_SITE_URL,
-        # https://patchdrift.vercel.app 자리표시)을 쓰고, 지정하려면 http(s):// 스킴에 non-empty
+        # https://patchgap.vercel.app 자리표시)을 쓰고, 지정하려면 http(s):// 스킴에 non-empty
         # 문자열이어야 한다(빈 문자열을 넘기면 parseArgs가 즉시 throw) — 그래서 SITE_URL이 비어
         # 있으면 `--site` 플래그 자체를 아예 넣지 않는다(빈 문자열을 강제로 넘겨 상대경로 링크가
         # 되거나 조기 실패하는 결함 방지, R5). 실제 배포 도메인이 정해지면 저장소 Variables에
-        # PATCHDRIFT_SITE_URL을 등록해야 브리핑 embed가 정확한 절대 URL을 가리킨다 — README
+        # PATCHGAP_SITE_URL을 등록해야 브리핑 embed가 정확한 절대 URL을 가리킨다 — README
         # "필요 secrets·variables" 표에 "배포 후 필수"로 명시.
         env:
-          SITE_URL: ${{ vars.PATCHDRIFT_SITE_URL }}
+          SITE_URL: ${{ vars.PATCHGAP_SITE_URL }}
           PATCH_FROM: ${{ steps.determine.outputs.from }}
           PATCH_TO: ${{ steps.determine.outputs.to }}
         run: |
@@ -248,7 +248,7 @@ jobs:
           if [[ -n "${SITE_URL}" ]]; then
             SITE_ARGS=(--site "${SITE_URL}")
           else
-            echo "[collect.yml] PATCHDRIFT_SITE_URL 미설정 — run-notify.ts DEFAULT_SITE_URL(자리표시) 사용"
+            echo "[collect.yml] PATCHGAP_SITE_URL 미설정 — run-notify.ts DEFAULT_SITE_URL(자리표시) 사용"
           fi
           npx tsx scripts/run-notify.ts \
             --from "$PATCH_FROM" \
@@ -263,8 +263,8 @@ jobs:
           PATCH_FROM: ${{ steps.determine.outputs.from }}
           PATCH_TO: ${{ steps.determine.outputs.to }}
         run: |
-          git config user.name "patchdrift-bot"
-          git config user.email "patchdrift-bot@users.noreply.github.com"
+          git config user.name "patchgap-bot"
+          git config user.email "patchgap-bot@users.noreply.github.com"
           git add data/aggregated public/dd data/ddragon
           if git diff --cached --quiet; then
             echo "변경분 없음 — 커밋 생략"

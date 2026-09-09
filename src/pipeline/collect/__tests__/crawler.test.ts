@@ -127,7 +127,7 @@ function readMatchesJsonl(dataRoot: string): MatchSlim[] {
 let dataRoot: string;
 
 beforeEach(() => {
-  dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "patchdrift-crawler-"));
+  dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "patchgap-crawler-"));
 });
 
 afterEach(() => {

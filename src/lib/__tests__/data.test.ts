@@ -71,7 +71,7 @@ describe("data.ts (dataRoot 주입 테스트)", () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "patchdrift-lib-data-"));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "patchgap-lib-data-"));
   });
 
   afterEach(() => {

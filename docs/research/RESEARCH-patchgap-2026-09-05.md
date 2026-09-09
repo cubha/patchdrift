@@ -1,7 +1,7 @@
-# 팀 리서치 보고서 — patchdrift
+# 팀 리서치 보고서 — patchgap
 
 > 생성일: 2026-09-05
-> 프로젝트: patchdrift — LoL 패치 선언·관측 괴리 감지 (원티드 AI 챔피언십 2026)
+> 프로젝트: patchgap — LoL 패치 선언·관측 괴리 감지 (원티드 AI 챔피언십 2026)
 > 리서치 깊이: 기본 (tech / architecture / market(게이트 검증 한정) / 제약사항=팀 리더)
 > 참여 에이전트: 3명 (sonnet) + 팀 리더 Context7·WebFetch 직접 실측
 
@@ -105,7 +105,7 @@
 
 ### 3-5. 디렉토리 구조 — 단일 패키지(모노레포 기각: 4.2일 공수 대비 오버헤드)
 ```
-patchdrift/
+patchgap/
 ├── data/raw/{patch}/…            # .gitignore
 ├── data/aggregated/{patch}/{champions,items,lanes,objectives}.json
 ├── data/aggregated/deltas/{from}_{to}.json   # 짝짓기·미공지 판정(근거 링크)

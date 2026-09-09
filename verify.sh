@@ -1,7 +1,7 @@
 #!/bin/bash
 # ================================================================
 # verify.sh — 코드 변경 자동 검증 파이프라인
-# patchdrift | Claude Code 워크플로우
+# patchgap | Claude Code 워크플로우
 #
 # 생태계: Node.js (TypeScript)
 # 구조: SINGLE (단일 패키지, npm)
@@ -283,7 +283,7 @@ if [ "$AI_MODE" = true ]; then
     warn "claude CLI 없음 — AI 분석 건너뜀"
   else
     DIFF_OUTPUT=$(git diff HEAD 2>/dev/null | head -400 || true)
-    CLAUDE_PROMPT="다음은 patchdrift 코드 변경사항입니다.
+    CLAUDE_PROMPT="다음은 patchgap 코드 변경사항입니다.
 
 ## 프로젝트 규칙 (CLAUDE.md 요약)
 런타임 외부 API 호출 0 · 사전 인덱싱(수집→집계→매칭→빌드) · 모든 판정문 원천 링크 ·

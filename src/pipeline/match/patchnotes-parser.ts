@@ -89,7 +89,7 @@ const ARROW = "⇒";
 // ─── URL 조립 ──────────────────────────────────────────────────────────────
 
 /**
- * 패치노트 정규 URL을 조립한다. 실측(RESEARCH-patchdrift-2026-09-05.md §1):
+ * 패치노트 정규 URL을 조립한다. 실측(RESEARCH-patchgap-2026-09-05.md §1):
  * `https://www.leagueoflegends.com/{locale}/news/game-updates/league-of-legends-patch-{XX-YY}-notes/`
  * 단축형("patch-26-17-notes"가 아니라 "league-of-legends-patch-26-17-notes")은 404였다.
  */

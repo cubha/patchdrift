@@ -52,7 +52,7 @@ export interface DiscordWebhookPayload {
 }
 
 export interface BuildBriefingOptions {
-  /** 브리핑 항목 링크의 기준 URL(끝에 슬래시 없이, 예: "https://patchdrift.vercel.app"). */
+  /** 브리핑 항목 링크의 기준 URL(끝에 슬래시 없이, 예: "https://patchgap.vercel.app"). */
   siteUrl: string;
   /** 미공지 상위 몇 건을 필드로 노출할지. 기본 5(PLAN F6 "상위 미공지 5건"). */
   topN?: number;
@@ -130,7 +130,7 @@ function buildFooterText(
 ): string {
   const nFrom = matchCounts?.from != null ? fmtInt(matchCounts.from) : "?";
   const nTo = matchCounts?.to != null ? fmtInt(matchCounts.to) : "?";
-  return `patchdrift · n=${nFrom}/${nTo} · ${fmtKst(generatedAtIso)}`;
+  return `patchgap · n=${nFrom}/${nTo} · ${fmtKst(generatedAtIso)}`;
 }
 
 /**
@@ -165,7 +165,7 @@ export function buildBriefingEmbeds(deltas: DeltasFile, options: BuildBriefingOp
     description += " · 게이트를 통과한 미공지 변화 없음";
   }
 
-  const title = `patchdrift · ${from} → ${to}`;
+  const title = `patchgap · ${from} → ${to}`;
   const footerText = buildFooterText(options.matchCounts, generatedAt);
 
   const candidateFields = [

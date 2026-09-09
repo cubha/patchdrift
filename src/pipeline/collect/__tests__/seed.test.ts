@@ -28,7 +28,7 @@ function makeFakeClient(byTier: Partial<Record<LeagueTier, LeagueEntrySlim[]>>) 
 let dataRoot: string;
 
 beforeEach(() => {
-  dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "patchdrift-seed-"));
+  dataRoot = fs.mkdtempSync(path.join(os.tmpdir(), "patchgap-seed-"));
 });
 
 afterEach(() => {
