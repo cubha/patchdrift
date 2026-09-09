@@ -112,7 +112,7 @@ CLI 인자 전체 목록은 각 `scripts/run-*.ts` 상단 주석 참고. `--dry-
 | Secret | `RIOT_API_KEY` | **필수** | Riot Developer Portal Personal Key |
 | Secret | `ANTHROPIC_API_KEY` | 선택 | 없으면 LLM 2단 매칭이 캐시 폴백/스킵으로 떨어짐 |
 | Secret | `DISCORD_WEBHOOK_URL` | 선택 | 없으면 Discord briefing 스텝 자체를 건너뜀 |
-| Variable | `PATCHDRIFT_SITE_URL` | **배포 후 필수** | Vercel 배포 URL(예: `https://patchdrift.vercel.app`). 미등록 상태로는 `run-notify.ts`의 자리표시 기본값이 그대로 브리핑 embed 링크에 쓰여 실제 도메인과 어긋날 수 있다 — 배포 전에는 비워둬도 워크플로우가 깨지지 않지만(자체 기본값으로 폴백), **첫 Vercel 배포 직후 반드시 등록**한다 |
+| Variable | `PATCHDRIFT_SITE_URL` | **배포 후 필수** | Vercel 배포 URL(현재 확정값 `https://patchdrift-three.vercel.app` — `patchdrift.vercel.app`은 타인 소유라 Vercel이 `-three` 접미사를 배정했다). 미등록 상태로는 `run-notify.ts`의 자리표시 기본값이 그대로 브리핑 embed 링크에 쓰여 실제 도메인과 어긋날 수 있다 — 배포 전에는 비워둬도 워크플로우가 깨지지 않지만(자체 기본값으로 폴백), **첫 Vercel 배포 직후 반드시 등록**한다 |
 
 ### GitHub Actions 수동 트리거
 
