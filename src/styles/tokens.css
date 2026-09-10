@@ -5,26 +5,33 @@
  * Source (Ground Truth): docs/design/seed/catalog-tokens.css
  * Provenance: open-design (nexu-io/open-design) / package `trading-terminal` / Apache-2.0
  * https://github.com/nexu-io/open-design/blob/main/design-systems/trading-terminal/tokens.css
- * 값·이름 임의 변경 금지 — 변경이 필요하면 seed 파일을 먼저 갱신하고 이 파일에 재복사한다.
+ * 비-색 토큰(타이포·spacing·radius·elev·motion·container) 값·이름 임의 변경 금지 —
+ * 변경이 필요하면 seed 파일을 먼저 갱신하고 이 파일에 재복사한다.
+ *
+ * 예외 — Color 절(아래 --bg ~ --game-glow)은 seed 소유가 아니라 patchgap 소유다.
+ * V4 협곡 나이트 팔레트(docs/design/DESIGN-TOKENS.md, 2026-09-10 확정, HANDOFF-redesign-2026-09-10.md §2)를
+ * 그대로 복사한 것 — 색을 바꾸려면 DESIGN-TOKENS.md를 먼저 갱신하고 이 파일에 재복사한다(seed 갱신 불필요).
  */
 
 :root {
-  --bg: #070b12;
-  --surface: #101826;
-  --surface-warm: #162238;
-  --fg: #f8fafc;
-  --fg-2: #cbd5e1;
-  --muted: #8492a6;
-  --meta: #38bdf8;
-  --border: #263246;
-  --border-soft: #1c2638;
-  --accent: #38bdf8;
-  --accent-on: #03111a;
+  --bg: #030d18;
+  --surface: #0a1626;
+  --surface-warm: #12213a;
+  --fg: #f0e6d2;
+  --fg-2: #c3b79f;
+  --muted: #8b8677;
+  --meta: #c8a355;
+  --border: #8c6b33;
+  --border-soft: #242c3a;
+  --accent: #c8a355;
+  --accent-on: #030d18;
   --accent-hover: color-mix(in oklab, var(--accent), black 8%);
   --accent-active: color-mix(in oklab, var(--accent), black 14%);
-  --success: #22c55e;
+  --success: #0ac8b9;
   --warn: #f59e0b;
-  --danger: #ef4444;
+  --danger: #cf4740;
+  --game-wash: #0a1626;
+  --game-glow: #c8a355;
   --font-display: Inter, system-ui, sans-serif;
   --font-body: Inter, system-ui, sans-serif;
   --font-mono: "Roboto Mono", "SF Mono", ui-monospace, Menlo, monospace;
@@ -57,7 +64,7 @@
   --elev-flat: none;
   --elev-ring: 0 0 0 1px var(--border);
   --elev-raised: 0 24px 80px rgba(0, 0, 0, 0.42);
-  --focus-ring: 0 0 0 4px rgba(56, 189, 248, 0.28);
+  --focus-ring: 0 0 0 4px rgba(200, 163, 85, 0.28);
   --motion-fast: 90ms;
   --motion-base: 160ms;
   --ease-standard: cubic-bezier(0.2, 0, 0, 1);
@@ -66,3 +73,11 @@
   --container-gutter-tablet: 24px;
   --container-gutter-phone: 16px;
 }
+
+/* [data-game] 오버라이드 계약 (2026-09-10 확정, 미출하) — 중립 8종
+ * (--bg --surface --surface-warm --border --border-soft --fg --fg-2 --muted) +
+ * 워시 2종(--game-wash --game-glow)만 덮어쓴다. 상태 4종(--accent --danger --warn --success)은
+ * 절대 재정의하지 않는다. :root 블록 뒤에 선언해 동일 특정도(0,1,0)를 소스 순서로 이긴다.
+ * PUBG 등 실제 [data-game="..."] 램프는 이번 릴리스에서 출하하지 않는다
+ * (HANDOFF-redesign-2026-09-10.md §3·§6 — V4 확정 이전 값이라 재도출 전엔 미연결 유지).
+ */

@@ -73,7 +73,7 @@ public/dd/          Data Dragon 정적 자산(챔피언/아이템 아이콘) —
 
 - Ground Truth: `docs/design/DESIGN-TOKENS.md` + `docs/design/prototype/*.html`
 - 토큰 실체: `src/styles/tokens.css`의 `:root`(카탈로그 verbatim 복사) + `src/app/globals.css`의 `@theme inline` 바인딩
-- 네임스페이스: `--bg --surface --surface-warm --fg --fg-2 --muted --border --border-soft --accent --accent-on --success --warn --danger --font-display --font-body --font-mono --radius-sm --radius-md --radius-lg --radius-pill`
+- 네임스페이스: `--bg --surface --surface-warm --fg --fg-2 --muted --border --border-soft --accent --accent-on --success --warn --danger --game-wash --game-glow --font-display --font-body --font-mono --radius-sm --radius-md --radius-lg --radius-pill`
 - 소비 형태: 웹 CSS 변수(`var(--*)`) + Tailwind v4 유틸리티(`bg-surface`, `text-muted`, `font-mono`, `rounded-md` 등) — 다른 소비 대상 없음
 - 예외 표기: 정당한 하드코딩(브랜드 로고색 등)은 같은 줄에 `design-lint-ignore` 주석
 - 게이트: `bash verify.sh`의 Spec 규칙(소스 하드코딩·arbitrary 우회 검사) + `/design-lint`(렌더 산출물, `docs/design/prototype/*.html` 대상)
