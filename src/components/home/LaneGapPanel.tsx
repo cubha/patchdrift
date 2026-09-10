@@ -1,0 +1,40 @@
+// src/components/home/LaneGapPanel.tsx
+// 라인별 미공지 분포 패널 — HANDOFF-redesign-2026-09-10.md §4-1 "라인별 미공지 분포 패널 —
+// 사이드". 순수 렌더(서버 컴포넌트) — 집계는 src/components/home/laneDistribution.ts(ST-C)가
+// 담당하고, 이 컴포넌트는 이미 계산된 LaneDistributionRow[]만 받는다.
+
+import LaneGlyph from "@/components/LaneGlyph";
+import SectionCard from "@/components/SectionCard";
+import { fmtInt } from "@/lib/format";
+import type { LaneDistributionRow } from "./laneDistribution";
+
+export interface LaneGapPanelProps {
+  rows: LaneDistributionRow[];
+}
+
+export default function LaneGapPanel({ rows }: LaneGapPanelProps) {
+  const total = rows.reduce((sum, row) => sum + row.count, 0);
+
+  return (
+    <SectionCard eyebrow="라인별 괴리" title="미공지 분포">
+      {total === 0 ? (
+        <p className="p-5 text-sm text-muted">이 패치 쌍에서는 라인별로 집계할 미공지 변화가 없습니다</p>
+      ) : (
+        <ul>
+          {rows.map((row) => (
+            <li
+              key={row.lane}
+              className="flex items-center justify-between gap-3 border-b border-border-soft px-5 py-3 last:border-b-0"
+            >
+              <span className="flex items-center gap-2 text-sm text-fg-2">
+                <LaneGlyph lane={row.lane} size={16} />
+                {row.label}
+              </span>
+              <span className="font-mono text-sm font-bold tabular-nums text-fg">{fmtInt(row.count)}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </SectionCard>
+  );
+}

@@ -12,7 +12,9 @@ import HeroSummary from "@/components/home/HeroSummary";
 import ReleaseNoteStream, { type ReleaseStreamEntry } from "@/components/home/ReleaseNoteStream";
 import SideMatchAverages from "@/components/home/SideMatchAverages";
 import DiscordPanel from "@/components/home/DiscordPanel";
+import LaneGapPanel from "@/components/home/LaneGapPanel";
 import { computeHeadline } from "@/components/home/logic";
+import { computeLaneDistribution } from "@/components/home/laneDistribution";
 import { buildReleaseStream } from "@/components/home/releaseStream";
 import { resolveStreamEntityIcon } from "@/components/home/releaseStreamEntity";
 import { lanesForEntityKey } from "@/lib/lane";
@@ -70,6 +72,9 @@ export default function Home() {
     for (const noteId of row.matchedNoteIds) noteStatus[noteId] = row.status;
   }
 
+  const unannouncedRows = (deltas?.rows ?? []).filter((row) => row.status === "unannounced");
+  const laneDistribution = computeLaneDistribution(unannouncedRows);
+
   return (
     <div className="flex flex-1 flex-col bg-bg">
       <FilterBar
@@ -98,6 +103,7 @@ export default function Home() {
                 objectivesTo={objectivesTo?.data ?? null}
                 objectivesFrom={objectivesFrom?.data ?? null}
               />
+              <LaneGapPanel rows={laneDistribution} />
               <DiscordPanel generatedAt={deltas?.meta.generatedAt ?? null} />
             </div>
           </div>

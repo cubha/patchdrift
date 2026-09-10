@@ -14,7 +14,8 @@ export interface CoverageBarProps {
 export default function CoverageBar({ stats }: CoverageBarProps) {
   return (
     <div className="border-t border-border-soft px-5 py-4 text-sm text-muted">
-      노트 <strong className="font-bold text-fg">{fmtInt(stats.noteItemCount)}</strong>항목 중 관측 짝{" "}
+      노트 <strong className="font-bold text-fg">{fmtInt(stats.noteEntityCount)}</strong>엔티티(
+      <strong className="font-bold text-fg">{fmtInt(stats.noteItemCount)}</strong>항목) 중 관측 짝{" "}
       <strong className="font-bold text-fg">{fmtInt(stats.matchedCount)}</strong> · 미공지{" "}
       <strong className="font-bold text-fg">{fmtInt(stats.unannouncedCount)}</strong> · 표본 부족{" "}
       <strong className="font-bold text-fg">{fmtInt(stats.lowSampleCount)}</strong>

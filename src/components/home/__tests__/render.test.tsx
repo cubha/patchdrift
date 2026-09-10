@@ -5,6 +5,8 @@
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import HeroSummary from "../HeroSummary";
+import HeroAmbient from "../HeroAmbient";
+import LaneGapPanel from "../LaneGapPanel";
 import ReleaseNoteStream from "../ReleaseNoteStream";
 import SideMatchAverages from "../SideMatchAverages";
 import DiscordPanel from "../DiscordPanel";
@@ -12,9 +14,9 @@ import DiscordPanel from "../DiscordPanel";
 describe("HeroSummary — 빈 상태(모든 수치 0)", () => {
   it("0을 그대로 렌더하고 크래시하지 않는다", () => {
     const { container } = render(
-      <HeroSummary stats={{ noteItemCount: 0, statCount: 0, unannouncedCount: 0 }} />
+      <HeroSummary stats={{ noteEntityCount: 0, noteItemCount: 0, statCount: 0, unannouncedCount: 0 }} />
     );
-    expect(container.textContent).toContain("0개 엔티티");
+    expect(container.textContent).toContain("0 엔티티 / 0 항목");
     expect(container.textContent).toContain("0개");
   });
 });
@@ -51,5 +53,39 @@ describe("DiscordPanel — generatedAt 없음", () => {
   it("generatedAt이 있으면 KST로 포맷한 캡션을 렌더한다", () => {
     const { container } = render(<DiscordPanel generatedAt="2026-09-05T05:00:00.000Z" />);
     expect(container.textContent).toContain("마지막 전송 2026-09-05 14:00 KST");
+  });
+});
+
+describe("HeroAmbient — 장식 배경", () => {
+  it("splashUrl 없이도 크래시 없이 그라디언트 워시만 렌더한다(무근거 아이콘/아트 금지)", () => {
+    const { container } = render(<HeroAmbient />);
+    expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
+    expect(container.querySelector("img")).toBeNull();
+  });
+
+  it("splashUrl이 있으면 img를 추가로 렌더한다", () => {
+    const { container } = render(<HeroAmbient splashUrl="/dd/splash/Chogath_0.jpg" />);
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("/dd/splash/Chogath_0.jpg");
+  });
+});
+
+describe("LaneGapPanel — 빈 상태", () => {
+  it("전부 0이면 빈 상태 문구를 렌더한다", () => {
+    const rows = (["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY", "all"] as const).map((lane) => ({
+      lane,
+      label: lane === "all" ? "전체" : lane,
+      count: 0,
+    }));
+    const { container } = render(<LaneGapPanel rows={rows} />);
+    expect(container.textContent).toContain("라인별로 집계할 미공지 변화가 없습니다");
+  });
+
+  it("count가 있으면 라인별 글리프+수치를 렌더한다", () => {
+    const { container } = render(
+      <LaneGapPanel rows={[{ lane: "TOP", label: "탑", count: 22 }, { lane: "all", label: "전체", count: 0 }]} />
+    );
+    expect(container.textContent).toContain("탑");
+    expect(container.textContent).toContain("22");
+    expect(container.querySelector("svg title")?.textContent).toBe("탑");
   });
 });

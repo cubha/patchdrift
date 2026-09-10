@@ -143,9 +143,17 @@ export function shortNoteId(matchedNoteId: string | null): string {
   return parts[parts.length - 1] ?? matchedNoteId;
 }
 
-/** 하단 커버리지 바 집계 — "노트 N항목 중 관측 짝 K · 미공지 U · 표본 부족 I". N은 홈 헤드라인과
- * 동일 정의(엔티티 단위 묶음, countRelevantNoteEntities)를 재사용해 두 화면 수치를 일치시킨다. */
+/** 하단 커버리지 바 집계 — "노트 N엔티티(M항목) 중 관측 짝 K · 미공지 U · 표본 부족 I". N은 홈
+ * 헤드라인과 동일 정의(엔티티 단위 묶음, countRelevantNoteEntities)를 재사용해 두 화면 수치를
+ * 일치시킨다.
+ *
+ * `noteEntityCount`/`noteItemCount` 리네임(HANDOFF-redesign-2026-09-10.md §4-1, 2026-09-10):
+ * 기존 `noteItemCount`가 실제 값은 엔티티 수인데 `CoverageBar.tsx`가 "노트 N**항목** 중"으로
+ * 렌더해 홈(`home/logic.ts` `HeadlineStats`)과 정확히 같은 클래스의 오라벨이었다 — HANDOFF
+ * 명시 범위는 홈뿐이었으나 사용자 승인으로 함께 고친다(같은 결함을 한쪽만 고치면 화면 간 수치
+ * 해석이 갈린다). */
 export interface CoverageStats {
+  noteEntityCount: number;
   noteItemCount: number;
   matchedCount: number;
   unannouncedCount: number;
@@ -162,7 +170,8 @@ export function computeCoverage(rows: DeltaRecord[], notes: NotesFile | null): C
     else if (row.status === "insufficient-sample") lowSampleCount++;
   }
   return {
-    noteItemCount: countRelevantNoteEntities(notes),
+    noteEntityCount: countRelevantNoteEntities(notes),
+    noteItemCount: notes?.meta.itemCount ?? 0,
     matchedCount,
     unannouncedCount,
     lowSampleCount,

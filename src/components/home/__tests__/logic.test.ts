@@ -123,6 +123,7 @@ describe("isSignificantDelta", () => {
 describe("computeHeadline", () => {
   it("deltas·notes 둘 다 null이면 전부 0(빈 상태 렌더 보장)", () => {
     expect(computeHeadline(null, null)).toEqual({
+      noteEntityCount: 0,
       noteItemCount: 0,
       statCount: 0,
       unannouncedCount: 0,
@@ -144,6 +145,7 @@ describe("computeHeadline", () => {
       delta({ id: "5", status: "no-change", q: 0.8, ci: [-0.02, 0.02] }),
     ]);
     expect(computeHeadline(rows, notes)).toEqual({
+      noteEntityCount: 2,
       noteItemCount: 2,
       statCount: 2,
       unannouncedCount: 1,

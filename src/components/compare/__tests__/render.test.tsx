@@ -40,9 +40,11 @@ describe("NoteNavigator — 빈 상태(notes=[])", () => {
 describe("CoverageBar — 전부 0", () => {
   it("0을 그대로 렌더한다", () => {
     const { container } = render(
-      <CoverageBar stats={{ noteItemCount: 0, matchedCount: 0, unannouncedCount: 0, lowSampleCount: 0 }} />
+      <CoverageBar
+        stats={{ noteEntityCount: 0, noteItemCount: 0, matchedCount: 0, unannouncedCount: 0, lowSampleCount: 0 }}
+      />
     );
-    expect(container.textContent).toContain("노트 0항목 중 관측 짝 0");
+    expect(container.textContent).toContain("노트 0엔티티(0항목) 중 관측 짝 0");
   });
 });
 
@@ -53,11 +55,11 @@ describe("CompareExplorer — 데이터 없음(쌍 0개) 전체 통합 빈 상�
         pair={null}
         notes={[]}
         rows={[]}
-        coverage={{ noteItemCount: 0, matchedCount: 0, unannouncedCount: 0, lowSampleCount: 0 }}
+        coverage={{ noteEntityCount: 0, noteItemCount: 0, matchedCount: 0, unannouncedCount: 0, lowSampleCount: 0 }}
       />
     );
     expect(container.querySelectorAll('[aria-pressed]')).toHaveLength(5);
     expect(container.textContent).toContain("표시할 델타가 없습니다");
-    expect(container.textContent).toContain("노트 0항목");
+    expect(container.textContent).toContain("노트 0엔티티(0항목)");
   });
 });

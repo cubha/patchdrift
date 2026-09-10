@@ -39,11 +39,20 @@ export function countRelevantNoteEntities(notes: NotesFile | null): number {
  */
 export { isSignificantDelta };
 
-/** 요약 카드 헤드라인 3수치(+스탯 타일 3종이 그대로 이 수치를 쓴다 — 코디네이터 정정,
- * 2026-09-05: 타일 "공지된 변화"는 별도 델타 집계가 아니라 `noteItemCount`(N)를 그대로
- * 재사용한다). */
+/** 요약 카드 헤드라인 수치(+스탯 타일이 그대로 이 수치를 쓴다 — 코디네이터 정정, 2026-09-05:
+ * 타일 "공지된 변화"는 별도 델타 집계가 아니라 `noteEntityCount`(N)를 그대로 재사용한다).
+ *
+ * `noteEntityCount`/`noteItemCount` 리네임(HANDOFF-redesign-2026-09-10.md §4-1, 2026-09-10):
+ * 기존 필드명 `noteItemCount`가 실제로는 "노트 **항목** 수"가 아니라 "노트 **엔티티** 수"를
+ * 담고 있어 오라벨이었다 — `src/components/methodology/pipelineSteps.ts`(ST-07)는 이미
+ * `noteEntityCount`/`noteItemCount`(=`NotesFile.meta.itemCount`)로 올바르게 분리해 썼으므로,
+ * 그 기존 컨벤션에 홈을 맞춘다. 소비처 3곳(`page.tsx`·`HeroSummary.tsx`·이 파일의 테스트)
+ * 전수 확인 후 리네임 — 외부 공개 API가 아니므로 `tsc --noEmit`가 누락을 전부 잡는다. */
 export interface HeadlineStats {
-  /** "패치노트는 N개 엔티티를 말했고" + 스탯 타일 "공지된 변화" — 위 countRelevantNoteEntities. */
+  /** "패치노트는 N개 엔티티를 말했고" + 스탯 타일 "공지된 변화" — countRelevantNoteEntities. */
+  noteEntityCount: number;
+  /** 원문 패치노트 "항목" 수(`NotesFile.meta.itemCount`) — HANDOFF §4-1 "35 엔티티 / 215 항목"
+   * 분리 표기에 쓰는 참고 병기 수치. */
   noteItemCount: number;
   /** "통계는 M개 변화를 말합니다" + 스탯 타일 "유의 변화" — `isSignificantDelta` 통과 건수. */
   statCount: number;
@@ -60,7 +69,8 @@ export function computeHeadline(
   notes: NotesFile | null,
   qAlpha: number = FDR_ALPHA
 ): HeadlineStats {
-  const noteItemCount = countRelevantNoteEntities(notes);
+  const noteEntityCount = countRelevantNoteEntities(notes);
+  const noteItemCount = notes?.meta.itemCount ?? 0;
   const rows = deltas?.rows ?? [];
   let statCount = 0;
   let unannouncedCount = 0;
@@ -68,7 +78,7 @@ export function computeHeadline(
     if (isSignificantDelta(row, qAlpha)) statCount++;
     if (row.status === "unannounced") unannouncedCount++;
   }
-  return { noteItemCount, statCount, unannouncedCount };
+  return { noteEntityCount, noteItemCount, statCount, unannouncedCount };
 }
 
 /** delta===null은 "측정 불가"에 가까운 취급으로 정렬 맨 뒤로 보낸다(ST-08 verdict.sortDeltas와

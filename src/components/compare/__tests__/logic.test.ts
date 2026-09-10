@@ -205,6 +205,7 @@ describe("shortNoteId", () => {
 describe("computeCoverage", () => {
   it("빈 입력(rows=[], notes=null)에서도 0으로 안전하게 계산된다", () => {
     expect(computeCoverage([], null)).toEqual({
+      noteEntityCount: 0,
       noteItemCount: 0,
       matchedCount: 0,
       unannouncedCount: 0,
@@ -212,7 +213,7 @@ describe("computeCoverage", () => {
     });
   });
 
-  it("상태별 집계 + 노트 엔티티 수", () => {
+  it("상태별 집계 + 노트 엔티티 수(+원문 항목 수)", () => {
     const notes = notesFile([note({ id: "a", entity: "A" }), note({ id: "b", entity: "A" })]);
     const rows = [
       delta({ id: "1", status: "announced-consistent" }),
@@ -221,7 +222,8 @@ describe("computeCoverage", () => {
       delta({ id: "4", status: "no-change" }),
     ];
     expect(computeCoverage(rows, notes)).toEqual({
-      noteItemCount: 1,
+      noteEntityCount: 1,
+      noteItemCount: 2,
       matchedCount: 1,
       unannouncedCount: 1,
       lowSampleCount: 1,
