@@ -1,0 +1,40 @@
+{
+  "type": "champion",
+  "format": "standAloneComplex",
+  "version": "16.17.1",
+  "data": {
+    "Chogath": {
+      "id": "Chogath",
+      "key": "31",
+      "name": "초가스",
+      "title": "공포의 종말",
+      "spells": [
+        {
+          "id": "Rupture",
+          "name": "대지 분출",
+          "image": { "full": "Rupture.png", "sprite": "spell0.png", "group": "spell" }
+        },
+        {
+          "id": "FeralScream",
+          "name": "야수의 포효",
+          "image": { "full": "FeralScream.png", "sprite": "spell0.png", "group": "spell" }
+        },
+        {
+          "id": "VorpalSpikes",
+          "name": "가시 촉수",
+          "image": { "full": "VorpalSpikes.png", "sprite": "spell0.png", "group": "spell" }
+        },
+        {
+          "id": "ChoGathFeast",
+          "name": "먹어치우기",
+          "image": { "full": "ChoGathFeast.png", "sprite": "spell0.png", "group": "spell" }
+        }
+      ],
+      "passive": {
+        "name": "육식동물",
+        "description": "초가스는 적 챔피언을 죽이거나 스킬로 처치에 관여할 때마다 영구적으로 체력이 증가한다.",
+        "image": { "full": "Chogath_Passive.png", "sprite": "passive0.png", "group": "passive" }
+      }
+    }
+  }
+}

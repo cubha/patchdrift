@@ -1,0 +1,40 @@
+{
+  "type": "champion",
+  "format": "standAloneComplex",
+  "version": "16.17.1",
+  "data": {
+    "Graves": {
+      "id": "Graves",
+      "key": "104",
+      "name": "그레이브즈",
+      "title": "무법자",
+      "spells": [
+        {
+          "id": "GravesQLineSpell",
+          "name": "탄창 조절",
+          "image": { "full": "GravesQLineSpell.png", "sprite": "spell1.png", "group": "spell" }
+        },
+        {
+          "id": "GravesSmokeGrenade",
+          "name": "연막탄",
+          "image": { "full": "GravesSmokeGrenade.png", "sprite": "spell1.png", "group": "spell" }
+        },
+        {
+          "id": "GravesMove",
+          "name": "속사",
+          "image": { "full": "GravesMove.png", "sprite": "spell1.png", "group": "spell" }
+        },
+        {
+          "id": "GravesCollateralDamage",
+          "name": "연쇄 피해",
+          "image": { "full": "GravesCollateralDamage.png", "sprite": "spell1.png", "group": "spell" }
+        }
+      ],
+      "passive": {
+        "name": "진정한 그릿",
+        "description": "그레이브즈는 기본 공격 시 탄창을 소모한다.",
+        "image": { "full": "Graves_Passive.png", "sprite": "passive1.png", "group": "passive" }
+      }
+    }
+  }
+}
