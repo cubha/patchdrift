@@ -5,8 +5,7 @@
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import HeroSummary from "../HeroSummary";
-import UnannouncedList from "../UnannouncedList";
-import NotePreviewList from "../NotePreviewList";
+import ReleaseNoteStream from "../ReleaseNoteStream";
 import SideMatchAverages from "../SideMatchAverages";
 import DiscordPanel from "../DiscordPanel";
 
@@ -20,19 +19,14 @@ describe("HeroSummary — 빈 상태(모든 수치 0)", () => {
   });
 });
 
-describe("UnannouncedList — 빈 상태", () => {
-  it("행이 없으면 지정된 빈 상태 문구를 렌더한다", () => {
-    const { container } = render(<UnannouncedList rows={[]} />);
-    expect(container.textContent).toContain(
-      "이 패치 쌍에서는 통계 게이트를 통과한 미공지 변화가 없습니다"
+describe("ReleaseNoteStream — 빈 상태", () => {
+  it("그룹이 없으면 라인 필터만 남기고 빈 상태 문구를 렌더한다", () => {
+    const { container } = render(
+      <ReleaseNoteStream entries={[]} spellIcons={null} noteStatus={{}} patch={null} />
     );
-  });
-});
-
-describe("NotePreviewList — 빈 상태", () => {
-  it("행이 없으면 빈 상태 문구를 렌더한다", () => {
-    const { container } = render(<NotePreviewList rows={[]} notesById={{}} />);
-    expect(container.textContent).toContain("패치노트와 짝지어진 관측 항목이 아직 없습니다");
+    expect(container.textContent).toContain("이 라인에서는 관측된 변화가 없습니다");
+    // 라인 필터 6종(전체/탑/정글/미드/원딜/서포터)은 데이터가 없어도 항상 렌더된다.
+    expect(container.querySelectorAll('button[role="button"], button').length).toBeGreaterThanOrEqual(6);
   });
 });
 

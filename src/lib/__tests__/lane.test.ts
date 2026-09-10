@@ -4,7 +4,12 @@
 // 없음) 파싱 / 잘못된 형식 id에 대한 null 처리.
 
 import { describe, expect, it } from "vitest";
-import { parseLaneAxis } from "../lane";
+import { lanesForEntityKey, parseLaneAxis } from "../lane";
+import type { DeltaRecord } from "@/pipeline/types";
+
+function stubRecord(id: string, entityKey: string): Pick<DeltaRecord, "id" | "entityKey"> {
+  return { id, entityKey };
+}
 
 describe("parseLaneAxis", () => {
   it("파싱: 5개 명명 포지션(scope=position, 4세그먼트) 각각", () => {
@@ -33,5 +38,30 @@ describe("parseLaneAxis", () => {
     expect(parseLaneAxis("champion:Ahri:FOO:pickRate")).toBeNull();
     expect(parseLaneAxis("champion:Ahri:TOP:pickRate:extra")).toBeNull();
     expect(parseLaneAxis("")).toBeNull();
+  });
+});
+
+describe("lanesForEntityKey", () => {
+  it("position-scope 행에서 라인 집합을 도출한다(LANE_ORDER 순서 보존)", () => {
+    const records = [
+      stubRecord("champion:Ahri:MIDDLE:pickRate", "Ahri"),
+      stubRecord("champion:Ahri:TOP:pickRate", "Ahri"),
+      stubRecord("champion:Ahri:MIDDLE:winRate", "Ahri"), // 같은 라인 중복 metric — 1개로 합쳐짐
+    ];
+    expect(lanesForEntityKey(records, "Ahri")).toEqual(["TOP", "MIDDLE"]);
+  });
+
+  it("scope=all 행은 라인 집합에 포함하지 않는다", () => {
+    const records = [stubRecord("champion:Ahri:pickRate", "Ahri")];
+    expect(lanesForEntityKey(records, "Ahri")).toEqual([]);
+  });
+
+  it("다른 entityKey 행은 무시한다", () => {
+    const records = [stubRecord("champion:Zed:TOP:pickRate", "Zed")];
+    expect(lanesForEntityKey(records, "Ahri")).toEqual([]);
+  });
+
+  it("position-scope 행이 없으면 빈 배열(라인을 추측하지 않음)", () => {
+    expect(lanesForEntityKey([], "Ahri")).toEqual([]);
   });
 });
