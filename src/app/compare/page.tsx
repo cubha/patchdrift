@@ -4,9 +4,11 @@
 // 데이터 로드는 이 서버 컴포넌트에서만 한다 — 상태 필터·검색·정렬·선택 하이라이트 등 인터랙션은
 // CompareExplorer('use client')로 위임한다.
 
+import { loadDdragonSafe } from "@/pipeline/match/ddragon";
 import FilterBar from "@/components/FilterBar";
 import CompareExplorer from "@/components/compare/CompareExplorer";
 import { computeCoverage } from "@/components/compare/logic";
+import { resolveEntityIconBySection, type StreamEntityIcon } from "@/components/home/releaseStreamEntity";
 import { getDefaultPair, listPatchPairs, loadDeltas, loadNotes, loadSummary } from "@/lib/data";
 
 export default function ComparePage() {
@@ -17,9 +19,15 @@ export default function ComparePage() {
   const notes = pair ? loadNotes(pair.to) : null;
   const summaryTo = pair ? loadSummary(pair.to) : null;
   const summaryFrom = pair ? loadSummary(pair.from) : null;
+  const ddragon = loadDdragonSafe();
 
   const rows = deltas?.rows ?? [];
   const coverage = computeCoverage(rows, notes);
+
+  const noteIcons: Record<string, StreamEntityIcon> = {};
+  for (const item of notes?.items ?? []) {
+    noteIcons[item.id] = resolveEntityIconBySection(item.entity, item.section, ddragon);
+  }
 
   return (
     <div className="flex flex-1 flex-col bg-bg">
@@ -31,7 +39,13 @@ export default function ComparePage() {
         aggregatedAt={summaryTo?.meta.generatedAt ?? null}
       />
       <main className="flex-1">
-        <CompareExplorer pair={pair} notes={notes?.items ?? []} rows={rows} coverage={coverage} />
+        <CompareExplorer
+          pair={pair}
+          notes={notes?.items ?? []}
+          rows={rows}
+          coverage={coverage}
+          noteIcons={noteIcons}
+        />
       </main>
     </div>
   );

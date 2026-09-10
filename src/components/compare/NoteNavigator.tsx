@@ -4,7 +4,9 @@
 // CompareExplorer가 소유(섹션 탭·검색어·선택 항목 전부 콜백으로 위임).
 
 import type { DeltaRecord, PatchNoteItem, PatchNoteSection } from "@/pipeline/types";
+import EntityIcon from "@/components/EntityIcon";
 import StatusBadge from "@/components/StatusBadge";
+import type { StreamEntityIcon } from "@/components/home/releaseStreamEntity";
 import { NAV_SECTIONS, filterNotesBySearch, filterNotesBySection, representativeStatus } from "./logic";
 
 export interface NoteNavigatorProps {
@@ -16,6 +18,9 @@ export interface NoteNavigatorProps {
   onSearchChange: (query: string) => void;
   selectedNoteId: string | null;
   onSelect: (noteId: string) => void;
+  /** note.id → EntityIcon 계약(부모가 ddragon으로 빌드 타임에 해석해 내려준다 — 이 컴포넌트는
+   * "use client" 경계 안이라 fs를 직접 읽지 못한다). 키가 없으면 아이콘 없이 폴백. */
+  icons: Record<string, StreamEntityIcon>;
 }
 
 export default function NoteNavigator({
@@ -27,6 +32,7 @@ export default function NoteNavigator({
   onSearchChange,
   selectedNoteId,
   onSelect,
+  icons,
 }: NoteNavigatorProps) {
   const sectionFiltered = filterNotesBySection(notes, activeSection);
   const visible = filterNotesBySearch(sectionFiltered, searchQuery);
@@ -76,26 +82,39 @@ export default function NoteNavigator({
           visible.map((item) => {
             const isSelected = item.id === selectedNoteId;
             const status = representativeStatus(item.id, rows);
+            const icon = icons[item.id] ?? { entityType: null, entityKey: null };
             return (
               <li key={item.id}>
                 <button
                   type="button"
                   onClick={() => onSelect(item.id)}
                   aria-current={isSelected ? "true" : undefined}
-                  className={`flex w-full flex-col items-start gap-1 border-l-2 px-5 py-3 text-left ${
+                  className={`flex w-full items-start gap-3 border-l-2 px-5 py-3 text-left ${
                     isSelected ? "border-accent bg-surface-warm" : "border-transparent"
                   }`}
                 >
-                  <span className="text-sm font-bold text-fg">{item.entity}</span>
-                  <span className="line-clamp-2 font-mono text-xs tabular-nums text-muted">
-                    {item.skill ? `${item.skill} ` : ""}
-                    {item.before && item.after ? `${item.before}⇒${item.after}` : item.summary}
-                  </span>
-                  {status ? (
-                    <StatusBadge status={status} className="mt-1 w-fit" />
+                  {icon.entityType && icon.entityKey ? (
+                    <EntityIcon entityType={icon.entityType} entityKey={icon.entityKey} name={item.entity} size={40} />
                   ) : (
-                    <span className="mt-1 w-fit text-xs text-muted">관측 없음</span>
+                    <span
+                      style={{ width: 40, height: 40 }}
+                      className="flex shrink-0 items-center justify-center rounded-sm border border-border bg-surface-warm font-display text-xs font-bold text-fg-2"
+                    >
+                      {item.entity.slice(0, 1)}
+                    </span>
                   )}
+                  <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
+                    <span className="text-sm font-bold text-fg">{item.entity}</span>
+                    <span className="line-clamp-2 font-mono text-xs tabular-nums text-muted">
+                      {item.skill ? `${item.skill} ` : ""}
+                      {item.before && item.after ? `${item.before}⇒${item.after}` : item.summary}
+                    </span>
+                    {status ? (
+                      <StatusBadge status={status} className="mt-1 w-fit" />
+                    ) : (
+                      <span className="mt-1 w-fit text-xs text-muted">관측 없음</span>
+                    )}
+                  </span>
                 </button>
               </li>
             );

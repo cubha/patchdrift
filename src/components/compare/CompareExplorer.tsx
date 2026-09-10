@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { DeltaRecord, PatchNoteItem, PatchNoteSection } from "@/pipeline/types";
 import Container from "@/components/Container";
+import type { StreamEntityIcon } from "@/components/home/releaseStreamEntity";
 import StatusFilterChips from "./StatusFilterChips";
 import NoteNavigator from "./NoteNavigator";
 import DeltaTable from "./DeltaTable";
@@ -19,11 +20,13 @@ export interface CompareExplorerProps {
   notes: PatchNoteItem[];
   rows: DeltaRecord[];
   coverage: CoverageStats;
+  /** note.id → EntityIcon 계약 — 부모(compare/page.tsx)가 ddragon으로 빌드 타임에 해석. */
+  noteIcons?: Record<string, StreamEntityIcon>;
 }
 
 const PAGE_SIZE = 200;
 
-export default function CompareExplorer({ pair, notes, rows, coverage }: CompareExplorerProps) {
+export default function CompareExplorer({ pair, notes, rows, coverage, noteIcons = {} }: CompareExplorerProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [activeSection, setActiveSection] = useState<PatchNoteSection>("champion");
   const [searchQuery, setSearchQuery] = useState("");
@@ -84,6 +87,7 @@ export default function CompareExplorer({ pair, notes, rows, coverage }: Compare
             onSearchChange={setSearchQuery}
             selectedNoteId={selectedNoteId}
             onSelect={setSelectedNoteId}
+            icons={noteIcons}
           />
           <section
             className="overflow-hidden rounded-lg border border-border bg-surface"

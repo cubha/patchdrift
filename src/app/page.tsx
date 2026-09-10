@@ -5,7 +5,7 @@
 // 컴포넌트는 전부 props만 받는 순수 렌더(상태 없음, 서버/클라이언트 경계 없음).
 
 import type { MatchStatus } from "@/pipeline/types";
-import { loadDdragon, type DdragonData } from "@/pipeline/match/ddragon";
+import { loadDdragonSafe } from "@/pipeline/match/ddragon";
 import Container from "@/components/Container";
 import FilterBar from "@/components/FilterBar";
 import HeroSummary from "@/components/home/HeroSummary";
@@ -28,23 +28,6 @@ import {
   loadSummary,
 } from "@/lib/data";
 
-/** ddragon 데이터가 없어도(예: run-ddragon.ts 미실행 상태) 홈이 크래시하지 않게 — 미공지 그룹은
- * DeltaRecord 필드만으로 아이콘을 그리므로 영향 없고, 노트 전용(matched) 그룹만 아이콘 없이
- * 텍스트 폴백으로 떨어진다. */
-function loadDdragonSafe(): DdragonData | null {
-  try {
-    return loadDdragon();
-  } catch {
-    return null;
-  }
-}
-
-const EMPTY_DDRAGON: DdragonData = {
-  version: "",
-  champions: { byKey: () => undefined, byId: () => undefined, byKoName: () => undefined },
-  items: { byId: () => undefined, byKoName: () => [], isCompleted: () => false },
-};
-
 export default function Home() {
   const pair = getDefaultPair();
   const pairs = listPatchPairs();
@@ -56,7 +39,7 @@ export default function Home() {
   const objectivesTo = pair ? loadObjectives(pair.to) : null;
   const objectivesFrom = pair ? loadObjectives(pair.from) : null;
   const spellIcons = loadSpellIcons();
-  const ddragon = loadDdragonSafe() ?? EMPTY_DDRAGON;
+  const ddragon = loadDdragonSafe();
 
   const headline = computeHeadline(deltas, notesTo, deltas?.meta.qAlpha);
 

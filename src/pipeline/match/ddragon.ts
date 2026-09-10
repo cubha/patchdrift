@@ -249,3 +249,21 @@ export function loadDdragon(version?: string, options: LoadDdragonOptions = {}):
     },
   };
 }
+
+/** 전부 undefined/빈 배열을 반환하는 무해 폴백 — `loadDdragonSafe`가 ddragon 데이터 부재 시
+ * 반환한다. 모든 필드가 함수(클로저 상태 없음)라 여러 소비처가 동시에 공유해도 안전하다. */
+export const EMPTY_DDRAGON: DdragonData = {
+  version: "",
+  champions: { byKey: () => undefined, byId: () => undefined, byKoName: () => undefined },
+  items: { byId: () => undefined, byKoName: () => [], isCompleted: () => false },
+};
+
+/** `loadDdragon`이 데이터 부재(run-ddragon.ts 미실행 등)로 throw해도 페이지가 크래시하지
+ * 않게 하는 안전 래퍼 — 아이콘 해석이 홈(page.tsx)·대조표(compare/page.tsx) 양쪽에서 쓴다. */
+export function loadDdragonSafe(version?: string, options: LoadDdragonOptions = {}): DdragonData {
+  try {
+    return loadDdragon(version, options);
+  } catch {
+    return EMPTY_DDRAGON;
+  }
+}

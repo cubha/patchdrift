@@ -3,11 +3,54 @@
 // 순수 프레젠테이션 — 정렬 상태·선택 하이라이트는 부모 CompareExplorer가 소유.
 
 import Link from "next/link";
-import type { DeltaRecord } from "@/pipeline/types";
-import { itemHref, metricLabel } from "@/lib/format";
+import type { DeltaRecord, LanePosition } from "@/pipeline/types";
+import { itemHref, metricLabel, positionLabel } from "@/lib/format";
+import { parseLaneAxis } from "@/lib/lane";
+import EntityIcon from "@/components/EntityIcon";
+import LaneGlyph from "@/components/LaneGlyph";
 import StatusBadge from "@/components/StatusBadge";
-import { formatMetricValue } from "@/components/home/logic";
+import { entityFallbackLabel, formatMetricValue } from "@/components/home/logic";
 import { directionSymbol, formatCiCell, formatDeltaCell, formatNCell, shortNoteId, type SortKey } from "./logic";
+
+/** 행의 엔티티 열 아이콘 — entityType==="lane"(라인 골드 지표, 챔피언 자산 없음)은 라인 글리프로,
+ * 그 외는 기존 EntityIcon(champion/item은 ddragon 이미지, objective/summary는 폴백 글자)로.
+ * HANDOFF-redesign-2026-09-10.md §4-2 "라인 행(바텀·미드 등)은 챔피언 자산이 없다 → '골' 텍스트
+ * 박스를 라인 글리프 박스로 교체". */
+function RowIcon({ row, size }: { row: DeltaRecord; size: number }) {
+  if (row.entityType === "lane") {
+    return (
+      <span
+        style={{ width: size, height: size }}
+        className="flex shrink-0 items-center justify-center rounded-sm border border-border bg-surface-warm text-fg-2"
+      >
+        <LaneGlyph lane={row.entityKey as LanePosition} size={Math.round(size * 0.6)} />
+      </span>
+    );
+  }
+  return (
+    <EntityIcon
+      entityType={row.entityType}
+      entityKey={row.entityKey}
+      name={row.entityName}
+      fallbackLabel={entityFallbackLabel(row)}
+      size={size}
+    />
+  );
+}
+
+/** 챔피언 position-scope 행(4세그먼트 id)의 라인 태그 — "엔티티 열 하위에 라인 태그(글리프 +
+ * '탑 · 승률')"(HANDOFF §4-2). scope=all·라인 파싱 불가(non-champion)면 렌더하지 않는다. */
+function LaneTag({ row }: { row: DeltaRecord }) {
+  if (row.entityType !== "champion") return null;
+  const lane = parseLaneAxis(row.id);
+  if (lane === null || lane === "all") return null;
+  return (
+    <span className="mt-0.5 flex items-center gap-1 text-xs text-muted">
+      <LaneGlyph lane={lane} size={12} />
+      {positionLabel(lane)} · {metricLabel(row.metric)}
+    </span>
+  );
+}
 
 export interface DeltaTableProps {
   pair: { from: string; to: string } | null;
@@ -88,9 +131,15 @@ export default function DeltaTable({ pair, rows, highlightNoteId, sortKey, sortD
                 >
                   <td className={`px-4 py-3 ${dir.colorClass}`}>{dir.symbol}</td>
                   <td className="px-4 py-3 font-body">
-                    <Link href={itemHref(row.id)} className="text-fg hover:text-accent hover:underline">
-                      {row.entityName}
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <RowIcon row={row} size={40} />
+                      <div className="flex flex-col">
+                        <Link href={itemHref(row.id)} className="text-fg hover:text-accent hover:underline">
+                          {row.entityName}
+                        </Link>
+                        <LaneTag row={row} />
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3 font-body text-fg-2">{metricLabel(row.metric)}</td>
                   <td className="px-4 py-3">{formatMetricValue(row.before, row.metric)}</td>
