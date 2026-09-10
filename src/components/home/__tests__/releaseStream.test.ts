@@ -1,7 +1,13 @@
 // src/components/home/__tests__/releaseStream.test.ts
 // 릴리즈노트 스트림 조립(releaseStream.ts) 단위 테스트 — ST-B TDD.
 // 최소 케이스: 노트만 있음(정상) / 델타만 있음(미공지 삽입) / 둘 다 있음(정상 짝) /
-// 미공지 여러 건 |delta| 내림차순 정렬.
+// 미공지 여러 건 |delta| 내림차순 정렬 / 노트 그룹 사이 균등 분산.
+//
+// 2026-09-10 명세 변경(verify-impl 축B): 기존 계약은 "미공지를 스트림 **상단에** 몰아 삽입"
+// 이었으나 확정 시안이 "아래는 노트 순서 그대로입니다 … 노트에 없는데 통계가 움직인 항목은
+// 그 자리에 끼워 넣습니다"를 요구해 **균등 분산**으로 바꿨다. 상단 몰림은 실데이터(노트 58
+// 그룹 vs 미공지 151그룹)에서 노트 스트림을 화면 밖으로 밀어내 "릴리즈노트 프레임"이라는
+// 설계 논지 자체를 지웠다.
 
 import { describe, expect, it } from "vitest";
 import type { DeltaRecord, PatchNoteItem } from "@/pipeline/types";
@@ -96,7 +102,7 @@ describe("buildReleaseStream", () => {
     expect(stream.map((g) => g.entity)).toEqual(["그레이브즈", "초가스"]);
   });
 
-  it("델타만 있고(status=unannounced) 대응 노트가 없으면 미공지 그룹이 상단에 삽입된다", () => {
+  it("델타만 있고(status=unannounced) 대응 노트가 없으면 미공지 그룹만으로 구성된다", () => {
     const deltas = deltasFile([
       delta({ id: "champion:Locke:banRate", entityKey: "Locke", entityName: "로크", status: "unannounced", delta: -0.13 }),
     ]);
@@ -132,15 +138,68 @@ describe("buildReleaseStream", () => {
     expect(stream).toEqual([{ kind: "matched", entity: "키아나", notes: notes.items }]);
   });
 
-  it("미공지 여러 건은 |delta| 내림차순으로 정렬되어 스트림 상단에 온다", () => {
+  it("미공지 여러 건은 |delta| 내림차순 순서를 유지한 채 노트 그룹 사이에 분산된다", () => {
     const notes = notesFile([note({ id: "a", entity: "공지된챔프" })]);
     const deltas = deltasFile([
       delta({ id: "champion:A:pickRate", entityKey: "A", entityName: "작은변화", status: "unannounced", delta: 0.05 }),
       delta({ id: "champion:B:pickRate", entityKey: "B", entityName: "큰변화", status: "unannounced", delta: -0.3 }),
       delta({ id: "champion:C:pickRate", entityKey: "C", entityName: "중간변화", status: "unannounced", delta: 0.15 }),
     ]);
+    // 노트 그룹 1개 → 슬롯 2개(앞·뒤). 미공지 3건은 floor 규칙으로 1건 + 2건에 나뉜다.
     const stream = buildReleaseStream(notes, deltas);
-    expect(stream.map((g) => g.entity)).toEqual(["큰변화", "중간변화", "작은변화", "공지된챔프"]);
+    expect(stream.map((g) => g.entity)).toEqual(["큰변화", "공지된챔프", "중간변화", "작은변화"]);
+  });
+
+  it("노트 그룹이 여럿이면 미공지가 한 곳에 몰리지 않고 그룹 사이마다 끼어든다", () => {
+    const notes = notesFile([
+      note({ id: "n1", entity: "노트1" }),
+      note({ id: "n2", entity: "노트2" }),
+      note({ id: "n3", entity: "노트3" }),
+    ]);
+    const deltas = deltasFile([
+      delta({ id: "champion:U1:pickRate", entityKey: "U1", entityName: "미공지1", status: "unannounced", delta: -0.4 }),
+      delta({ id: "champion:U2:pickRate", entityKey: "U2", entityName: "미공지2", status: "unannounced", delta: 0.3 }),
+      delta({ id: "champion:U3:pickRate", entityKey: "U3", entityName: "미공지3", status: "unannounced", delta: -0.2 }),
+      delta({ id: "champion:U4:pickRate", entityKey: "U4", entityName: "미공지4", status: "unannounced", delta: 0.1 }),
+    ]);
+    const stream = buildReleaseStream(notes, deltas);
+    // 슬롯 4개 × 미공지 4건 = 슬롯당 1건.
+    expect(stream.map((g) => g.entity)).toEqual([
+      "미공지1",
+      "노트1",
+      "미공지2",
+      "노트2",
+      "미공지3",
+      "노트3",
+      "미공지4",
+    ]);
+  });
+
+  it("노트 그룹의 상대 순서는 분산 삽입 후에도 원본 순서를 유지한다", () => {
+    const notes = notesFile([
+      note({ id: "n1", entity: "노트1" }),
+      note({ id: "n2", entity: "노트2" }),
+    ]);
+    const deltas = deltasFile([
+      delta({ id: "champion:U1:pickRate", entityKey: "U1", entityName: "미공지1", status: "unannounced", delta: -0.4 }),
+      delta({ id: "champion:U2:pickRate", entityKey: "U2", entityName: "미공지2", status: "unannounced", delta: 0.3 }),
+      delta({ id: "champion:U3:pickRate", entityKey: "U3", entityName: "미공지3", status: "unannounced", delta: -0.2 }),
+      delta({ id: "champion:U4:pickRate", entityKey: "U4", entityName: "미공지4", status: "unannounced", delta: 0.1 }),
+      delta({ id: "champion:U5:pickRate", entityKey: "U5", entityName: "미공지5", status: "unannounced", delta: -0.05 }),
+    ]);
+    const stream = buildReleaseStream(notes, deltas);
+    const matchedOrder = stream.filter((g) => g.kind === "matched").map((g) => g.entity);
+    const unannouncedOrder = stream.filter((g) => g.kind === "unannounced").map((g) => g.entity);
+    expect(matchedOrder).toEqual(["노트1", "노트2"]);
+    expect(unannouncedOrder).toEqual(["미공지1", "미공지2", "미공지3", "미공지4", "미공지5"]);
+    // 상단 몰림 금지 — 첫 matched 그룹이 스트림 상위 절반 안에 있어야 한다.
+    expect(stream.findIndex((g) => g.kind === "matched")).toBeLessThan(stream.length / 2);
+  });
+
+  it("미공지가 없으면 노트 그룹 순서 그대로다", () => {
+    const notes = notesFile([note({ id: "n1", entity: "노트1" }), note({ id: "n2", entity: "노트2" })]);
+    const stream = buildReleaseStream(notes, deltasFile([]));
+    expect(stream.map((g) => g.entity)).toEqual(["노트1", "노트2"]);
   });
 
   it("같은 엔티티의 미공지 델타가 여럿이면 하나의 그룹으로 묶인다", () => {
