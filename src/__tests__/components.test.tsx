@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
 import StatusBadge from "../components/StatusBadge";
 import DeltaValue from "../components/DeltaValue";
+import LaneGlyph from "../components/LaneGlyph";
+import SpellIcon from "../components/SpellIcon";
 
 describe("StatusBadge", () => {
   it("공지-일치 상태를 렌더한다", () => {
@@ -60,5 +62,48 @@ describe("DeltaValue", () => {
     const { container } = render(<DeltaValue delta={320} ci={[235, 405]} kind="gold" />);
     expect(container.textContent).toContain("+320");
     expect(container.textContent).toContain("CI ±85");
+  });
+});
+
+describe("LaneGlyph", () => {
+  it("5개 라인 + all 각각 다른 라벨의 <title>을 렌더한다(색·모양만으로 라인을 구분하지 않음)", () => {
+    const lanes = ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY", "all"] as const;
+    const labels = new Set<string>();
+    for (const lane of lanes) {
+      const { container } = render(<LaneGlyph lane={lane} />);
+      const title = container.querySelector("title")?.textContent;
+      expect(title).toBeTruthy();
+      labels.add(title ?? "");
+    }
+    expect(labels.size).toBe(lanes.length);
+  });
+
+  it("size prop이 svg width/height에 반영된다", () => {
+    const { container } = render(<LaneGlyph lane="TOP" size={24} />);
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("width")).toBe("24");
+    expect(svg?.getAttribute("height")).toBe("24");
+  });
+});
+
+describe("SpellIcon", () => {
+  it("filename이 있으면 /dd/spell/ 경로의 img를 렌더한다", () => {
+    const { container } = render(<SpellIcon filename="VorpalSpikes.png" name="초가스 E" />);
+    const img = container.querySelector("img");
+    expect(img?.getAttribute("src")).toBe("/dd/spell/VorpalSpikes.png");
+    expect(img?.getAttribute("alt")).toBe("초가스 E");
+  });
+
+  it("filename이 null이면 이미지 없이 폴백 라벨만 렌더한다(무근거 아이콘을 지어내지 않음)", () => {
+    const { container } = render(<SpellIcon filename={null} name="이렐리아 Q" />);
+    expect(container.querySelector("img")).toBeNull();
+    expect(container.textContent).toBe("이");
+  });
+
+  it("fallbackLabel을 지정하면 첫 글자 대신 그 값을 쓴다", () => {
+    const { container } = render(
+      <SpellIcon filename={null} name="이렐리아 Q" fallbackLabel="Q" />
+    );
+    expect(container.textContent).toBe("Q");
   });
 });
