@@ -1,0 +1,12 @@
+### VERIFY-SPEC — SubTask R2 (항목상세 CI 범례 실측값 병기)
+- 기준선 요구사항: PLAN-ux-redesign-remainder-2026-09-10.md P2/P3 — 시안 `[46.3, 48.2] · [33.3, 35.2]` 병기, 저장 CI가 양쪽 막대 모두에 적용된 경우에만
+- 변경 파일:
+  - src/components/item/chartData.ts — `ItemChartData.barCi: {before,after: Interval} | null` 필드 추가, storedCi 경로 적용 시에만 set
+  - src/components/item/__tests__/chartData.test.ts — barCi 4케이스(적용/폴백/suppressError/한쪽만) RED→GREEN
+  - src/components/item/metricFormat.ts — `formatCiRange(interval): "[lo, hi]"` (×100, 소수 1자리)
+  - src/components/item/__tests__/metricFormat.test.ts — formatCiRange 케이스 추가
+  - src/app/item/[id]/page.tsx — 범례 span에 `chartData.barCi` 있을 때만 mono 텍스트 병기
+- 관찰 가능한 계약: storedCi가 양쪽 다 non-null이고 kind="pp"이며 suppressError=false일 때만 `barCi` non-null → 범례에 `[lo,hi] · [lo,hi]` 렌더. 그 외(델타-CI 폴백/표본부족/한쪽만)는 barCi null → 병기 없음(기존 범례 문구만).
+- 구현 결정: barCi는 `usableStoredCi`를 그대로 참조(추가 변환 없음) — offsetFor와 별개 계산 경로라 부동소수 오차로 어긋날 일이 없음.
+- 인접 경계: `ItemChart.tsx`는 `barCi`를 쓰지 않음(오차 막대는 기존 `error` 필드 그대로) — 차트 렌더 로직 변경 없음. `resolveStoredCi`(storedCi.ts) 시그니처 변경 없음.
+- 미확인 사항: 없음.

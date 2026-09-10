@@ -1,0 +1,11 @@
+### VERIFY-SPEC — SubTask R3 (히어로 스플래시 배선)
+- 기준선 요구사항: PLAN-ux-redesign-remainder-2026-09-10.md P4/P5/P6 — 패치 대표 챔피언 1장 선정 + `HeroAmbient.splashUrl` 배선 + 자산 다운로드
+- 변경 파일:
+  - src/components/home/heroSplash.ts(신규) — `resolveHeroSplashEntityKey(rows)`, `heroSplashUrl(entityKey)`
+  - src/components/home/__tests__/heroSplash.test.ts(신규) — 6케이스 RED→GREEN
+  - src/app/page.tsx — `ambientSplashUrl` 계산 후 `HeroSummary`에 전달(기존 `HeroSummaryProps.ambientSplashUrl`은 이미 optional로 열려 있었음 — HeroSummary/HeroAmbient 자체는 수정 없음)
+  - public/dd/splash/Qiyana_0.jpg(신규, 바이너리) — DDragon CDN에서 수동 다운로드
+- 관찰 가능한 계약: `resolveHeroSplashEntityKey`는 champion·scope=all(3세그먼트 id)·status≠insufficient-sample·delta≠null 행 중 |delta| 최댓값 1건의 entityKey. 실데이터(26.16→26.17) 기준 "Qiyana" — 다운로드한 자산과 일치.
+- 구현 결정: 다운로드는 파이프라인 스크립트(run-ddragon.ts)에 편입하지 않고 수동 1회 — §5 "1~2장만" 스코프 결정을 유지하며 전체 173챔피언 스플래시 자동화는 범위 밖.
+- 인접 경계: `HeroAmbient.tsx`/`HeroSummary.tsx`는 기존에 이미 `splashUrl`/`ambientSplashUrl` prop이 optional로 열려 있어 무수정. `run-ddragon.ts`(champion/item/spell 다운로드 소유)는 건드리지 않음 — 스플래시는 그 스크립트의 책임 범위 밖(파일 상단 주석에 "룬 아이콘"처럼 향후 확장 대상으로 남을 수 있음, 미확인 사항 아래 기록).
+- 미확인 사항: 패치가 바뀌어 대표 챔피언이 달라지면(예: 26.17→26.18) 이 자산은 자동 갱신되지 않는다 — 수동 재다운로드 필요. 다음 재수집(26.18) 시 이 갭을 인지하고 있어야 함.
