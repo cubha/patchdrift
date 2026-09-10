@@ -17,6 +17,7 @@ import { getDefaultPair, loadDeltas, loadNotes, loadSummary } from "@/lib/data";
 import { fmtKst } from "@/lib/format";
 import { FDR_ALPHA, WIN_RATE_MIN_N } from "@/pipeline/aggregate/stats";
 import { countRelevantNoteEntities } from "@/pipeline/shared/notes-count";
+import AdapterMatrix from "@/components/methodology/AdapterMatrix";
 import DiscordEmbedPreview from "@/components/methodology/DiscordEmbedPreview";
 import GateGrid from "@/components/methodology/GateGrid";
 import PipelineDiagram from "@/components/methodology/PipelineDiagram";
@@ -87,6 +88,12 @@ export default function MethodologyPage() {
 
           <SectionCard eyebrow="우선 1 · 해석" title="상태 정의">
             <StatusDefinitionTable minN={WIN_RATE_MIN_N} alpha={FDR_ALPHA} />
+          </SectionCard>
+
+          {/* 확장성의 증명 — HANDOFF-redesign-2026-09-10.md §4-4. 셀렉터가 아니라 어댑터
+              매핑표로 "다른 게임에도 같은 판정 엔진을 쓸 수 있다"를 보인다. */}
+          <SectionCard eyebrow="우선 2 · 확장성" title="어댑터 매핑표 (LoL ↔ PUBG)">
+            <AdapterMatrix />
           </SectionCard>
 
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_1fr]">
