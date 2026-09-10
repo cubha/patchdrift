@@ -50,6 +50,11 @@ export interface ItemChartData {
    * 값 막대는 그리되 CI를 신뢰할 수 없어 숨겼음을 호출부가 캡션으로 알릴 수 있게 한다. */
   errorSuppressed: boolean;
   bars: [ChartBarDatum, ChartBarDatum];
+  /** before/after 각 패치 자신의 저장 CI(storedCi 경로가 실제로 적용된 경우만) — 범례의
+   * CI 실측값 병기(`[46.3, 48.2] · [33.3, 35.2]`, HANDOFF §4-3)용 원본 Interval. 델타-CI
+   * 폴백(after 막대만 CI)이거나 errorSuppressed면 null — before의 "자기 CI"가 없는데
+   * 값을 지어내지 않는다(무근거 문장 금지). */
+  barCi: { before: Interval; after: Interval } | null;
 }
 
 function scaleFor(kind: MetricKind): number {
@@ -118,6 +123,7 @@ export function buildChartData(
   ];
 
   let errorSuppressed = false;
+  let barCi: { before: Interval; after: Interval } | null = null;
   if (hasData && delta.delta !== null) {
     const usableStoredCi = resolveUsableStoredCi(kind, storedCi);
     if (suppressError) {
@@ -125,6 +131,7 @@ export function buildChartData(
     } else if (usableStoredCi && delta.before !== null && delta.after !== null) {
       bars[0] = { ...bars[0], error: offsetFor(delta.before, usableStoredCi.before, scale) };
       bars[1] = { ...bars[1], error: offsetFor(delta.after, usableStoredCi.after, scale) };
+      barCi = usableStoredCi;
     } else {
       const [lo, hi]: Interval = delta.ci;
       const errLow = Math.max(0, (delta.delta - lo) * scale);
@@ -133,5 +140,5 @@ export function buildChartData(
     }
   }
 
-  return { kind, hasData, errorSuppressed, bars };
+  return { kind, hasData, errorSuppressed, bars, barCi };
 }
