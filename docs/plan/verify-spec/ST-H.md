@@ -1,0 +1,7 @@
+### VERIFY-SPEC — SubTask ST-H (홈 릴리즈노트 스트림 렌더 + 라인 필터 6종)
+- 기준선 요구사항: PLAN §4 ST-H(§1-1 수용 기준 직결, 절단 불가) — "ReleaseNoteStream/ReleaseNoteRow/LaneFilter 신규, UnannouncedList·NotePreviewList 삭제·흡수, page.tsx 배선."
+- 변경 파일: src/app/page.tsx(수정), src/components/home/{ReleaseNoteStream,ReleaseNoteRow,LaneFilter,releaseStreamEntity}.tsx/ts(신규), src/components/home/{UnannouncedList,NotePreviewList}.tsx(삭제), src/lib/lane.ts(lanesForEntityKey 추가), src/lib/__tests__/lane.test.ts·home/__tests__/releaseStreamEntity.test.ts·render.test.tsx(수정/신규)
+- 관찰 가능한 계약: `buildReleaseStream(notes, deltas)`(ST-B) → `resolveStreamEntityIcon`(ddragon 역조회) + `lanesForEntityKey`(라인 필터용) → `ReleaseNoteStream`이 "use client" 경계에서 selectedLane state 소유, 필터링은 `lanes.includes(selectedLane)`(라인 없는 엔티티는 "전체"에서만). 미공지 행: accent 좌측 레일 + surface-warm + "✕ {patch} 패치노트에 {엔티티} 항목 없음" 문구. 공지 행: 스킬별 SpellIcon(40px) + "stat: before⇒after" + StatusBadge(matchedNoteIds 역색인, 없으면 "관측 보류").
+- 구현 결정: 서버(page.tsx)에서 fs 읽기(loadDdragonSafe/loadSpellIcons/loadNotes/loadDeltas) 전부 완료 후 순수 props만 클라이언트 컴포넌트에 전달(src/lib/data.ts server-only 제약 준수). ddragon 로드 실패 시 EMPTY_DDRAGON 폴백(크래시 방지) — 현재는 실제 데이터 있어 정상 경로만 실행됨.
+- 인접 경계: 라인 필터는 lanesForEntityKey가 deltas.rows 전체를 스캔(SubTask당 아니라 페이지 렌더당 1회) — 매치 쌍이 커지면 O(n·m) 비용 증가 가능(현재 규모에서는 문제없음, 미래 최적화 여지로 기록).
+- 미확인 사항: entityType이 "lane"/"objective"/"summary"인 unannounced 델타(ST-B가 전 타입 포함으로 구현)도 이 스트림에서 EntityIcon 폴백 박스로 렌더된다 — HANDOFF §4-1이 "챔피언 카드" 위주로 서술했으나 명시적 타입 제한은 없어 포함 유지. 화면상 위화감 있으면 후속 필터링 필요.
