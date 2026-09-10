@@ -17,6 +17,7 @@ import { computeHeadline } from "@/components/home/logic";
 import { computeLaneDistribution } from "@/components/home/laneDistribution";
 import { buildReleaseStream } from "@/components/home/releaseStream";
 import { resolveStreamEntityIcon } from "@/components/home/releaseStreamEntity";
+import { heroSplashUrl, resolveHeroSplashEntityKey } from "@/components/home/heroSplash";
 import { lanesForEntityKey } from "@/lib/lane";
 import {
   getDefaultPair,
@@ -60,6 +61,8 @@ export default function Home() {
   const unannouncedRows = (deltas?.rows ?? []).filter((row) => row.status === "unannounced");
   const laneDistribution = computeLaneDistribution(unannouncedRows);
 
+  const ambientSplashUrl = heroSplashUrl(resolveHeroSplashEntityKey(deltas?.rows ?? []));
+
   return (
     <div className="flex flex-1 flex-col bg-bg">
       <FilterBar
@@ -71,7 +74,7 @@ export default function Home() {
       />
       <main className="flex-1">
         <Container className="flex flex-col gap-6 py-8">
-          <HeroSummary stats={headline} />
+          <HeroSummary stats={headline} ambientSplashUrl={ambientSplashUrl} />
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_1fr]">
             <div className="flex flex-col gap-6">
               <ReleaseNoteStream
