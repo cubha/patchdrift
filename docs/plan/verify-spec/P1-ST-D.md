@@ -1,0 +1,15 @@
+### VERIFY-SPEC — SubTask ST-D
+- 기준선 요구사항: "DDragon 챔피언 상세 JSON(data/{lang}/champion/{Key}.json)의 spells[].image.full 필드에서 스펠 아이콘 파일명을 조회하는 순수 함수를 작성하라 ... spells 배열을 인덱스로 읽어 매핑해야 한다(P=패시브는 passive.image.full) ... 못 찾은 경우 null 반환 — throw 하지 마라."
+- 변경 파일:
+  - src/pipeline/match/spell-icon.ts (신규)
+  - src/pipeline/match/__tests__/spell-icon.test.ts (신규)
+  - src/__fixtures__/ddragon-champion-chogath.json (신규)
+  - src/__fixtures__/ddragon-champion-graves.json (신규)
+- 관찰 가능한 계약: `resolveSpellIconFile(championJson: unknown, slot: "Q"|"W"|"E"|"R"|"P"): string | null`
+  - 입력: DDragon 상세 JSON 전체 파일 형태 `{ data: { [championId]: { spells: [...4개], passive: {...} } } }`
+  - Q/W/E/R → `spells[0..3].image.full`, P → `passive.image.full`
+  - 정상 케이스: 초가스 E → `"VorpalSpikes.png"`, 그레이브즈 Q → `"GravesQLineSpell.png"`
+  - 실패 케이스(슬롯 범위 초과, data 없음, spells가 배열 아님, 최상위 null) → null 반환(throw 없음)
+- 구현 결정: stub/fallback 없음 — 순수 타입가드 4개(isSpellImage/isSpellEntry/isChampionDetailEntry/isChampionDetailFile)로 unknown을 단계적으로 좁혀 검증. `championJson.data`의 첫 번째 value를 대상 챔피언으로 취급(파일 내 챔피언은 항상 1개라는 DDragon 스키마 전제).
+- 인접 경계: 이 모듈을 소비할 예정인 ST-F(scripts/run-ddragon.ts)가 `data/{lang}/champion/{Key}.json`을 읽어 그대로 championJson에 넘기는 계약. 네트워크/파일 IO 없음 — 순수 함수 경계 준수.
+- 미확인 사항: 픽스처는 웹 접근 없이 학습 지식 기반으로 축약 구성했다(spells[].image, passive.image 필드 구조, Q/W/E/R 순서 고정). 초가스 E=VorpalSpikes.png, 그레이브즈 Q=GravesQLineSpell.png는 요구사항 명시값과 일치하도록 맞췄으나, sprite/group 등 부가 필드는 검증하지 않았다 — 실제 DDragon 파일과 대조 검증은 ST-F 단계에서 실물 데이터로 재확인 필요.

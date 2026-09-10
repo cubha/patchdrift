@@ -1,0 +1,14 @@
+### VERIFY-SPEC — SubTask ST-C
+- 기준선 요구사항: "src/lib/lane.ts: 델타 행 id(champion:{key}:{pos}:{metric} 규약)에서 position을 파싱해 라인(...)을 도출하는 순수 함수." / "src/components/home/laneDistribution.ts: 위 파싱을 사용해 라인별 미공지 엔티티 수를 런타임으로 집계하는 함수... 노트 없는 델타 엔티티 집합을 인자로 받아 라인별로 분포시키는 순수 함수로 설계" / "엄격 금지: 라인 축 집계에 banRate를 포함하지 마라"
+- 변경 파일:
+  - src/lib/lane.ts (신규) — `parseLaneAxis(id: string): LaneAxis | null`
+  - src/components/home/laneDistribution.ts (신규) — `computeLaneDistribution(records: readonly DeltaRecord[]): LaneDistributionRow[]`
+- 관찰 가능한 계약:
+  - `parseLaneAxis("champion:Ahri:TOP:pickRate")` → `"TOP"`. `parseLaneAxis("champion:Ahri:pickRate")` → `"all"`. `parseLaneAxis("item:1001:adoptionRate")` → `null`. 세그먼트 수가 3/4이 아니거나 4번째 세그먼트가 유효 포지션이 아니면 `null`.
+  - `computeLaneDistribution([...])` → 항상 6행(`TOP/JUNGLE/MIDDLE/BOTTOM/UTILITY/all` 고정 순서, 0건이어도 행 자체는 존재) `{lane, label, count}[]`. `metric==="banRate"`인 레코드는 무조건 count에서 제외. 같은 `entityKey`가 같은 라인에서 여러 행을 가지면 1로만 카운트.
+- 구현 결정: stub/fallback 없음(파싱 실패는 null 반환으로 명시). 하드코딩: `LANE_ORDER` 배열(5라인+all 고정 순서)과 `"all"→"전체"` 라벨 매핑 — 스펙이 정의한 고정 축이라 정당.
+- 인접 경계:
+  - `parseLaneAxis`는 `src/pipeline/types.ts`의 `LanePosition`(도메인 타입 SSOT)을 import해 사용.
+  - `computeLaneDistribution`은 `src/pipeline/types.ts`의 `DeltaRecord`를 직접 소비 — ST-B가 만드는 "미공지 필터링" 출력이 `DeltaRecord[]`(또는 서브타입)라는 암묵 계약(구조적 타이핑이라 서브셋도 호환). `positionLabel`(`src/lib/format.ts`, 읽기 전용 재사용)에 의존.
+  - 아직 어느 페이지/컴포넌트도 `computeLaneDistribution`을 호출하지 않는다(상위 SubTask ST-I가 연동).
+- 미확인 사항: ST-B가 실제로 넘길 입력이 `DeltaRecord[]` 그대로인지, 별도 축약 타입인지는 ST-B 명세를 대조하지 않아 확정 못함(구조적 타이핑으로 호환되긴 함) — ST-I 통합 시 실제 연결 지점에서 재확인 필요.

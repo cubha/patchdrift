@@ -1,0 +1,13 @@
+### VERIFY-SPEC — SubTask ST-E
+- 기준선 요구사항: "저장된 CI가 있는 metric(champion pick/ban/win, item adoptionRate 등)에 대해서는, before/after 각 막대에 그 패치 자신의 CI를 오프셋으로 계산해 얹는다. 저장된 CI가 없는 metric(goldAt10/goldAt14/firstSec/avgDurationSec)은 기존 델타-CI 폴백을 그대로 유지한다... 분수→pp 스케일 변환 시 ×100이 chartValue와 일치... ci.win===null처럼... 오프셋을 표시하지 말고 조용히 폴백... champions.json/해당 patch 파일이 없는 경우에도 크래시 없이... 오프셋 값은 항상 0 이상"
+- 변경 파일:
+  - src/components/item/chartData.ts (수정) — `StoredCi` 인터페이스 export 추가, `buildChartData`에 optional 5번째 파라미터 `storedCi` 추가, `offsetFor`/`resolveUsableStoredCi` 헬퍼 추가
+  - src/components/item/__tests__/chartData.test.ts (수정) — 기존 6개 테스트 무수정(회귀 PASS), 신규 describe 블록에 6개 케이스 추가
+- 관찰 가능한 계약: `buildChartData(delta, beforeLabel?, afterLabel?, suppressError?, storedCi?)` → `storedCi`가 `{before: Interval, after: Interval}`(둘 다 non-null)이고 `metricKind(delta.metric)==="pp"`이면 `bars[0].error`/`bars[1].error`가 각각 자기 패치 CI 기반 오프셋. 그 외 모든 경우(storedCi 미지정, kind≠"pp", 한쪽이라도 null, suppressError=true)는 원안 그대로: before는 항상 [0,0], after는 delta.ci 기반 델타-CI 오프셋.
+- 구현 결정: fallback 방식(all-or-nothing) — before/after 중 한쪽이라도 저장 CI가 없으면 두 막대 모두 델타-CI 폴백으로 떨어뜨린다(서로 다른 종류의 구간을 한 차트에 섞지 않기 위함). 하드코딩 없음. stub 없음. `kind==="pp"`인 4개 metric(pickRate/banRate/winRate/adoptionRate)이 저장 CI 존재 metric과 일치한다는 전제로 기존 `metricKind`(SSOT, metricFormat.ts)를 재사용.
+- 인접 경계:
+  - 직접 호출부: src/app/item/[id]/page.tsx (이번 SubTask 미수정 — storedCi 없이 호출하므로 프로덕션 출력 불변, 회귀 없음)
+  - ItemChart.tsx: 미수정, ChartBarDatum/ItemChartData 출력 형태 불변이라 코드 변경 불필요
+  - 데이터 계약: ChampionStat.ci.{pick,ban,win}, ItemStat.ci — chartData.ts는 이 타입들을 직접 import하지 않고 이미 조회된 Interval|null만 받는 얕은 계약(StoredCi). 실제 champions.json/items.json 조회는 loadChampions/loadItems(둘 다 파일 부재 시 null 반환)를 호출부가 써야 한다.
+  - **후속 SubTask(ST-K)가 해야 할 일**: page.tsx에서 loadChampions(patch)/loadItems(patch)로 delta.entityType/entityKey/metric에 맞는 before/after 패치의 저장 CI를 조회해 StoredCi{before, after} 형태로 만든 뒤 5번째 인자로 넘겨야 실제 오프셋 기능이 활성화된다. metric→저장CI 매핑: pickRate→ci.pick, banRate→ci.ban(scope!=="all"이면 항상 null), winRate→ci.win(게이트 미달 시 null), adoptionRate→ItemStat.ci.
+- 미확인 사항: 없음(RED→GREEN 확인, 전체 vitest 508개 PASS, verify.sh --ts-only PASS). storedCi를 실제로 채워 넣는 ST-K가 이 계약을 정확히 따르는지는 그쪽 구현 시점에 별도 검증 필요.
