@@ -5,7 +5,7 @@
 import { describe, it, expect } from "vitest";
 import chogathFixture from "../../../__fixtures__/ddragon-champion-chogath.json";
 import gravesFixture from "../../../__fixtures__/ddragon-champion-graves.json";
-import { resolveSpellIconFile } from "../spell-icon";
+import { parseSkillSlot, resolveSpellIconFile, spellIconKey } from "../spell-icon";
 
 describe("resolveSpellIconFile", () => {
   it("초가스 E는 VorpalSpikes.png", () => {
@@ -47,5 +47,44 @@ describe("resolveSpellIconFile", () => {
 
   it("null 입력은 null", () => {
     expect(resolveSpellIconFile(null, "Q")).toBeNull();
+  });
+});
+
+describe("parseSkillSlot", () => {
+  it("'Q - 빛의 숨결' → Q", () => {
+    expect(parseSkillSlot("Q - 빛의 숨결")).toBe("Q");
+  });
+
+  it("'E - 날카로운 가시' → E", () => {
+    expect(parseSkillSlot("E - 날카로운 가시")).toBe("E");
+  });
+
+  it("복합 표기 'RW - 모방: 왜곡'은 첫 글자 R만 취한다", () => {
+    expect(parseSkillSlot("RW - 모방: 왜곡")).toBe("R");
+  });
+
+  it("'기본 능력치'는 슬롯 표기가 없어 null(추측하지 않음)", () => {
+    expect(parseSkillSlot("기본 능력치")).toBeNull();
+  });
+
+  it("'기본 지속 효과 - 영혼의 포식자'는 슬롯 표기가 없어 null", () => {
+    expect(parseSkillSlot("기본 지속 효과 - 영혼의 포식자")).toBeNull();
+  });
+
+  it("빈 문자열은 null", () => {
+    expect(parseSkillSlot("")).toBeNull();
+  });
+});
+
+describe("spellIconKey", () => {
+  it("entity와 skill을 Unit Separator(U+001F)로 결합한다", () => {
+    const key = spellIconKey("초가스", "E - 날카로운 가시");
+    expect(key).toBe("초가스\u001FE - 날카로운 가시");
+  });
+
+  it("entity/skill 경계가 달라도 결합 결과가 겹치지 않는다(구분자로 경계 보존 확인)", () => {
+    const a = spellIconKey("A", "BC");
+    const b = spellIconKey("AB", "C");
+    expect(a).not.toBe(b);
   });
 });

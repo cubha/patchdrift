@@ -53,3 +53,9 @@ export function notesFile(patch: PatchId, dataRoot: string = DATA_ROOT): string 
 export function llmCacheDir(dataRoot: string = DATA_ROOT): string {
   return path.join(dataRoot, "cache", "llm");
 }
+
+/** data/aggregated/spell-icons.json — scripts/run-ddragon.ts가 산출하는 스펠 아이콘 slim
+ * 인덱스(`DataFile<SpellIconMap>`). 패치별 디렉토리가 아니라 전 패치 노트를 스캔한 단일 파일. */
+export function spellIconsFile(dataRoot: string = DATA_ROOT): string {
+  return path.join(dataRoot, "aggregated", "spell-icons.json");
+}

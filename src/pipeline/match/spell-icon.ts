@@ -82,3 +82,21 @@ export function resolveSpellIconFile(championJson: unknown, slot: SpellSlot): st
   const spell = champion.spells[SPELL_SLOT_INDEX[slot]];
   return spell ? spell.image.full : null;
 }
+
+/**
+ * `PatchNoteItem.skill`(예: "Q - 빛의 숨결", "RW - 모방: 왜곡")에서 선행 슬롯 문자를 추출한다.
+ * 문자열 맨 앞이 Q/W/E/R가 아니면(예: "기본 능력치", "기본 지속 효과 - ...") null을 반환한다 —
+ * 패시브 텍스트는 명시적 슬롯 표기가 없어 추측하지 않는다(무근거 아이콘 매핑 방지). "RW" 같은
+ * 복합 표기(궁극기로 다른 스킬을 모방하는 챔피언)는 첫 글자(R)만 슬롯으로 취급한다.
+ */
+export function parseSkillSlot(skill: string): SpellSlot | null {
+  const match = /^([QWER])/.exec(skill.trim());
+  return match ? (match[1] as SpellSlot) : null;
+}
+
+/** entity+skill 쌍을 스펠 아이콘 인덱스(`data/aggregated/spell-icons.json`)의 키로 정규화한다.
+ * Unit Separator(U+001F, 인쇄 불가 제어문자라 실제 entity/skill 텍스트와 충돌하지 않음)로
+ * 결합 — entity·skill 어느 쪽에도 나타나지 않는 문자라 키 충돌 걱정 없이 안전하다. */
+export function spellIconKey(entity: string, skill: string): string {
+  return `${entity}\u001F${skill}`;
+}

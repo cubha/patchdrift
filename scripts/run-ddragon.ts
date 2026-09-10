@@ -15,8 +15,15 @@
 import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
-import { DATA_ROOT } from "../src/pipeline/shared/paths";
-import { loadDdragon } from "../src/pipeline/match/ddragon";
+import { DATA_ROOT, spellIconsFile } from "../src/pipeline/shared/paths";
+import { loadDdragon, type DdragonData } from "../src/pipeline/match/ddragon";
+import {
+  parseSkillSlot,
+  resolveSpellIconFile,
+  spellIconKey,
+  type SpellSlot,
+} from "../src/pipeline/match/spell-icon";
+import type { SpellIconIndexFile, SpellIconMap } from "../src/pipeline/types";
 import { isMainModule } from "./shared/cli";
 
 const VERSIONS_URL = "https://ddragon.leagueoflegends.com/api/versions.json";
@@ -128,6 +135,133 @@ export function collectAppearedEntities(dataRoot: string = DATA_ROOT): {
   return { championIds, itemIds };
 }
 
+interface SpellIconTarget {
+  entity: string;
+  skill: string;
+  slot: SpellSlot;
+}
+
+interface NotesFileForIcons {
+  items: Array<{ section: string; entity: string; skill: string | null }>;
+}
+
+/**
+ * `data/aggregated/notes/*.json` 전 패치를 스캔해, 스펠 아이콘이 필요한 (entity, skill) 쌍만
+ * 뽑는다 — HANDOFF §5 "챔피언 상세 JSON 170개를 커밋하지 않고 slim 인덱스만 산출"의 다운로드
+ * 범위 축소(등장한 것만) 원칙을 여기에도 적용한다. section이 "champion"이 아니거나 skill이
+ * null이거나, `parseSkillSlot`이 슬롯을 못 읽으면(예: "기본 능력치") 대상에서 제외한다.
+ */
+export function collectSpellIconTargets(dataRoot: string = DATA_ROOT): SpellIconTarget[] {
+  const notesDir = path.join(dataRoot, "aggregated", "notes");
+  const targets: SpellIconTarget[] = [];
+  if (!fs.existsSync(notesDir)) return targets;
+
+  const seenKeys = new Set<string>();
+  for (const entry of fs.readdirSync(notesDir, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith(".json")) continue;
+    const parsed = JSON.parse(
+      fs.readFileSync(path.join(notesDir, entry.name), "utf8")
+    ) as NotesFileForIcons;
+    for (const item of parsed.items) {
+      if (item.section !== "champion" || !item.skill) continue;
+      const slot = parseSkillSlot(item.skill);
+      if (!slot) continue;
+      const key = spellIconKey(item.entity, item.skill);
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      targets.push({ entity: item.entity, skill: item.skill, slot });
+    }
+  }
+  return targets;
+}
+
+/**
+ * 노트에 등장한 (entity, skill) 대상만큼만 챔피언 상세 JSON을 fetch해(디스크에 쓰지 않음 —
+ * 170개 전량 커밋 방지, HANDOFF §5) 스펠 아이콘 파일명을 조회하고, 실제 이미지를
+ * `public/dd/spell/`에 다운로드한 뒤 slim 인덱스를 `data/aggregated/spell-icons.json`에 쓴다.
+ */
+async function syncSpellIcons(
+  version: string,
+  ddragon: DdragonData,
+  fetchImpl: typeof fetch,
+  dataRoot: string = DATA_ROOT
+): Promise<void> {
+  const targets = collectSpellIconTargets(dataRoot);
+  console.log(`[run-ddragon] spell icon targets (entity+skill 쌍): ${targets.length}`);
+
+  const byChampion = new Map<string, SpellIconTarget[]>();
+  for (const target of targets) {
+    const bucket = byChampion.get(target.entity);
+    if (bucket) bucket.push(target);
+    else byChampion.set(target.entity, [target]);
+  }
+
+  const icons: SpellIconMap = {};
+  let downloaded = 0;
+  let skipped = 0;
+  let failed = 0;
+  const missingChampionMapping: string[] = [];
+  const missingSlot: Array<{ entity: string; skill: string }> = [];
+
+  for (const [entity, entityTargets] of byChampion) {
+    const champion = ddragon.champions.byKoName(entity);
+    if (!champion) {
+      missingChampionMapping.push(entity);
+      continue;
+    }
+    const detailUrl = `${cdnBase(version)}/data/ko_KR/champion/${champion.id}.json`;
+    const res = await fetchImpl(detailUrl);
+    if (!res.ok) {
+      missingChampionMapping.push(entity);
+      continue;
+    }
+    const detailJson = (await res.json()) as unknown;
+
+    for (const target of entityTargets) {
+      const filename = resolveSpellIconFile(detailJson, target.slot);
+      if (!filename) {
+        missingSlot.push({ entity: target.entity, skill: target.skill });
+        continue;
+      }
+      icons[spellIconKey(target.entity, target.skill)] = filename;
+      const url = `${cdnBase(version)}/img/spell/${filename}`;
+      const dest = path.join(PUBLIC_DD_DIR, "spell", filename);
+      const result = await downloadImageIfMissing(url, dest, fetchImpl);
+      if (result === "downloaded") downloaded += 1;
+      else if (result === "skipped") skipped += 1;
+      else failed += 1;
+    }
+  }
+
+  const indexFile: SpellIconIndexFile = {
+    meta: {
+      ddragonVersion: version,
+      generatedAt: new Date().toISOString(),
+      count: Object.keys(icons).length,
+    },
+    icons,
+  };
+  const indexPath = spellIconsFile(dataRoot);
+  fs.mkdirSync(path.dirname(indexPath), { recursive: true });
+  fs.writeFileSync(indexPath, JSON.stringify(indexFile, null, 2) + "\n", "utf8");
+
+  console.log(
+    `[run-ddragon] spell icons: resolved=${Object.keys(icons).length} downloaded=${downloaded} skipped=${skipped} failed=${failed}`
+  );
+  if (missingChampionMapping.length > 0) {
+    console.log(
+      `[run-ddragon] spell icons — missing champion ddragon mapping: ${missingChampionMapping.join(", ")}`
+    );
+  }
+  if (missingSlot.length > 0) {
+    console.log(
+      `[run-ddragon] spell icons — slot not resolvable in detail JSON (entity/skill): ${missingSlot
+        .map((m) => `${m.entity}/${m.skill}`)
+        .join(", ")}`
+    );
+  }
+}
+
 export async function main(): Promise<void> {
   const fetchImpl = fetch;
   const version = await fetchLatestVersion(fetchImpl);
@@ -211,6 +345,8 @@ export async function main(): Promise<void> {
       `[run-ddragon] missing item ddragon mapping (itemId): ${missingItemMapping.join(", ")}`
     );
   }
+
+  await syncSpellIcons(version, ddragon, fetchImpl);
 }
 
 if (isMainModule(import.meta.url)) {

@@ -237,6 +237,25 @@ export interface DataFile<T> {
   data: T;
 }
 
+/**
+ * `spellIconKey(entity, skill)`(`src/pipeline/match/spell-icon.ts`) → 스펠 아이콘 파일명
+ * (`public/dd/spell/` 아래). 상세 JSON 170여 개를 커밋하지 않고 노트에 등장한 (entity, skill)
+ * 쌍만 slim 인덱스로 산출한다.
+ */
+export type SpellIconMap = Record<string, string>;
+
+/** `data/aggregated/spell-icons.json` 전체 파일 형태 — scripts/run-ddragon.ts가 산출한다.
+ * 특정 패치가 아니라 전 패치 노트를 스캔한 결과라 `AggregateMeta`(patch 단일값 전제)를 재사용하지
+ * 않고 별도 메타를 둔다. */
+export interface SpellIconIndexFile {
+  meta: {
+    ddragonVersion: string;
+    generatedAt: string;
+    count: number;
+  };
+  icons: SpellIconMap;
+}
+
 /** 패치노트 항목 섹션 분류. */
 export type PatchNoteSection = "champion" | "item" | "system" | "other";
 

@@ -20,8 +20,15 @@ import type {
   PatchNoteItem,
   PatchSummary,
   RowsFile as PipelineRowsFile,
+  SpellIconIndexFile,
 } from "@/pipeline/types";
-import { DATA_ROOT, aggregatedDir, deltasFile, notesFile } from "@/pipeline/shared/paths";
+import {
+  DATA_ROOT,
+  aggregatedDir,
+  deltasFile,
+  notesFile,
+  spellIconsFile,
+} from "@/pipeline/shared/paths";
 
 /** run-aggregate.ts가 각 산출 파일에 공통으로 얹는 메타 블록 — `src/pipeline/types.ts`의
  * `AggregateMeta`를 그대로 재export한다(2026-09-05 리팩토링 — 원래 이 파일 로컬 정의였다). */
@@ -154,4 +161,10 @@ export function loadNotes(patch: PatchId, dataRoot: string = DATA_ROOT): NotesFi
  * 빌드 모두 이 경로로 안전하게 처리된다). */
 export function loadDeltas(from: PatchId, to: PatchId, dataRoot: string = DATA_ROOT): DeltasFile | null {
   return readJsonFile(deltasFile(from, to, dataRoot));
+}
+
+/** data/aggregated/spell-icons.json — scripts/run-ddragon.ts 미실행이거나 노트에 스킬 표기가
+ * 없으면 null — 렌더러는 아이콘 없이 텍스트만 표시하는 것으로 폴백한다(크래시 없음). */
+export function loadSpellIcons(dataRoot: string = DATA_ROOT): SpellIconIndexFile | null {
+  return readJsonFile(spellIconsFile(dataRoot));
 }
