@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { displayMetricLabel, formatMetricValue, metricKind } from "../metricFormat";
+import { displayMetricLabel, formatCiRange, formatMetricValue, metricKind } from "../metricFormat";
 
 describe("metricKind", () => {
   it("비율 지표는 pp", () => {
@@ -55,5 +55,12 @@ describe("displayMetricLabel", () => {
     expect(displayMetricLabel({ metric: "unknownMetric", entityName: "x" })).toBe(
       "unknownMetric"
     );
+  });
+});
+
+describe("formatCiRange", () => {
+  it("비율 Interval을 퍼센트 소수 1자리 [lo, hi]로", () => {
+    expect(formatCiRange([0.463, 0.482])).toBe("[46.3, 48.2]");
+    expect(formatCiRange([0.333, 0.352])).toBe("[33.3, 35.2]");
   });
 });

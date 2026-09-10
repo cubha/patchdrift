@@ -4,10 +4,11 @@
 // 참고 — setupFiles는 RTL cleanup 등록에만 쓰고 매처는 붙이지 않는다, vitest.setup.ts).
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
+import type { DeltaRecord } from "@/pipeline/types";
 import HeroSummary from "../HeroSummary";
 import HeroAmbient from "../HeroAmbient";
 import LaneGapPanel from "../LaneGapPanel";
-import ReleaseNoteStream from "../ReleaseNoteStream";
+import ReleaseNoteStream, { type ReleaseStreamEntry } from "../ReleaseNoteStream";
 import SideMatchAverages from "../SideMatchAverages";
 import DiscordPanel from "../DiscordPanel";
 
@@ -90,5 +91,43 @@ describe("LaneGapPanel — 빈 상태", () => {
     const glyph = container.querySelector("svg");
     expect(glyph).not.toBeNull();
     expect(glyph?.getAttribute("aria-hidden")).toBe("true");
+  });
+});
+
+describe("ReleaseNoteStream — 라인 엔티티(entityType='lane') 카드 아이콘", () => {
+  it("대조표(RowIcon)와 동형으로 LaneGlyph를 렌더한다 — 텍스트 첫글자 폴백('바')을 쓰지 않는다", () => {
+    const laneDelta: DeltaRecord = {
+      id: "lane:BOTTOM:goldAt14",
+      entityType: "lane",
+      entityKey: "BOTTOM",
+      entityName: "바텀",
+      metric: "goldAt14",
+      before: 6139,
+      after: 6211,
+      delta: 72,
+      ci: [16, 128],
+      n: { before: 2946, after: 2962 },
+      q: 0.02,
+      status: "unannounced",
+      matchedNoteId: null,
+      matchedNoteIds: [],
+      causes: [],
+      evidence: { matchIds: [], aggregatePath: "x", noteAnchor: null },
+    };
+    const entries: ReleaseStreamEntry[] = [
+      {
+        group: { kind: "unannounced", entity: "바텀", deltas: [laneDelta] },
+        icon: { entityType: "lane", entityKey: "BOTTOM" },
+        lanes: [],
+      },
+    ];
+    const { container } = render(
+      <ReleaseNoteStream entries={entries} spellIcons={null} noteDeltas={{}} patch="26.17" />
+    );
+    const glyph = container.querySelector("svg");
+    expect(glyph).not.toBeNull();
+    expect(glyph?.getAttribute("aria-hidden")).toBe("true");
+    // EntityIcon 기본 폴백(첫 글자 텍스트 박스)이 아님을 확인 — "바" 단독 텍스트 박스 부재.
+    expect(container.querySelector('span[style*="width: 56px"]')?.textContent?.trim()).not.toBe("바");
   });
 });

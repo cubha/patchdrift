@@ -35,7 +35,12 @@ import NoteContrastPanel from "@/components/item/NoteContrastPanel";
 import SourceMatchesPanel from "@/components/item/SourceMatchesPanel";
 import StatsGatePanel from "@/components/item/StatsGatePanel";
 import { buildChartData } from "@/components/item/chartData";
-import { displayMetricLabel, formatMetricValue, metricKind } from "@/components/item/metricFormat";
+import {
+  displayMetricLabel,
+  formatCiRange,
+  formatMetricValue,
+  metricKind,
+} from "@/components/item/metricFormat";
 import { resolveNoteContrast } from "@/components/item/noteContrast";
 import { resolveStoredCi } from "@/components/item/storedCi";
 import { snapshotHash } from "@/components/item/snapshotHash";
@@ -232,6 +237,12 @@ export default async function ItemDetailPage({ params }: ItemPageProps) {
                         있으면 전/후 막대 각각 자기 패치 CI, 없으면(goldAt10 등) 후 막대에만 델타
                         CI(storedCi.ts·chartData.ts 폴백 규칙과 표현 일치). */}
                     95% CI 오차 막대(전/후 각각 — 없으면 후 막대에 델타 CI)
+                    {chartData.barCi ? (
+                      <span className="font-mono">
+                        {formatCiRange(chartData.barCi.before)} ·{" "}
+                        {formatCiRange(chartData.barCi.after)}
+                      </span>
+                    ) : null}
                   </span>
                 </div>
               </SectionCard>

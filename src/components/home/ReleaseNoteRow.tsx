@@ -12,8 +12,9 @@
 //     행마다 반복하면 같은 문장이 카드 안에서 3~4번 되풀이된다.
 
 import Link from "next/link";
-import type { DeltaRecord } from "@/pipeline/types";
+import type { DeltaRecord, LanePosition } from "@/pipeline/types";
 import EntityIcon from "@/components/EntityIcon";
+import LaneGlyph from "@/components/LaneGlyph";
 import SpellIcon from "@/components/SpellIcon";
 import StatusBadge from "@/components/StatusBadge";
 import DeltaValue from "@/components/DeltaValue";
@@ -41,6 +42,30 @@ export interface ReleaseNoteRowProps {
 
 const FALLBACK_ICON_CLASS =
   "flex shrink-0 items-center justify-center rounded-sm border border-border bg-surface-warm font-display text-sm font-bold text-fg-2";
+
+/** 카드 엔티티 아이콘(56px) — 라인 엔티티(entityType="lane", 챔피언 자산 없음)는
+ * DeltaTable.tsx의 RowIcon과 동형으로 LaneGlyph 박스를 쓴다(2026-09-10 verify-impl 축B 후속:
+ * EntityIcon 기본 폴백이 "바텀"의 첫 글자 "바"로 렌더돼 대조표와 불일치했던 결함). */
+function CardIcon({ icon, entity }: { icon: StreamEntityIcon; entity: string }) {
+  if (icon.entityType === "lane" && icon.entityKey) {
+    return (
+      <span
+        style={{ width: 56, height: 56 }}
+        className="flex shrink-0 items-center justify-center rounded-sm border border-border bg-surface-warm text-fg-2"
+      >
+        <LaneGlyph lane={icon.entityKey as LanePosition} size={34} labelled />
+      </span>
+    );
+  }
+  if (icon.entityType && icon.entityKey) {
+    return <EntityIcon entityType={icon.entityType} entityKey={icon.entityKey} name={entity} size={56} />;
+  }
+  return (
+    <span style={{ width: 56, height: 56 }} className={FALLBACK_ICON_CLASS}>
+      {entity.slice(0, 1)}
+    </span>
+  );
+}
 
 /** 시안 `.rn-obs` — 엔티티 대표 관측 1줄. "밴률 26.8% → 42.4% ▲ +15.7%p CI ±1.3 · q<0.001" */
 function ObservationLine({ record }: { record: DeltaRecord }) {
@@ -99,13 +124,7 @@ export default function ReleaseNoteRow({
       }
     >
       <div className="flex items-center gap-4">
-        {icon.entityType && icon.entityKey ? (
-          <EntityIcon entityType={icon.entityType} entityKey={icon.entityKey} name={group.entity} size={56} />
-        ) : (
-          <span style={{ width: 56, height: 56 }} className={FALLBACK_ICON_CLASS}>
-            {group.entity.slice(0, 1)}
-          </span>
-        )}
+        <CardIcon icon={icon} entity={group.entity} />
         <div className="min-w-0 flex-1">
           <div className="font-display text-base font-bold text-fg">{group.entity}</div>
           {observation ? <ObservationLine record={observation} /> : null}

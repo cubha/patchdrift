@@ -5,6 +5,7 @@
 // 표시와, DeltaRecord.metric → DeltaValue/차트가 쓰는 단위 종류(kind) 매핑을 이 파일에 모은다.
 // 순수 함수만 — 부수효과 없음(테스트 대상).
 
+import type { Interval } from "@/pipeline/types";
 import { fmtInt, fmtPct, fmtSec, metricLabel } from "@/lib/format";
 
 /** DeltaValue/차트가 구분하는 값의 단위 종류. */
@@ -48,4 +49,10 @@ export function displayMetricLabel(delta: { metric: string; entityName: string }
     return `첫 ${delta.entityName} 시각`;
   }
   return metricLabel(delta.metric);
+}
+
+/** 범례 CI 실측값 병기용 — `chartData.ts`의 `barCi`(항상 kind="pp"인 저장 CI, 비율 0~1)를
+ * 시안 표기(`[46.3, 48.2]`, 소수 1자리 퍼센트)로 포맷한다. */
+export function formatCiRange([lo, hi]: Interval): string {
+  return `[${(lo * 100).toFixed(1)}, ${(hi * 100).toFixed(1)}]`;
 }
