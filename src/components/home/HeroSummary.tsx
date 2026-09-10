@@ -1,8 +1,9 @@
 // src/components/home/HeroSummary.tsx
 // 요약 카드(히어로) — 프로토타입 `.panel > .panel-body(.hero-headline/.hero-sub) + .stat-tile-grid`
 // 1:1 (docs/design/prototype/01-briefing-home.html). 서버 컴포넌트(순수 렌더, 상태 없음).
-// 스탯 타일 "공지된 변화"는 별도 델타 집계가 아니라 헤드라인의 N(noteItemCount)을 그대로
-// 재사용한다(코디네이터 확정, 2026-09-05 — HeadlineStats 주석 참고).
+// 스탯 타일 "공지된 변화"는 별도 델타 집계가 아니라 헤드라인의 N(noteEntityCount)을 그대로
+// 재사용한다(코디네이터 확정, 2026-09-05 — HeadlineStats 주석 참고. 필드명은 2026-09-10
+// noteEntityCount/noteItemCount로 분리됐다 — HANDOFF-redesign-2026-09-10.md §4-1).
 
 import Link from "next/link";
 import { fmtInt } from "@/lib/format";
