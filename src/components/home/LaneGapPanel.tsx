@@ -27,7 +27,7 @@ export default function LaneGapPanel({ rows }: LaneGapPanelProps) {
               className="flex items-center justify-between gap-3 border-b border-border-soft px-5 py-3 last:border-b-0"
             >
               <span className="flex items-center gap-2 text-sm text-fg-2">
-                <LaneGlyph lane={row.lane} size={16} />
+                <LaneGlyph lane={row.lane} size={16} labelled />
                 {row.label}
               </span>
               <span className="font-mono text-sm font-bold tabular-nums text-fg">{fmtInt(row.count)}</span>

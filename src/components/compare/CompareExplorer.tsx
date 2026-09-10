@@ -8,12 +8,21 @@
 import { useEffect, useMemo, useState } from "react";
 import type { DeltaRecord, PatchNoteItem, PatchNoteSection } from "@/pipeline/types";
 import Container from "@/components/Container";
+import LaneFilter from "@/components/LaneFilter";
 import type { StreamEntityIcon } from "@/components/home/releaseStreamEntity";
+import type { LaneAxis } from "@/lib/lane";
 import StatusFilterChips from "./StatusFilterChips";
 import NoteNavigator from "./NoteNavigator";
 import DeltaTable from "./DeltaTable";
 import CoverageBar from "./CoverageBar";
-import { STATUS_FILTERS, filterByStatus, sortRows, type CoverageStats, type SortKey } from "./logic";
+import {
+  STATUS_FILTERS,
+  filterByLane,
+  filterByStatus,
+  sortRows,
+  type CoverageStats,
+  type SortKey,
+} from "./logic";
 
 export interface CompareExplorerProps {
   pair: { from: string; to: string } | null;
@@ -28,6 +37,7 @@ const PAGE_SIZE = 200;
 
 export default function CompareExplorer({ pair, notes, rows, coverage, noteIcons = {} }: CompareExplorerProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [laneFilter, setLaneFilter] = useState<LaneAxis>("all");
   const [activeSection, setActiveSection] = useState<PatchNoteSection>("champion");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
@@ -60,17 +70,19 @@ export default function CompareExplorer({ pair, notes, rows, coverage, noteIcons
   }
 
   const filteredSortedRows = useMemo(
-    () => sortRows(filterByStatus(rows, statusFilter), sortKey, sortDir),
-    [rows, statusFilter, sortKey, sortDir]
+    () => sortRows(filterByLane(filterByStatus(rows, statusFilter), laneFilter), sortKey, sortDir),
+    [rows, statusFilter, laneFilter, sortKey, sortDir]
   );
   const visibleRows = filteredSortedRows.slice(0, visibleCount);
   const hasMore = filteredSortedRows.length > visibleRows.length;
 
   return (
     <>
+      {/* 시안 .m-filter — 상태 칩과 라인 필터를 같은 필터바 줄에 둔다(홈과 동일한 어휘). */}
       <div className="border-b border-border bg-surface-warm">
-        <Container>
+        <Container className="flex flex-wrap items-center justify-between gap-3 py-3">
           <StatusFilterChips active={statusFilter} onChange={setStatusFilter} />
+          <LaneFilter selected={laneFilter} onSelect={setLaneFilter} />
         </Container>
       </div>
       <Container className="py-8">

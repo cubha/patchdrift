@@ -54,7 +54,12 @@ describe("DeltaTable — 아이콘·라인 태그 (ST-J)", () => {
       <DeltaTable pair={null} rows={[row]} highlightNoteId={null} sortKey="absDelta" sortDir="desc" onSort={() => {}} />
     );
     // 라인 글리프(svg)가 아이콘 자리에 렌더돼야 한다 — 옛 "골" 텍스트 폴백 박스 대신.
-    expect(container.querySelector("tbody svg title")?.textContent).toBe("원딜");
+    // 2026-09-10: 엔티티명("바텀")이 바로 옆에 있어 글리프는 labelled(장식) 처리라 <title>이
+    // 없다 — 접근명 "원딜바텀" 중복 방지. 존재 검사는 svg + aria-hidden으로 한다.
+    const glyph = container.querySelector("tbody svg");
+    expect(glyph).not.toBeNull();
+    expect(glyph?.getAttribute("aria-hidden")).toBe("true");
+    expect(container.querySelector("tbody svg title")).toBeNull();
   });
 
   it("챔피언 position-scope 행(4세그먼트 id)은 라인 태그(글리프+라벨·지표)를 렌더한다", () => {
@@ -169,7 +174,9 @@ describe("CompareExplorer — 데이터 없음(쌍 0개) 전체 통합 빈 상�
         coverage={{ noteEntityCount: 0, noteItemCount: 0, matchedCount: 0, unannouncedCount: 0, lowSampleCount: 0 }}
       />
     );
-    expect(container.querySelectorAll('[aria-pressed]')).toHaveLength(5);
+    // 상태 칩 5종 + 라인 필터 6종(시안 .m-filter, 2026-09-10 신설) = 11.
+    expect(container.querySelectorAll('[aria-pressed]')).toHaveLength(11);
+    expect(container.querySelector('[aria-label="라인 필터"]')).not.toBeNull();
     expect(container.textContent).toContain("표시할 델타가 없습니다");
     expect(container.textContent).toContain("노트 0엔티티(0항목)");
   });

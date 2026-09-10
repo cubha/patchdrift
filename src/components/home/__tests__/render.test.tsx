@@ -86,6 +86,9 @@ describe("LaneGapPanel — 빈 상태", () => {
     );
     expect(container.textContent).toContain("탑");
     expect(container.textContent).toContain("22");
-    expect(container.querySelector("svg title")?.textContent).toBe("탑");
+    // 라벨("탑")이 글리프 바로 옆에 있어 labelled(장식) 처리 — <title> 중복 낭독 방지.
+    const glyph = container.querySelector("svg");
+    expect(glyph).not.toBeNull();
+    expect(glyph?.getAttribute("aria-hidden")).toBe("true");
   });
 });

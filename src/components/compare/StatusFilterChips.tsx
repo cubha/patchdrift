@@ -12,7 +12,7 @@ export interface StatusFilterChipsProps {
 
 export default function StatusFilterChips({ active, onChange }: StatusFilterChipsProps) {
   return (
-    <div className="flex flex-wrap gap-2 py-3" role="group" aria-label="상태 필터">
+    <div className="flex flex-wrap gap-2" role="group" aria-label="상태 필터">
       {STATUS_FILTERS.map((filter) => {
         const isActive = filter.key === active;
         return (

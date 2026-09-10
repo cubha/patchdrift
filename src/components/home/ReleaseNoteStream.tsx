@@ -9,7 +9,7 @@
 import { useMemo, useState } from "react";
 import type { DeltaRecord, LanePosition } from "@/pipeline/types";
 import type { LaneAxis } from "@/lib/lane";
-import LaneFilter from "./LaneFilter";
+import LaneFilter from "@/components/LaneFilter";
 import ReleaseNoteRow from "./ReleaseNoteRow";
 import type { ReleaseStreamGroup } from "./releaseStream";
 import type { StreamEntityIcon } from "./releaseStreamEntity";

@@ -1,7 +1,9 @@
-// src/components/home/LaneFilter.tsx
+// src/components/LaneFilter.tsx
 // 라인 필터 6종(전체/탑/정글/미드/원딜/서포터) — HANDOFF-redesign-2026-09-10.md §4-1
 // "라인 필터 6종 — 인라인 SVG 글리프". 순수 프레젠테이션(선택 상태·클릭 핸들러는 상위
-// ReleaseNoteStream이 소유하는 "use client" 경계에서 props로 내려받는다).
+// "use client" 경계 — 홈은 ReleaseNoteStream, 대조표는 CompareExplorer — 가 소유한다).
+// 2026-09-10 home/ → components/ 이동: 확정 시안이 대조표에도 같은 필터를 두므로 화면 전용
+// 디렉토리에 둘 수 없게 됐다(LaneGlyph와 같은 층).
 // 접근성: role="group" + 각 버튼 aria-pressed(HANDOFF UI 설계 명세).
 
 import type { LaneAxis } from "@/lib/lane";
@@ -37,7 +39,7 @@ export default function LaneFilter({ selected, onSelect, className = "" }: LaneF
                 : "border-border-soft text-fg-2 hover:border-border hover:text-fg"
             }`}
           >
-            <LaneGlyph lane={lane} size={14} />
+            <LaneGlyph lane={lane} size={14} labelled />
             {laneLabel(lane)}
           </button>
         );

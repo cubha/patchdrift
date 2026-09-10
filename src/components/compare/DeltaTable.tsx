@@ -23,7 +23,7 @@ function RowIcon({ row, size }: { row: DeltaRecord; size: number }) {
         style={{ width: size, height: size }}
         className="flex shrink-0 items-center justify-center rounded-sm border border-border bg-surface-warm text-fg-2"
       >
-        <LaneGlyph lane={row.entityKey as LanePosition} size={Math.round(size * 0.6)} />
+        <LaneGlyph lane={row.entityKey as LanePosition} size={Math.round(size * 0.6)} labelled />
       </span>
     );
   }
@@ -46,7 +46,7 @@ function LaneTag({ row }: { row: DeltaRecord }) {
   if (lane === null || lane === "all") return null;
   return (
     <span className="mt-0.5 flex items-center gap-1 text-xs text-muted">
-      <LaneGlyph lane={lane} size={12} />
+      <LaneGlyph lane={lane} size={12} labelled />
       {positionLabel(lane)} · {metricLabel(row.metric)}
     </span>
   );

@@ -7,6 +7,7 @@ import type { DeltaRecord, MatchStatus, PatchNoteItem, PatchNoteSection } from "
 import type { NotesFile } from "@/lib/data";
 import { fmtCiHalf, fmtDeltaInt, fmtDeltaSec, fmtInt, fmtPp } from "@/lib/format";
 import { absDelta, countRelevantNoteEntities, metricKind } from "@/components/home/logic";
+import { parseLaneAxis, type LaneAxis } from "@/lib/lane";
 
 /** 상태 필터 칩 5종(UX-BRIEF "02 대조표" 필터 바) — "no-change"는 칩이 없다(전체=필터 없음이라
  * no-change 행도 "전체"에서는 그대로 보인다, ST-11.md 구현 결정 참고). `key`를 `MatchStatus |
@@ -24,6 +25,25 @@ export const STATUS_FILTERS: ReadonlyArray<{ key: MatchStatus | "all"; label: st
 export function filterByStatus(rows: DeltaRecord[], key: string): DeltaRecord[] {
   if (key === "all") return rows;
   return rows.filter((r) => r.status === key);
+}
+
+/**
+ * 라인 필터 — 확정 시안(2026-09-10)이 대조표 필터바에도 라인 6종을 두므로 신설했다.
+ * `"all"`은 전체 통과. 특정 라인을 고르면 남는 행은 둘뿐이다:
+ *  - 챔피언 position-scope 행(`champion:{key}:{pos}:{metric}`) — `parseLaneAxis`가 판정
+ *  - 라인 엔티티 행(`lane:{pos}:{metric}` — 골드@10/14) — entityType/entityKey로 판정
+ *
+ * 결과적으로 **밴률은 라인 선택 시 자동으로 사라진다** — 밴은 라인 무관이라 position-scope
+ * 행에 banRate가 없고(ChampionStat.ci.ban은 scope!=="all"에서 null), all-scope 행은
+ * `parseLaneAxis`가 `"all"`을 돌려주므로 특정 라인과 절대 일치하지 않는다. HANDOFF §6
+ * "라인별 밴률 컬럼 — 컬럼 자체를 만들지 말 것"을 별도 분기 없이 구조로 만족한다.
+ */
+export function filterByLane(rows: DeltaRecord[], lane: LaneAxis): DeltaRecord[] {
+  if (lane === "all") return rows;
+  return rows.filter(
+    (r) =>
+      parseLaneAxis(r.id) === lane || (r.entityType === "lane" && r.entityKey === lane)
+  );
 }
 
 /** 헤더 정렬 3키(ST-11 프롬프트 "헤더 정렬(클라이언트, |Δ|·q·n)"). q는 낮을수록(더 유의할수록)

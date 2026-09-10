@@ -8,6 +8,7 @@ import type { NotesFile } from "@/lib/data";
 import {
   computeCoverage,
   directionSymbol,
+  filterByLane,
   filterByStatus,
   filterNotesBySearch,
   filterNotesBySection,
@@ -228,5 +229,48 @@ describe("computeCoverage", () => {
       unannouncedCount: 1,
       lowSampleCount: 1,
     });
+  });
+});
+
+describe("filterByLane — 대조표 라인 필터(시안 .m-filter, 2026-09-10)", () => {
+  const allScopeBan = delta({ id: "champion:Camille:banRate", metric: "banRate" });
+  const topWin = delta({ id: "champion:Anivia:TOP:winRate", metric: "winRate" });
+  const jungleWin = delta({ id: "champion:Ambessa:JUNGLE:winRate", metric: "winRate" });
+  const laneGold = delta({
+    id: "lane:BOTTOM:goldAt14",
+    entityType: "lane",
+    entityKey: "BOTTOM",
+    entityName: "바텀",
+    metric: "goldAt14",
+  });
+  const objective = delta({
+    id: "objective:dragon:firstSec",
+    entityType: "objective",
+    entityKey: "dragon",
+    entityName: "첫 용",
+    metric: "firstSec",
+  });
+  const rows = [allScopeBan, topWin, jungleWin, laneGold, objective];
+
+  it('"all"이면 전부 통과한다', () => {
+    expect(filterByLane(rows, "all")).toEqual(rows);
+  });
+
+  it("특정 라인은 그 라인의 position-scope 챔피언 행만 남긴다", () => {
+    expect(filterByLane(rows, "TOP").map((r) => r.id)).toEqual(["champion:Anivia:TOP:winRate"]);
+  });
+
+  it("라인 엔티티 행(lane:{pos}:{metric})도 같은 라인으로 묶인다", () => {
+    expect(filterByLane(rows, "BOTTOM").map((r) => r.id)).toEqual(["lane:BOTTOM:goldAt14"]);
+  });
+
+  it("밴률은 라인 선택 시 사라진다 — 밴은 라인 무관(HANDOFF §6)", () => {
+    for (const lane of ["TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"] as const) {
+      expect(filterByLane(rows, lane).some((r) => r.metric === "banRate")).toBe(false);
+    }
+  });
+
+  it("라인 축이 없는 엔티티(오브젝트·매치 평균)는 라인 선택에서 제외된다", () => {
+    expect(filterByLane(rows, "MIDDLE")).toEqual([]);
   });
 });
