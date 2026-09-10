@@ -25,9 +25,10 @@ import DeltaValue from "@/components/DeltaValue";
 import EntityIcon from "@/components/EntityIcon";
 import SectionCard from "@/components/SectionCard";
 import StatusBadge from "@/components/StatusBadge";
-import { listPatchPairs, loadDeltas, loadNotes, type PatchPair } from "@/lib/data";
+import { listPatchPairs, loadChampions, loadDeltas, loadItems, loadNotes, type PatchPair } from "@/lib/data";
 import { fmtInt, itemIdFromSlug, itemSlug } from "@/lib/format";
 import type { DeltaRecord, PatchNoteItem } from "@/pipeline/types";
+import { loadDdragonSafe } from "@/pipeline/match/ddragon";
 import CausesPanel from "@/components/item/CausesPanel";
 import ItemChart from "@/components/item/ItemChart";
 import NoteContrastPanel from "@/components/item/NoteContrastPanel";
@@ -36,6 +37,7 @@ import StatsGatePanel from "@/components/item/StatsGatePanel";
 import { buildChartData } from "@/components/item/chartData";
 import { displayMetricLabel, formatMetricValue, metricKind } from "@/components/item/metricFormat";
 import { resolveNoteContrast } from "@/components/item/noteContrast";
+import { resolveStoredCi } from "@/components/item/storedCi";
 import { snapshotHash } from "@/components/item/snapshotHash";
 
 interface ItemPageProps {
@@ -130,7 +132,16 @@ export default async function ItemDetailPage({ params }: ItemPageProps) {
   // 델타·CI 문구와 차트 오차 막대를 모두 생략한다(원시 전/후 관측값 자체는 계속 보여준다 —
   // "델타 미제시"이지 "값 미제시"가 아니다).
   const suppressDelta = delta.status === "insufficient-sample";
-  const chartData = buildChartData(delta, pair.from, pair.to, suppressDelta);
+  const ddragon = loadDdragonSafe();
+  const storedCi = resolveStoredCi(
+    delta,
+    ddragon,
+    loadChampions(pair.from)?.rows ?? null,
+    loadChampions(pair.to)?.rows ?? null,
+    loadItems(pair.from)?.rows ?? null,
+    loadItems(pair.to)?.rows ?? null
+  );
+  const chartData = buildChartData(delta, pair.from, pair.to, suppressDelta, storedCi);
   const noteContrast = resolveNoteContrast(delta, notes, pair.to);
   const rawDeltas = readDeltasRaw(pair);
   const hash = rawDeltas ? snapshotHash(rawDeltas) : null;
@@ -145,7 +156,7 @@ export default async function ItemDetailPage({ params }: ItemPageProps) {
                 entityType={delta.entityType}
                 entityKey={delta.entityKey}
                 name={delta.entityName}
-                size={48}
+                size={72}
                 className="rounded-md text-lg"
               />
               <div>
@@ -186,13 +197,22 @@ export default async function ItemDetailPage({ params }: ItemPageProps) {
 
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_1fr]">
             <div className="flex flex-col gap-6">
+              {/* 근거 패널(패치노트 대조)을 차트보다 위로 — HANDOFF §4-3 "차트 폭을 줄이고
+                  근거 패널을 위로". */}
+              <SectionCard eyebrow="우선 1 · 선언 대조" title="패치노트 대조">
+                <NoteContrastPanel result={noteContrast} />
+              </SectionCard>
+
               <SectionCard eyebrow="우선 1 · 시각 근거" title="전/후 관측값">
                 <div className="p-5 pb-0">
                   <p className="text-xs text-muted">
                     일별 추이는 수집 확장 후 제공 — 현재 집계는 패치 단위 전/후 값만 제공합니다.
                   </p>
                 </div>
-                <ItemChart data={chartData} />
+                {/* 차트 폭 축소 — 근거 패널 대비 시각 우선순위를 낮춘다(HANDOFF §4-3). */}
+                <div className="max-w-xl">
+                  <ItemChart data={chartData} />
+                </div>
                 <div className="flex flex-wrap gap-4 border-t border-border-soft px-5 py-4 text-xs text-muted">
                   <span className="inline-flex items-center gap-2">
                     <span className="inline-block h-2.5 w-2.5 rounded-sm bg-fg-2" aria-hidden="true" />
@@ -208,13 +228,12 @@ export default async function ItemDetailPage({ params }: ItemPageProps) {
                       style={{ background: "var(--muted)" }}
                       aria-hidden="true"
                     />
-                    95% CI 오차 막대
+                    {/* HANDOFF §4-3: "95% CI 오차 막대" 범례를 양쪽 막대 기준으로 수정 — 저장 CI가
+                        있으면 전/후 막대 각각 자기 패치 CI, 없으면(goldAt10 등) 후 막대에만 델타
+                        CI(storedCi.ts·chartData.ts 폴백 규칙과 표현 일치). */}
+                    95% CI 오차 막대(전/후 각각 — 없으면 후 막대에 델타 CI)
                   </span>
                 </div>
-              </SectionCard>
-
-              <SectionCard eyebrow="우선 1 · 선언 대조" title="패치노트 대조">
-                <NoteContrastPanel result={noteContrast} />
               </SectionCard>
 
               <SectionCard eyebrow="우선 2 · 간접 영향 후보" title="추정 원인(LLM)">
