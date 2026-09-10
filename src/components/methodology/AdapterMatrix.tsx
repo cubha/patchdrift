@@ -1,18 +1,17 @@
 // src/components/methodology/AdapterMatrix.tsx
 // 어댑터 매핑표 렌더 — HANDOFF-redesign-2026-09-10.md §4-4. 레이아웃은 기존 방법론 표
 // 스타일(StatusDefinitionTable.tsx)을 그대로 따른다("레이아웃은 그대로" 원칙). 순수 렌더.
+// 2026-09-10 verify-impl 축B: 4열을 "PUBG 상태" → "어댑터 인터페이스"로 교체하고 상태는
+// PUBG 머리글로, 판정 엔진은 표 밖 문단 → 마지막 행으로 옮겼다(시안 구조 그대로).
 
-import { ADAPTER_MATRIX, JUDGMENT_ENGINE_NOTE, type AdapterStatus } from "./adapterMatrixData";
+import {
+  ADAPTER_MATRIX,
+  JUDGMENT_ENGINE_NOTE,
+  PUBG_COLUMN_HEADER,
+} from "./adapterMatrixData";
 
-const STATUS_LABEL: Record<AdapterStatus, string> = {
-  designed: "어댑터 확정 · 미연결",
-  "verified-unconnected": "API 실측 완료 · 미연결",
-};
-
-const STATUS_CLASSES: Record<AdapterStatus, string> = {
-  designed: "border-border text-fg-2",
-  "verified-unconnected": "border-accent text-accent",
-};
+const HEAD_CLASS = "border-b border-border-soft px-5 py-3 text-left text-xs font-bold text-muted";
+const CELL_CLASS = "border-b border-border-soft px-5 py-4 align-top text-fg-2";
 
 export default function AdapterMatrix() {
   return (
@@ -21,18 +20,10 @@ export default function AdapterMatrix() {
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr>
-              <th className="border-b border-border-soft px-5 py-3 text-left text-xs font-bold text-muted">
-                계층
-              </th>
-              <th className="border-b border-border-soft px-5 py-3 text-left text-xs font-bold text-muted">
-                LoL (현재)
-              </th>
-              <th className="border-b border-border-soft px-5 py-3 text-left text-xs font-bold text-muted">
-                PUBG (확장 설계)
-              </th>
-              <th className="border-b border-border-soft px-5 py-3 text-left text-xs font-bold text-muted">
-                PUBG 상태
-              </th>
+              <th className={HEAD_CLASS}>파이프라인 계층</th>
+              <th className={HEAD_CLASS}>리그 오브 레전드 (연결됨)</th>
+              <th className={HEAD_CLASS}>{PUBG_COLUMN_HEADER}</th>
+              <th className={HEAD_CLASS}>어댑터 인터페이스</th>
             </tr>
           </thead>
           <tbody>
@@ -41,14 +32,14 @@ export default function AdapterMatrix() {
                 <td className="border-b border-border-soft px-5 py-4 align-top font-bold text-fg">
                   {row.layer}
                 </td>
-                <td className="border-b border-border-soft px-5 py-4 align-top text-fg-2">{row.lol}</td>
-                <td className="border-b border-border-soft px-5 py-4 align-top text-fg-2">{row.pubg}</td>
+                {/* pubg===null인 행(판정 엔진)은 게임 무관이라 LoL 셀이 PUBG 열까지 가로지른다. */}
+                <td className={CELL_CLASS} colSpan={row.pubg === null ? 2 : 1}>
+                  {row.lol}
+                </td>
+                {row.pubg === null ? null : <td className={CELL_CLASS}>{row.pubg}</td>}
                 <td className="border-b border-border-soft px-5 py-4 align-top">
-                  <span
-                    className={`inline-flex items-center gap-2 whitespace-nowrap rounded-sm border px-2 py-1 font-mono text-xs font-bold ${STATUS_CLASSES[row.pubgStatus]}`}
-                  >
-                    <span className="h-1.5 w-1.5 rounded-pill bg-current" aria-hidden="true" />
-                    {STATUS_LABEL[row.pubgStatus]}
+                  <span className="whitespace-nowrap font-mono text-xs font-bold text-accent">
+                    {row.iface}
                   </span>
                 </td>
               </tr>
@@ -56,7 +47,7 @@ export default function AdapterMatrix() {
           </tbody>
         </table>
       </div>
-      <p className="px-5 pb-5 text-xs text-muted">{JUDGMENT_ENGINE_NOTE}</p>
+      <p className="px-5 text-xs text-muted">{JUDGMENT_ENGINE_NOTE}</p>
       <p className="px-5 pb-5 text-xs text-muted">
         PUBG 수집 수치: 0건 — 이번 릴리즈는 매핑 설계까지만 확정하고 실연결은 범위 밖이다(도그푸딩
         일정 확보 우선, HANDOFF-redesign-2026-09-10.md §6·§8).
