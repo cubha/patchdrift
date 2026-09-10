@@ -4,7 +4,7 @@
 // 데이터 로드는 이 서버 컴포넌트에서만 한다(src/lib/data.ts, 빌드 타임 fs) — 하위 home/*
 // 컴포넌트는 전부 props만 받는 순수 렌더(상태 없음, 서버/클라이언트 경계 없음).
 
-import type { MatchStatus } from "@/pipeline/types";
+import type { DeltaRecord } from "@/pipeline/types";
 import { loadDdragonSafe } from "@/pipeline/match/ddragon";
 import Container from "@/components/Container";
 import FilterBar from "@/components/FilterBar";
@@ -50,9 +50,11 @@ export default function Home() {
     return { group, icon, lanes };
   });
 
-  const noteStatus: Record<string, MatchStatus> = {};
+  // note.id → 그 노트를 근거로 매칭된 델타. 스트림 카드가 뱃지(status)뿐 아니라 관측 수치
+  // (.rn-obs)와 판정 문장(.verdict .m)까지 그리므로 status가 아니라 레코드 전체를 넘긴다.
+  const noteDeltas: Record<string, DeltaRecord> = {};
   for (const row of deltas?.rows ?? []) {
-    for (const noteId of row.matchedNoteIds) noteStatus[noteId] = row.status;
+    for (const noteId of row.matchedNoteIds) noteDeltas[noteId] = row;
   }
 
   const unannouncedRows = (deltas?.rows ?? []).filter((row) => row.status === "unannounced");
@@ -75,8 +77,9 @@ export default function Home() {
               <ReleaseNoteStream
                 entries={streamEntries}
                 spellIcons={spellIcons?.icons ?? null}
-                noteStatus={noteStatus}
+                noteDeltas={noteDeltas}
                 patch={pair?.to ?? null}
+                qAlpha={deltas?.meta.qAlpha}
               />
             </div>
             <div className="flex flex-col gap-6">

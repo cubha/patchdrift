@@ -24,7 +24,7 @@ describe("HeroSummary — 빈 상태(모든 수치 0)", () => {
 describe("ReleaseNoteStream — 빈 상태", () => {
   it("그룹이 없으면 라인 필터만 남기고 빈 상태 문구를 렌더한다", () => {
     const { container } = render(
-      <ReleaseNoteStream entries={[]} spellIcons={null} noteStatus={{}} patch={null} />
+      <ReleaseNoteStream entries={[]} spellIcons={null} noteDeltas={{}} patch={null} />
     );
     expect(container.textContent).toContain("이 라인에서는 관측된 변화가 없습니다");
     // 라인 필터 6종(전체/탑/정글/미드/원딜/서포터)은 데이터가 없어도 항상 렌더된다.

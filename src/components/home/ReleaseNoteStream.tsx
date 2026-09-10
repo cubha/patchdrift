@@ -7,7 +7,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { LanePosition, MatchStatus } from "@/pipeline/types";
+import type { DeltaRecord, LanePosition } from "@/pipeline/types";
 import type { LaneAxis } from "@/lib/lane";
 import LaneFilter from "./LaneFilter";
 import ReleaseNoteRow from "./ReleaseNoteRow";
@@ -25,15 +25,18 @@ export interface ReleaseStreamEntry {
 export interface ReleaseNoteStreamProps {
   entries: ReleaseStreamEntry[];
   spellIcons: Record<string, string> | null;
-  noteStatus: Record<string, MatchStatus>;
+  /** note.id → 짝지어진 델타(page.tsx가 matchedNoteIds 역색인으로 구성). */
+  noteDeltas: Record<string, DeltaRecord>;
   patch: string | null;
+  /** deltas.meta.qAlpha — 판정 문장(streamVerdict)의 유의 임계. */
+  qAlpha?: number;
 }
 
 function groupKey(group: ReleaseStreamGroup): string {
   return `${group.kind}:${group.entity}`;
 }
 
-export default function ReleaseNoteStream({ entries, spellIcons, noteStatus, patch }: ReleaseNoteStreamProps) {
+export default function ReleaseNoteStream({ entries, spellIcons, noteDeltas, patch, qAlpha }: ReleaseNoteStreamProps) {
   const [selectedLane, setSelectedLane] = useState<LaneAxis>("all");
 
   const filtered = useMemo(() => {
@@ -56,8 +59,9 @@ export default function ReleaseNoteStream({ entries, spellIcons, noteStatus, pat
               group={entry.group}
               icon={entry.icon}
               spellIcons={spellIcons}
-              noteStatus={noteStatus}
+              noteDeltas={noteDeltas}
               patch={patch}
+              qAlpha={qAlpha}
             />
           ))}
         </ul>
