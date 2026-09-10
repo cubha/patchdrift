@@ -200,3 +200,37 @@ describe("buildChartData — storedCi(패치별 자기 CI) 오프셋", () => {
     expect(data.bars[1].error).toEqual([0, 0]);
   });
 });
+
+// 2026-09-10 verify-impl 축B 후속 — 시안 범례에 CI 실측값 병기(`[46.3, 48.2] · [33.3, 35.2]`).
+// storedCi 경로(양쪽 막대 모두 자기 패치 CI)가 실제로 쓰인 경우에만 barCi를 노출한다 — 델타-CI
+// 폴백(after 막대만 CI)은 before의 "자기 CI"가 없으므로 무근거 값을 지어내지 않고 null.
+describe("buildChartData — barCi(범례 CI 실측값 병기용)", () => {
+  it("storedCi가 실제로 적용되면 barCi에 before/after 원본 Interval을 그대로 노출한다", () => {
+    const delta = makeDelta({ metric: "banRate", before: 0.472, after: 0.342, delta: -0.13 });
+    const data = buildChartData(delta, "26.16", "26.17", false, {
+      before: [0.463, 0.482],
+      after: [0.333, 0.352],
+    });
+    expect(data.barCi).toEqual({ before: [0.463, 0.482], after: [0.333, 0.352] });
+  });
+
+  it("델타-CI 폴백(storedCi 미지정)이면 barCi는 null", () => {
+    const data = buildChartData(makeDelta());
+    expect(data.barCi).toBeNull();
+  });
+
+  it("suppressError=true면 storedCi가 있어도 barCi는 null(오차 자체를 숨기는 상태이므로)", () => {
+    const delta = makeDelta({ metric: "winRate", before: 0.625, after: 0.625, delta: 0 });
+    const data = buildChartData(delta, "전", "후", true, {
+      before: [0.5, 0.75],
+      after: [0.5, 0.75],
+    });
+    expect(data.barCi).toBeNull();
+  });
+
+  it("storedCi가 한쪽만 있으면(폴백 조건) barCi는 null", () => {
+    const delta = makeDelta({ metric: "pickRate" });
+    const data = buildChartData(delta, "전", "후", false, { before: [0.015, 0.024], after: null });
+    expect(data.barCi).toBeNull();
+  });
+});
