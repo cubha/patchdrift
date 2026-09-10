@@ -155,4 +155,30 @@ describe("buildReleaseStream", () => {
       expect(stream[0].deltas).toHaveLength(2);
     }
   });
+
+  it("champion 외 entityType(lane/objective/summary)의 미공지 델타도 그룹에 포함된다(필터링하지 않음, scope-critic 2026-09-10 확인)", () => {
+    const deltas = deltasFile([
+      delta({
+        id: "lane:BOTTOM:goldAt10",
+        entityType: "lane",
+        entityKey: "BOTTOM",
+        entityName: "바텀",
+        metric: "goldAt10",
+        status: "unannounced",
+        delta: 120,
+      }),
+      delta({
+        id: "objective:dragon:firstSec",
+        entityType: "objective",
+        entityKey: "dragon",
+        entityName: "첫 용",
+        metric: "firstSec",
+        status: "unannounced",
+        delta: -15,
+      }),
+    ]);
+    const stream = buildReleaseStream(null, deltas);
+    expect(stream.map((g) => g.entity).sort()).toEqual(["바텀", "첫 용"].sort());
+    expect(stream.every((g) => g.kind === "unannounced")).toBe(true);
+  });
 });

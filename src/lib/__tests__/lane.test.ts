@@ -64,4 +64,15 @@ describe("lanesForEntityKey", () => {
   it("position-scope 행이 없으면 빈 배열(라인을 추측하지 않음)", () => {
     expect(lanesForEntityKey([], "Ahri")).toEqual([]);
   });
+
+  it("champion이 아닌 id 네임스페이스(lane:/objective: 등)는 parseLaneAxis가 항상 null이라 빈 배열로 안전하게 떨어진다(scope-critic 2026-09-10 확인 — 홈 스트림이 entityType 무관하게 모든 unannounced를 렌더하므로, 이 안전망이 없으면 라인 필터가 오작동할 수 있었다)", () => {
+    const records = [
+      stubRecord("lane:BOTTOM:goldAt10", "BOTTOM"),
+      stubRecord("objective:dragon:firstSec", "dragon"),
+      stubRecord("summary:avgDurationSec", "avgDurationSec"),
+    ];
+    expect(lanesForEntityKey(records, "BOTTOM")).toEqual([]);
+    expect(lanesForEntityKey(records, "dragon")).toEqual([]);
+    expect(lanesForEntityKey(records, "avgDurationSec")).toEqual([]);
+  });
 });

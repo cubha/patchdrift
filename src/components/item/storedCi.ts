@@ -15,9 +15,14 @@ import type { DdragonData } from "@/pipeline/match/ddragon";
 import { parseLaneAxis } from "@/lib/lane";
 import type { StoredCi } from "./chartData";
 
-function championCiFor(row: ChampionStat, metric: string): Interval | null {
+/** `scope`를 함께 받아 banRate를 scope="all"에서만 읽는다 — `aggregate/champions.ts`가 애초에
+ * `ci.ban`을 scope!=="all"일 때 null로 산출하므로(및 delta.ts가 position-scope 델타를 pickRate/
+ * winRate로만 만들어 banRate가 position 행과 짝지어질 일이 현재는 없으므로) 오늘은 도달 불가한
+ * 분기지만, ST-E VERIFY-SPEC이 명시한 불변식("scope!=='all'이면 항상 null")을 코드로도 강제해
+ * 향후 delta.ts가 바뀌어도 조용히 어긋난 CI를 반환하지 않게 한다(scope-critic 2026-09-10 지적). */
+function championCiFor(row: ChampionStat, metric: string, scope: ChampionStat["scope"]): Interval | null {
   if (metric === "pickRate") return row.ci.pick;
-  if (metric === "banRate") return row.ci.ban;
+  if (metric === "banRate") return scope === "all" ? row.ci.ban : null;
   if (metric === "winRate") return row.ci.win;
   return null;
 }
@@ -53,8 +58,8 @@ export function resolveStoredCi(
       (r) => r.championId === championId && r.scope === scope && r.position === position
     );
     return {
-      before: beforeRow ? championCiFor(beforeRow, delta.metric) : null,
-      after: afterRow ? championCiFor(afterRow, delta.metric) : null,
+      before: beforeRow ? championCiFor(beforeRow, delta.metric, scope) : null,
+      after: afterRow ? championCiFor(afterRow, delta.metric, scope) : null,
     };
   }
 
