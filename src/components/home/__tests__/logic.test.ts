@@ -12,6 +12,7 @@ import {
   computeHeadline,
   countRelevantNoteEntities,
   entityFallbackLabel,
+  excludeObservation,
   formatMetricValue,
   formatNotePreviewText,
   formatObservedSummary,
@@ -373,5 +374,26 @@ describe("entityFallbackLabel", () => {
   it("champion/item은 undefined(EntityIcon 기본 동작에 위임)", () => {
     expect(entityFallbackLabel({ entityType: "champion", entityKey: "Trundle" })).toBeUndefined();
     expect(entityFallbackLabel({ entityType: "item", entityKey: "3047" })).toBeUndefined();
+  });
+});
+
+describe("excludeObservation", () => {
+  // 홈 릴리즈노트 스트림 미공지 카드: 헤더(ObservationLine)가 대표 관측 1건을 이미 보여주므로,
+  // 카드 하단 전체 delta 리스트는 그 레코드를 다시 포함하면 안 된다(2026-09-11 중복 렌더 버그).
+  it("observation과 id가 같은 레코드를 리스트에서 제외한다", () => {
+    const ban = delta({ id: "champion:Camille:banRate", metric: "banRate", delta: -0.1 });
+    const pick = delta({ id: "champion:Camille:pickRate", metric: "pickRate", delta: -0.089 });
+    expect(excludeObservation([ban, pick], ban)).toEqual([pick]);
+  });
+
+  it("observation이 null이면 원본 배열을 그대로 돌려준다", () => {
+    const ban = delta({ id: "champion:Camille:banRate" });
+    expect(excludeObservation([ban], null)).toEqual([ban]);
+  });
+
+  it("observation과 일치하는 id가 리스트에 없으면 전부 유지한다", () => {
+    const ban = delta({ id: "champion:Camille:banRate" });
+    const other = delta({ id: "champion:Other:banRate" });
+    expect(excludeObservation([ban], other)).toEqual([ban]);
   });
 });
