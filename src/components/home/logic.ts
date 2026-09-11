@@ -87,6 +87,17 @@ export function absDelta(record: DeltaRecord): number {
   return record.delta === null ? -Infinity : Math.abs(record.delta);
 }
 
+/** 릴리즈노트 스트림 미공지 카드 하단 delta 리스트에서, 헤더(ObservationLine)가 이미 보여준
+ * 대표 관측(`observation`)과 같은 레코드(id 기준)를 제외한다 — 헤더 1회 + 리스트 1회로
+ * 중복 렌더되던 결함(2026-09-11) 수정. `observation`이 null이면 원본을 그대로 돌려준다. */
+export function excludeObservation(
+  rows: readonly DeltaRecord[],
+  observation: DeltaRecord | null
+): DeltaRecord[] {
+  if (!observation) return [...rows];
+  return rows.filter((row) => row.id !== observation.id);
+}
+
 /** 미공지 변화 상위 N건 — ST-08 `writeDeltas`가 이미 상태 우선순위(unannounced 최우선) →
  * `|delta|` 내림차순으로 정렬해 기록하므로(verdict.sortDeltas), 여기서는 상태로 필터링만 하고
  * 파일 순서를 신뢰한다(재정렬하지 않음 — ST-11 프롬프트 "정렬은 파일 순서 신뢰"). */

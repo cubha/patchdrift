@@ -20,7 +20,7 @@ import StatusBadge from "@/components/StatusBadge";
 import DeltaValue from "@/components/DeltaValue";
 import { itemHref, metricLabel } from "@/lib/format";
 import { spellIconKey } from "@/pipeline/match/spell-icon";
-import { formatMetricValue, metricKind, resolveCause } from "./logic";
+import { excludeObservation, formatMetricValue, metricKind, resolveCause } from "./logic";
 import { buildNoteVerdict, formatQ, selectEntityObservation } from "./streamVerdict";
 import type { ReleaseStreamGroup } from "./releaseStream";
 import type { StreamEntityIcon } from "./releaseStreamEntity";
@@ -114,59 +114,73 @@ export default function ReleaseNoteRow({
     : selectEntityObservation(matchedRecords(group.notes.map((n) => n.id), noteDeltas));
   // 미공지 카드의 추정 원인 — 대표 관측 1건 기준으로 엔티티당 한 번만 렌더한다(시안 .gap-why).
   const gapCause = isUnannounced && observation ? resolveCause(observation) : null;
+  // 헤더(ObservationLine)가 이미 보여준 대표 관측을 하단 리스트에서 제외 — 안 그러면 같은
+  // 델타 행이 카드 안에서 두 번 렌더된다(2026-09-11 결함).
+  const remainingDeltas = isUnannounced ? excludeObservation(group.deltas, observation) : [];
 
   return (
     <li
       className={
         isUnannounced
-          ? "border-b border-l-4 border-border-soft border-l-accent bg-surface-warm px-5 py-4 last:border-b-0"
-          : "border-b border-border-soft px-5 py-4 last:border-b-0"
+          ? "border-b border-l-4 border-border-soft border-l-accent bg-surface-warm last:border-b-0"
+          : "border-b border-border-soft last:border-b-0"
       }
     >
-      <div className="flex items-center gap-4">
-        <CardIcon icon={icon} entity={group.entity} />
-        <div className="min-w-0 flex-1">
-          <div className="font-display text-base font-bold text-fg">{group.entity}</div>
-          {observation ? <ObservationLine record={observation} /> : null}
-        </div>
-      </div>
+      {/* 기본 접힘 아코디언 — 카드 전체가 항상 펼쳐져 화면을 뒤덮던 문제(2026-09-11) 수정.
+          네이티브 <details>/<summary>라 서버 컴포넌트 그대로 유지할 수 있다(JS 상태 불필요). */}
+      <details className="group px-5 py-4">
+        <summary className="flex cursor-pointer list-none items-center gap-4 [&::-webkit-details-marker]:hidden">
+          <CardIcon icon={icon} entity={group.entity} />
+          <div className="min-w-0 flex-1">
+            <div className="font-display text-base font-bold text-fg">{group.entity}</div>
+            {observation ? <ObservationLine record={observation} /> : null}
+          </div>
+          <span
+            aria-hidden="true"
+            className="shrink-0 text-xs text-muted transition-transform group-open:rotate-180"
+          >
+            ▾
+          </span>
+        </summary>
 
-      {isUnannounced ? (
-        <>
-          {patch ? (
-            <div className="mt-3 text-xs font-bold text-accent">
-              ✕ {patch} 패치노트에 {group.entity} 항목 없음 — 짝지을 선언이 존재하지 않습니다
-            </div>
-          ) : null}
-          {gapCause && observation ? (
-            <p className={`mt-2 text-xs ${gapCause.mode === "verified" ? "text-fg-2" : "text-muted"}`}>
-              추정 원인: {gapCause.text}{" "}
-              <Link href={itemHref(observation.id)} className="font-bold text-accent hover:underline">
-                관측 근거 보기 →
-              </Link>
-            </p>
-          ) : null}
-          <ul className="mt-3 flex flex-col gap-3">
-            {group.deltas.map((row) => (
-              <li key={row.id} className="grid grid-cols-[1fr_1.4fr_1.4fr_auto] items-center gap-4">
-                <div className="text-xs text-muted">{metricLabel(row.metric)}</div>
-                <div className="text-xs text-muted">
-                  {formatMetricValue(row.before, row.metric)} ⇒{" "}
-                  <span className="font-mono tabular-nums text-fg">
-                    {formatMetricValue(row.after, row.metric)}
-                  </span>
-                </div>
-                <DeltaValue delta={row.delta} ci={row.ci} kind={metricKind(row.metric)} />
-                <Link href={itemHref(row.id)} className="text-xs font-bold text-accent hover:underline">
-                  근거 보기 →
+        {isUnannounced ? (
+          <>
+            {patch ? (
+              <div className="mt-3 text-xs font-bold text-accent">
+                ✕ {patch} 패치노트에 {group.entity} 항목 없음 — 짝지을 선언이 존재하지 않습니다
+              </div>
+            ) : null}
+            {gapCause && observation ? (
+              <p className={`mt-2 text-xs ${gapCause.mode === "verified" ? "text-fg-2" : "text-muted"}`}>
+                추정 원인: {gapCause.text}{" "}
+                <Link href={itemHref(observation.id)} className="font-bold text-accent hover:underline">
+                  관측 근거 보기 →
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </>
-      ) : (
-        <ul className="mt-3 flex flex-col gap-3">
-          {group.notes.map((note) => {
+              </p>
+            ) : null}
+            {remainingDeltas.length > 0 ? (
+              <ul className="mt-3 flex flex-col gap-3">
+                {remainingDeltas.map((row) => (
+                  <li key={row.id} className="grid grid-cols-[1fr_1.4fr_1.4fr_auto] items-center gap-4">
+                    <div className="text-xs text-muted">{metricLabel(row.metric)}</div>
+                    <div className="text-xs text-muted">
+                      {formatMetricValue(row.before, row.metric)} ⇒{" "}
+                      <span className="font-mono tabular-nums text-fg">
+                        {formatMetricValue(row.after, row.metric)}
+                      </span>
+                    </div>
+                    <DeltaValue delta={row.delta} ci={row.ci} kind={metricKind(row.metric)} />
+                    <Link href={itemHref(row.id)} className="text-xs font-bold text-accent hover:underline">
+                      근거 보기 →
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </>
+        ) : (
+          <ul className="mt-3 flex flex-col gap-3">
+            {group.notes.map((note) => {
             const filename = note.skill ? (spellIcons?.[spellIconKey(note.entity, note.skill)] ?? null) : null;
             const record = noteDeltas[note.id];
             const verdict = buildNoteVerdict(note, record, qAlpha);
@@ -208,8 +222,9 @@ export default function ReleaseNoteRow({
               </li>
             );
           })}
-        </ul>
-      )}
+          </ul>
+        )}
+      </details>
     </li>
   );
 }

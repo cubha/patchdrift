@@ -13,6 +13,7 @@ import ReleaseNoteStream, { type ReleaseStreamEntry } from "@/components/home/Re
 import SideMatchAverages from "@/components/home/SideMatchAverages";
 import DiscordPanel from "@/components/home/DiscordPanel";
 import LaneGapPanel from "@/components/home/LaneGapPanel";
+import StreamColumnLayout from "@/components/home/StreamColumnLayout";
 import { computeHeadline } from "@/components/home/logic";
 import { computeLaneDistribution } from "@/components/home/laneDistribution";
 import { buildReleaseStream } from "@/components/home/releaseStream";
@@ -75,8 +76,8 @@ export default function Home() {
       <main className="flex-1">
         <Container className="flex flex-col gap-6 py-8">
           <HeroSummary stats={headline} ambientSplashUrl={ambientSplashUrl} />
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_1fr]">
-            <div className="flex flex-col gap-6">
+          <StreamColumnLayout
+            left={
               <ReleaseNoteStream
                 entries={streamEntries}
                 spellIcons={spellIcons?.icons ?? null}
@@ -84,18 +85,20 @@ export default function Home() {
                 patch={pair?.to ?? null}
                 qAlpha={deltas?.meta.qAlpha}
               />
-            </div>
-            <div className="flex flex-col gap-6">
-              <SideMatchAverages
-                summaryTo={summaryTo?.data ?? null}
-                summaryFrom={summaryFrom?.data ?? null}
-                objectivesTo={objectivesTo?.data ?? null}
-                objectivesFrom={objectivesFrom?.data ?? null}
-              />
-              <LaneGapPanel rows={laneDistribution} />
-              <DiscordPanel generatedAt={deltas?.meta.generatedAt ?? null} />
-            </div>
-          </div>
+            }
+            right={
+              <>
+                <SideMatchAverages
+                  summaryTo={summaryTo?.data ?? null}
+                  summaryFrom={summaryFrom?.data ?? null}
+                  objectivesTo={objectivesTo?.data ?? null}
+                  objectivesFrom={objectivesFrom?.data ?? null}
+                />
+                <LaneGapPanel rows={laneDistribution} />
+                <DiscordPanel generatedAt={deltas?.meta.generatedAt ?? null} />
+              </>
+            }
+          />
         </Container>
       </main>
     </div>

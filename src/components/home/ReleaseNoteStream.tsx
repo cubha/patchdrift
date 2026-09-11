@@ -45,14 +45,17 @@ export default function ReleaseNoteStream({ entries, spellIcons, noteDeltas, pat
   }, [entries, selectedLane]);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex h-full min-h-0 flex-col gap-4">
       <LaneFilter selected={selectedLane} onSelect={setSelectedLane} />
       {filtered.length === 0 ? (
         <p className="rounded-lg border border-border bg-surface p-5 text-sm text-muted">
           이 라인에서는 관측된 변화가 없습니다
         </p>
       ) : (
-        <ul className="overflow-hidden rounded-lg border border-border bg-surface" style={{ boxShadow: "var(--elev-ring)" }}>
+        <ul
+          className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-border bg-surface"
+          style={{ boxShadow: "var(--elev-ring)" }}
+        >
           {filtered.map((entry) => (
             <ReleaseNoteRow
               key={groupKey(entry.group)}
