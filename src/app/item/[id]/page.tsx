@@ -200,7 +200,10 @@ export default async function ItemDetailPage({ params }: ItemPageProps) {
             </div>
           </section>
 
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_1fr]">
+          {/* items-start 제거 — 좌/우 컬럼 높이를 grid 기본 stretch로 맞추고, 각 컬럼의
+              마지막 카드(추정 원인 LLM · 원천 매치)가 flex-1로 남는 높이를 흡수해 하단을
+              정렬한다(2026-09-11, 사용자 지시 — 시안B 유지 + 컬럼 하단 정렬). */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
             <div className="flex flex-col gap-6">
               {/* 근거 패널(패치노트 대조)을 차트보다 위로 — HANDOFF §4-3 "차트 폭을 줄이고
                   근거 패널을 위로". */}
@@ -247,7 +250,11 @@ export default async function ItemDetailPage({ params }: ItemPageProps) {
                 </div>
               </SectionCard>
 
-              <SectionCard eyebrow="우선 2 · 간접 영향 후보" title="추정 원인(LLM)">
+              <SectionCard
+                eyebrow="우선 2 · 간접 영향 후보"
+                title="추정 원인(LLM)"
+                className="flex flex-1 flex-col"
+              >
                 <CausesPanel
                   causes={delta.causes}
                   llm={delta.llm}
@@ -262,7 +269,7 @@ export default async function ItemDetailPage({ params }: ItemPageProps) {
                 <StatsGatePanel delta={delta} kind={kind} />
               </SectionCard>
 
-              <SectionCard title="원천 매치">
+              <SectionCard title="원천 매치" className="flex flex-1 flex-col">
                 <SourceMatchesPanel
                   matchIds={delta.evidence.matchIds}
                   aggregatePath={delta.evidence.aggregatePath}

@@ -21,7 +21,7 @@ export default function SourceMatchesPanel({
   snapshotHash,
 }: SourceMatchesPanelProps) {
   return (
-    <div>
+    <div className="flex flex-1 flex-col">
       {matchIds.length > 0 ? (
         <div className="flex flex-wrap gap-2 p-5">
           {matchIds.map((id) => (
@@ -36,7 +36,9 @@ export default function SourceMatchesPanel({
       ) : (
         <p className="p-5 text-sm text-muted">원천 매치 표본 없음</p>
       )}
-      <div className="flex flex-col gap-2 px-5 pb-5 font-mono text-xs text-muted">
+      {/* mt-auto — 부모(SectionCard)가 옆 컬럼과 하단을 맞추려 flex-1로 늘어난 경우, 이 메타
+          블록이 항상 카드 하단에 붙는다. 늘어난 공간이 없으면 자연 높이 그대로. */}
+      <div className="mt-auto flex flex-col gap-2 px-5 pb-5 font-mono text-xs text-muted">
         <span>집계 경로: {aggregatePath}</span>
         <span>데이터 스냅샷 sha256:{snapshotHash}</span>
       </div>

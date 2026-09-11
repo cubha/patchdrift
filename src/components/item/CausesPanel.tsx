@@ -17,7 +17,7 @@ export interface CausesPanelProps {
 
 export default function CausesPanel({ causes, llm, notesById, generatedAt }: CausesPanelProps) {
   return (
-    <div>
+    <div className="flex flex-1 flex-col">
       {causes.length === 0 ? (
         <p className="px-5 py-4 text-sm text-muted">간접 영향 후보 없음</p>
       ) : (
@@ -53,7 +53,10 @@ export default function CausesPanel({ causes, llm, notesById, generatedAt }: Cau
       )}
 
       {llm ? (
-        <div className="px-5 py-4 pt-0">
+        // mt-auto — 부모(SectionCard)가 옆 컬럼과 하단을 맞추려 flex-1로 늘어난 경우, 카드
+        // 안에서 이 블록(캡션 포함 마지막 요소)이 항상 카드 하단에 붙도록 한다. 늘어난 공간이
+        // 없으면(자연 높이) mt-auto는 0이라 기존 pt-0 간격 그대로 유지된다.
+        <div className="mt-auto px-5 py-4 pt-0">
           {llm.skipped ? (
             <p className="mb-2 text-xs text-muted">LLM 미실행({llm.reason ?? "사유 없음"})</p>
           ) : llm.summary ? (
