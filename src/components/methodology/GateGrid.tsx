@@ -3,6 +3,15 @@
 // minN·alpha는 하드코딩하지 않고 page.tsx가 src/pipeline/aggregate/stats.ts에서 import한
 // WIN_RATE_MIN_N·FDR_ALPHA를 prop으로 내려받는다(과제 지시 — 방법론 화면 수치는 상수 import,
 // 하드코딩 금지).
+//
+// 2026-09-12(5차 연속, 사용자 지적 "card도 단색 평면 디자인"): `bg-surface-warm` 단일색 →
+// `.card-surface`(src/styles/panel.css, 깊이 그라디언트)로 교체.
+//
+// 2026-09-12(6차): 카드 div를 손으로 반복 작성하던 것을 공용 Card 컴포넌트로 교체 —
+// src/components/Card.tsx 주석 참고(PipelineDiagram.tsx와 보더 색이 달랐던 드리프트도
+// 그 컴포넌트가 흡수).
+
+import Card from "@/components/Card";
 
 export interface GateGridProps {
   minN: number;
@@ -32,10 +41,10 @@ export default function GateGrid({ minN, alpha }: GateGridProps) {
   return (
     <div className="grid grid-cols-1 gap-4 p-5 sm:grid-cols-2">
       {items.map((item) => (
-        <div key={item.title} className="rounded-md border border-border-soft bg-surface-warm p-4">
+        <Card key={item.title}>
           <h3 className="font-display text-sm font-bold text-fg">{item.title}</h3>
           <p className="mt-2 text-xs text-muted">{item.body}</p>
-        </div>
+        </Card>
       ))}
     </div>
   );

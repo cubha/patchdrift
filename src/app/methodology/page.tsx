@@ -78,41 +78,45 @@ export default function MethodologyPage() {
     nAfter: summaryTo?.data.matches ?? null,
   });
 
+  // 전 패널 유리화(2026-09-12·5차, R6 사용자 재지적 — "방법론 메뉴에 모든 섹션 전부 불투명
+  // 판넬 그대로") — 이 페이지도 layout.tsx의 전역 앰비언트 배경을 받지만 첫 패널이 top≈89px
+  // (헤더 바로 아래)부터 카메라 노출 밴드 전체를 불투명으로 덮고 있었다. 홈·`/compare/`와
+  // 동일 근거로 6개 SectionCard 전부 `variant="glass"`.
   return (
     <div className="flex flex-1 flex-col">
       <main>
         <Container className="flex flex-col gap-6 py-8">
-          <SectionCard eyebrow="우선 1 · 신뢰" title="데이터 파이프라인">
+          <SectionCard eyebrow="우선 1 · 신뢰" title="데이터 파이프라인" variant="glass">
             <PipelineDiagram steps={steps} />
           </SectionCard>
 
-          <SectionCard eyebrow="우선 1 · 해석" title="상태 정의">
+          <SectionCard eyebrow="우선 1 · 해석" title="상태 정의" variant="glass">
             <StatusDefinitionTable minN={WIN_RATE_MIN_N} alpha={FDR_ALPHA} />
           </SectionCard>
 
           {/* 확장성의 증명 — HANDOFF-redesign-2026-09-10.md §4-4. 셀렉터가 아니라 어댑터
               매핑표로 "다른 게임에도 같은 판정 엔진을 쓸 수 있다"를 보인다. */}
-          <SectionCard eyebrow="우선 2 · 확장성" title="어댑터 매핑표 (LoL ↔ PUBG)">
+          <SectionCard eyebrow="우선 2 · 확장성" title="어댑터 매핑표 (LoL ↔ PUBG)" variant="glass">
             <AdapterMatrix />
           </SectionCard>
 
           <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[2fr_1fr]">
             <div className="flex flex-col gap-6">
               <div id="gates">
-                <SectionCard eyebrow="우선 2 · 투명성" title="통계 게이트">
+                <SectionCard eyebrow="우선 2 · 투명성" title="통계 게이트" variant="glass">
                   <GateGrid minN={WIN_RATE_MIN_N} alpha={FDR_ALPHA} />
                 </SectionCard>
               </div>
 
               <div id="discord">
-                <SectionCard title="디스코드 미리보기">
+                <SectionCard title="디스코드 미리보기" variant="glass">
                   <DiscordEmbedPreview preview={discordPreview} />
                 </SectionCard>
               </div>
             </div>
 
             <aside className="flex flex-col gap-6">
-              <SectionCard title="고지">
+              <SectionCard title="고지" variant="glass">
                 <div className="flex flex-col gap-3 p-5">
                   <p className="text-xs leading-relaxed text-muted">
                     patchgap isn&apos;t endorsed by Riot Games and doesn&apos;t reflect the views

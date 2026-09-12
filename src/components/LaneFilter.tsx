@@ -11,8 +11,13 @@
 // 다른 bg 컬러에 투명도 0"이라고 재지적했다. Header.tsx의 활성 탭 표시(불투명 채움이 아니라
 // `border-accent text-fg`만 쓰는 밑줄 방식)와 같은 언어로 맞춘다 — `bg-accent/20`(반투명
 // 골드 워시) + `text-accent`로 바꿔 "선택됨"은 여전히 뚜렷하되 불투명 블록은 없앤다.
+//
+// pill 마크업(2026-09-12·6차): StatusFilterChips.tsx와 거의 동일한 마크업을 각자 손으로
+// 구현하고 있었고(같은 필터 줄에 나란히 렌더되는데도 padding·선택색 표현이 서로 달랐음),
+// 공용 FilterPill로 추출했다 — src/components/FilterPill.tsx 주석 참고.
 
 import type { LaneAxis } from "@/lib/lane";
+import FilterPill from "@/components/FilterPill";
 import LaneGlyph from "@/components/LaneGlyph";
 import { positionLabel } from "@/lib/format";
 
@@ -34,20 +39,10 @@ export default function LaneFilter({ selected, onSelect, className = "" }: LaneF
       {LANES.map((lane) => {
         const isSelected = lane === selected;
         return (
-          <button
-            key={lane}
-            type="button"
-            aria-pressed={isSelected}
-            onClick={() => onSelect(lane)}
-            className={`inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 font-mono text-xs font-bold transition-colors ${
-              isSelected
-                ? "border-accent bg-accent/20 text-accent"
-                : "border-border-soft text-fg-2 hover:border-border hover:text-fg"
-            }`}
-          >
+          <FilterPill key={lane} selected={isSelected} onClick={() => onSelect(lane)}>
             <LaneGlyph lane={lane} size={14} labelled />
             {laneLabel(lane)}
-          </button>
+          </FilterPill>
         );
       })}
     </div>

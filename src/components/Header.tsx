@@ -158,11 +158,15 @@ export default function Header({
               </select>
             </label>
 
+            {/* 2026-09-12(6차, /verify-impl 재검증): bg-[color-mix(...)](arbitrary bracket)를
+                .meta-chip(src/styles/panel.css, --chip-fill 토큰)으로 교체 — verify.sh Spec
+                arbitrary 값 정규식이 이 형태를 못 잡아 실제로는 다른 컴포넌트들과 함께 토큰을
+                우회하고 있었다. */}
             <div role="group" aria-label="고정 표본" className="hidden min-h-8 items-center gap-1.5 md:flex">
               {FIXED_SAMPLE.map((label) => (
                 <span
                   key={label}
-                  className="whitespace-nowrap rounded-pill border border-border-soft bg-[color-mix(in_oklab,var(--surface),transparent_40%)] px-3 py-1 font-mono text-xs text-fg-2"
+                  className="meta-chip whitespace-nowrap rounded-pill border border-border-soft px-3 py-1 font-mono text-xs text-fg-2"
                 >
                   {label}
                 </span>

@@ -14,6 +14,7 @@
 import Link from "next/link";
 import type { DeltaRecord, LanePosition } from "@/pipeline/types";
 import EntityIcon from "@/components/EntityIcon";
+import IconBox from "@/components/IconBox";
 import LaneGlyph from "@/components/LaneGlyph";
 import SpellIcon from "@/components/SpellIcon";
 import StatusBadge from "@/components/StatusBadge";
@@ -40,30 +41,26 @@ export interface ReleaseNoteRowProps {
   qAlpha?: number;
 }
 
-const FALLBACK_ICON_CLASS =
-  "flex shrink-0 items-center justify-center rounded-sm border border-border bg-surface-warm font-display text-sm font-bold text-fg-2";
-
 /** 카드 엔티티 아이콘(56px) — 라인 엔티티(entityType="lane", 챔피언 자산 없음)는
  * DeltaTable.tsx의 RowIcon과 동형으로 LaneGlyph 박스를 쓴다(2026-09-10 verify-impl 축B 후속:
- * EntityIcon 기본 폴백이 "바텀"의 첫 글자 "바"로 렌더돼 대조표와 불일치했던 결함). */
+ * EntityIcon 기본 폴백이 "바텀"의 첫 글자 "바"로 렌더돼 대조표와 불일치했던 결함).
+ * 박스 마크업은 2026-09-12(6차, /verify-impl 재검증)부터 IconBox 공용 — src/components/IconBox.tsx
+ * 참고(DeltaTable.tsx RowIcon과 각자 손으로 재구현하던 것을 정리). */
 function CardIcon({ icon, entity }: { icon: StreamEntityIcon; entity: string }) {
   if (icon.entityType === "lane" && icon.entityKey) {
     return (
-      <span
-        style={{ width: 56, height: 56 }}
-        className="flex shrink-0 items-center justify-center rounded-sm border border-border bg-surface-warm text-fg-2"
-      >
+      <IconBox size={56}>
         <LaneGlyph lane={icon.entityKey as LanePosition} size={34} labelled />
-      </span>
+      </IconBox>
     );
   }
   if (icon.entityType && icon.entityKey) {
     return <EntityIcon entityType={icon.entityType} entityKey={icon.entityKey} name={entity} size={56} />;
   }
   return (
-    <span style={{ width: 56, height: 56 }} className={FALLBACK_ICON_CLASS}>
+    <IconBox size={56} className="font-display text-sm font-bold">
       {entity.slice(0, 1)}
-    </span>
+    </IconBox>
   );
 }
 
@@ -118,11 +115,19 @@ export default function ReleaseNoteRow({
   // 델타 행이 카드 안에서 두 번 렌더된다(2026-09-11 결함).
   const remainingDeltas = isUnannounced ? excludeObservation(group.deltas, observation) : [];
 
+  // 2026-09-13(6차 연속, 사용자 지적 "메인화면 좌측섹션 투명화가 진행안되어잇어서그랫어") —
+  // 미공지 행의 강조가 완전 불투명 `bg-surface-warm`이었다. 미공지는 스트림 최상단에 정렬되므로
+  // (releaseStream.ts, |delta| 내림차순 삽입) 스크롤 없이 보이는 행이 거의 전부 미공지였고, 그
+  // 행들의 불투명 채움이 부모 <ul>의 `panel-surface-glass`(R6.1) 위를 다 덮어 유리 효과가
+  // 사실상 안 보였다(실측: 픽셀이 정확히 --surface-warm #12213a로 고정, 배경 지형 변화가
+  // 전혀 반영 안 됨). DeltaTable.tsx의 `.row-highlight`(--row-highlight-fill, 반투명 골드
+  // 워시)와 동일 클래스로 교체 — 강조 신호는 왼쪽 골드 보더(border-l-accent)로 유지하고
+  // 채움만 유리 패널 아래로 지형이 비치도록 옅게 바꾼다.
   return (
     <li
       className={
         isUnannounced
-          ? "border-b border-l-4 border-border-soft border-l-accent bg-surface-warm last:border-b-0"
+          ? "row-highlight border-b border-l-4 border-border-soft border-l-accent last:border-b-0"
           : "border-b border-border-soft last:border-b-0"
       }
     >

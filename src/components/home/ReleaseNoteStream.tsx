@@ -25,6 +25,7 @@
 import { useMemo } from "react";
 import type { DeltaRecord, LanePosition } from "@/pipeline/types";
 import { useAmbient } from "@/components/AmbientContext";
+import { panelSurfaceClass } from "@/lib/panelSurface";
 import ReleaseNoteRow from "./ReleaseNoteRow";
 import type { ReleaseStreamGroup } from "./releaseStream";
 import type { StreamEntityIcon } from "./releaseStreamEntity";
@@ -62,7 +63,7 @@ export default function ReleaseNoteStream({ entries, spellIcons, noteDeltas, pat
   if (filtered.length === 0) {
     // 고정 높이 셀(StreamColumnLayout row2) 안에서 문구가 위에 붙지 않도록 중앙 배치한다.
     return (
-      <div className="panel-surface panel-surface-glass flex h-full min-h-0 flex-1 items-center justify-center rounded-lg">
+      <div className={`${panelSurfaceClass("glass")} flex h-full min-h-0 flex-1 items-center justify-center rounded-lg`}>
         <p className="p-5 text-sm text-muted">이 라인에서는 관측된 변화가 없습니다</p>
       </div>
     );
@@ -73,7 +74,7 @@ export default function ReleaseNoteStream({ entries, spellIcons, noteDeltas, pat
   // 콘텐츠와 함께 스크롤해 사라지지 않는다 — 대신 채움이 스크롤 전체 높이가 아니라 보이는
   // 프레임 높이에 맞춰져 프레임 vignette처럼 읽힌다(의도된 부수효과, panel.css 주석 참고).
   return (
-    <ul className="panel-surface panel-surface-glass min-h-0 flex-1 overflow-y-auto rounded-lg">
+    <ul className={`${panelSurfaceClass("glass")} min-h-0 flex-1 overflow-y-auto rounded-lg`}>
       {filtered.map((entry) => (
         <ReleaseNoteRow
           key={groupKey(entry.group)}

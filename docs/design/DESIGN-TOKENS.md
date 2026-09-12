@@ -48,6 +48,13 @@
   --panel-rail-from: var(--border);
   --panel-rail-via: color-mix(in srgb, var(--border) 55%, transparent);
   --panel-rail-to: transparent;
+  /* 중첩 카드 깊이(2026-09-12·5차 연속) — PipelineDiagram·GateGrid의 2차 카드가
+     `bg-surface-warm` 단일 평면색이던 것을 --panel-fill-*과 같은 방향(위 밝게→아래 어둡게)
+     그라디언트로. surface-warm을 기준으로 삼아 1차 패널보다 밝게 유지(위계 구분). 레일은
+     반복하지 않는다(격자 카드 여러 개에 골드 선 난립 방지). 소비는 panel.css .card-surface. */
+  --card-fill-from: color-mix(in srgb, var(--surface-warm), var(--fg) 6%);
+  --card-fill-via: var(--surface-warm);
+  --card-fill-to: color-mix(in srgb, var(--surface-warm), var(--bg) 25%);
   /* 구간 한정 유리화(2026-09-12·5차, R6 "옵션 B") — 카메라 노출 밴드(y<873px) 안의 최초
      1~2개 패널(히어로 스탯·매치평균)만 헤더와 같은 레시피로 바꾼다. 이 알파는 위 불변식
      ①·②의 적용 대상이 아니다 — 뒤에 비치는 게 고정 --surface가 아니라 가변 지형이라
@@ -55,6 +62,13 @@
      AA 미달 — 해당 라벨은 --fg-2로 올려 대응, src/components/home/HeroSummary.tsx 참고).
      소비는 src/styles/panel.css의 .panel-surface-glass에서만 한다. */
   --panel-glass-fill: color-mix(in srgb, var(--surface) 46%, transparent);
+  /* 읽기전용 메타 칩·행 하이라이트(2026-09-12·6차, /verify-impl 재검증 발견) — Header.tsx
+     고정 표본 칩·DeltaTable.tsx 하이라이트 행이 arbitrary Tailwind bracket(`bg-[color-mix(...)]`)
+     로 토큰을 우회하고 있었다(verify.sh Spec의 arbitrary 값 정규식이 `#hex`/`Npx`/`Nrem`만
+     잡아 color-mix() 형태를 못 걸러낸 사각지대). 소비는 src/styles/panel.css의
+     .meta-chip/.row-highlight에서만 한다. */
+  --chip-fill: color-mix(in oklab, var(--surface), transparent 40%);
+  --row-highlight-fill: color-mix(in oklab, var(--accent), transparent 90%);
   --font-display: Inter, system-ui, sans-serif;
   --font-body: Inter, system-ui, sans-serif;
   --font-mono: "Roboto Mono", "SF Mono", ui-monospace, Menlo, monospace;
@@ -124,7 +138,7 @@
 | `--border-soft` | #242c3a | 행 구분선(약) | — | ✓ |
 | `--accent` | #c8a355 | 미공지 상태·링크·주요 버튼·현재 내비 | 7.64:1 | ✓ |
 | `--accent-on` | #030d18 | accent 위 텍스트 | — | ✓ |
-| `--accent-hover` | derived (oklab, black 8%) | 버튼 호버 | — | ✓ |
+| `--accent-hover` | derived (oklab, black 8%) | 버튼 호버 — 2026-09-12·6차: 유일 소비처(DiscordPanel.tsx)가 `@theme inline` 매핑 누락으로 `bg-[var(--accent-hover)]`(arbitrary bracket)를 쓰고 있었다. `--color-accent-hover` 매핑 추가(globals.css) 후 `hover:bg-accent-hover` 유틸로 교체 | — | ✓ |
 | `--accent-active` | derived (oklab, black 14%) | 버튼 활성 | — | ○ |
 | `--success` | #0ac8b9 | 상승 델타 ▲ | 미계측(§7 검증 시 추가) | ✓ |
 | `--danger` | #cf4740 | 하락 델타 ▼ · 공지-불일치 | 4.00:1 | ✓ |
@@ -140,6 +154,9 @@
 | `--panel-fill-to` | derived (srgb, surface 72%→bg) | 패널 깊이 그라디언트 바닥(≈#081322, bg보다 밝음) | — | ✓ (신규 2026-09-12·3차) |
 | `--panel-glass-fill` | derived (srgb, surface 46%) | 전면 유리화(2026-09-12·5차 연속 — 사용자 재지적으로 카메라 밴드 한정 "옵션 B"에서 홈·`/compare/`의 모든 `.panel-surface`로 확대) | 가변(뒤 지형에 따라 흔들림 — `--muted` 위 실측 4.01~4.43:1로 AA 근접·미달) → `.panel-surface-glass .text-muted{color:var(--fg-2)}`(panel.css)로 중앙 대응, 재측정 7.3~9.7:1 | ✓ (신규 2026-09-12·5차) |
 | `--panel-rail-from`/`-via`/`-to` | border → border 55% → transparent | 패널 상단 2px 골드 레일(알파 페이드) | — | ✓ (신규 2026-09-12·3차) |
+| `--card-fill-from`/`-via`/`-to` | surface-warm+fg 6% → surface-warm → surface-warm+bg 25% | 2차(중첩) 카드 깊이 그라디언트(PipelineDiagram·GateGrid) — 1차 패널보다 밝게 유지해 위계 구분 | muted 실측 필요(§7) | ✓ (신규 2026-09-12·5차) |
+| `--chip-fill` | derived (oklab, surface 60%) | 읽기전용 메타 칩(Header.tsx 고정 표본) — 2026-09-12·6차 `/verify-impl` 재검증에서 arbitrary bracket 우회 발견, 토큰화 | — | ✓ (신규 2026-09-12·6차) |
+| `--row-highlight-fill` | derived (oklab, accent 10%) | 대조표 행 하이라이트(DeltaTable.tsx, NoteNavigator 선택 연동) — 위와 동일 발견 경로 | — | ✓ (신규 2026-09-12·6차) |
 | `--scrollbar-thumb` | `var(--border)` (#8c6b33) | 커스텀 스크롤바 thumb — 계산치 surface 대비 3.42:1 / bg 대비 3.97:1(WCAG 1.4.11 비텍스트 3:1 통과, `color-mix`로 희석 금지 — 1.8~2.6:1로 떨어짐) | 3.42:1(surface) | ✓ (신규 2026-09-12·4차) |
 | `--scrollbar-thumb-hover` | `var(--accent)` | 스크롤바 thumb hover/active | 7.64:1 | ✓ (신규 2026-09-12·4차) |
 | `--scrollbar-track` | derived (srgb, bg 45%→transparent) | 커스텀 스크롤바 트랙 | — | ✓ (신규 2026-09-12·4차) |

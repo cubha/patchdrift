@@ -38,6 +38,7 @@
 
 import Link from "next/link";
 import { fmtInt } from "@/lib/format";
+import { panelSurfaceClass } from "@/lib/panelSurface";
 import type { HeadlineStats } from "./logic";
 
 export interface HeroSummaryProps {
@@ -63,7 +64,7 @@ export default function HeroSummary({ stats }: HeroSummaryProps) {
           게이트 통과분만 제시
         </p>
       </div>
-      <section className="panel-surface panel-surface-glass grid grid-cols-3 overflow-hidden rounded-lg">
+      <section className={`${panelSurfaceClass("glass")} grid grid-cols-3 overflow-hidden rounded-lg`}>
         <div className="border-r border-border-soft p-5">
           <strong className="block font-display text-3xl font-bold tabular-nums text-fg">
             {fmtInt(noteEntityCount)}
