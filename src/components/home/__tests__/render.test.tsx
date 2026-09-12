@@ -4,13 +4,20 @@
 // 참고 — setupFiles는 RTL cleanup 등록에만 쓰고 매처는 붙이지 않는다, vitest.setup.ts).
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
+import type { ReactNode } from "react";
 import type { DeltaRecord } from "@/pipeline/types";
+import { AmbientProvider } from "@/components/AmbientContext";
 import HeroSummary from "../HeroSummary";
-import HeroAmbient from "../HeroAmbient";
 import LaneGapPanel from "../LaneGapPanel";
 import ReleaseNoteStream, { type ReleaseStreamEntry } from "../ReleaseNoteStream";
 import SideMatchAverages from "../SideMatchAverages";
 import DiscordPanel from "../DiscordPanel";
+
+/** ReleaseNoteStream은 useAmbient()로 라인 선택 상태를 읽는다(AmbientContext.tsx) —
+ * AmbientProvider 밖에서 렌더하면 throw하므로 테스트 전용 래퍼로 감싼다. */
+function withAmbient(children: ReactNode) {
+  return <AmbientProvider>{children}</AmbientProvider>;
+}
 
 describe("HeroSummary — 빈 상태(모든 수치 0)", () => {
   it("0을 그대로 렌더하고 크래시하지 않는다", () => {
@@ -25,7 +32,7 @@ describe("HeroSummary — 빈 상태(모든 수치 0)", () => {
 describe("ReleaseNoteStream — 빈 상태", () => {
   it("그룹이 없으면 라인 필터만 남기고 빈 상태 문구를 렌더한다", () => {
     const { container } = render(
-      <ReleaseNoteStream entries={[]} spellIcons={null} noteDeltas={{}} patch={null} />
+      withAmbient(<ReleaseNoteStream entries={[]} spellIcons={null} noteDeltas={{}} patch={null} />)
     );
     expect(container.textContent).toContain("이 라인에서는 관측된 변화가 없습니다");
     // 라인 필터 6종(전체/탑/정글/미드/원딜/서포터)은 데이터가 없어도 항상 렌더된다.
@@ -54,19 +61,6 @@ describe("DiscordPanel — generatedAt 없음", () => {
   it("generatedAt이 있으면 KST로 포맷한 캡션을 렌더한다", () => {
     const { container } = render(<DiscordPanel generatedAt="2026-09-05T05:00:00.000Z" />);
     expect(container.textContent).toContain("마지막 전송 2026-09-05 14:00 KST");
-  });
-});
-
-describe("HeroAmbient — 장식 배경", () => {
-  it("splashUrl 없이도 크래시 없이 그라디언트 워시만 렌더한다(무근거 아이콘/아트 금지)", () => {
-    const { container } = render(<HeroAmbient />);
-    expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
-    expect(container.querySelector("img")).toBeNull();
-  });
-
-  it("splashUrl이 있으면 img를 추가로 렌더한다", () => {
-    const { container } = render(<HeroAmbient splashUrl="/dd/splash/Chogath_0.jpg" />);
-    expect(container.querySelector("img")?.getAttribute("src")).toBe("/dd/splash/Chogath_0.jpg");
   });
 });
 
@@ -122,7 +116,7 @@ describe("ReleaseNoteStream — 라인 엔티티(entityType='lane') 카드 아�
       },
     ];
     const { container } = render(
-      <ReleaseNoteStream entries={entries} spellIcons={null} noteDeltas={{}} patch="26.17" />
+      withAmbient(<ReleaseNoteStream entries={entries} spellIcons={null} noteDeltas={{}} patch="26.17" />)
     );
     const glyph = container.querySelector("svg");
     expect(glyph).not.toBeNull();

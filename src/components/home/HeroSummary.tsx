@@ -4,29 +4,38 @@
 // 스탯 타일 "공지된 변화"는 별도 델타 집계가 아니라 헤드라인의 N(noteEntityCount)을 그대로
 // 재사용한다(코디네이터 확정, 2026-09-05 — HeadlineStats 주석 참고. 필드명은 2026-09-10
 // noteEntityCount/noteItemCount로 분리됐다 — HANDOFF-redesign-2026-09-10.md §4-1).
+//
+// 카드 자체 배경(HeroAmbient)은 2026-09-12 확정 시안(아티팩트 "협곡 앰비언트 배경" v5)에서
+// 제거됐다 — 지형은 이제 카드 하나가 아니라 사이트 전역(layout.tsx AmbientBackground)에서
+// 콘텐츠 바깥에 깔린다. 카드마다 반투명 스플래시를 얹는 대신 배경이 페이지 전체를 감싼다.
+//
+// 2026-09-12(2차): 헤드라인 문단을 카드 밖으로 빼 시안 `.hero`와 같은 구조로 맞췄다 — 시안의
+// 히어로는 패널이 아니라 배경 위에 직접 앉은 텍스트(text-shadow만)고, 보더 패널은 아래
+// `.tiles`(스탯 3분할)뿐이다. 구현이 둘을 한 카드로 묶고 있어서 앰비언트 배경의 섬 지형 중심부
+// (y 180~420)를 불투명 --surface가 덮고 있었다. 보조 문단 색은 --muted에서 --fg로 올렸다 —
+// 배경 픽셀 휘도를 실측해 최악 지점(섬의 밝은 잔디) 대비를 계산했더니 --muted/--fg-2로는
+// 3.54:1(일반 텍스트 AA 4.5:1 미달, 그 줄 면적의 0.83%)이고 --fg면 5.67:1로 전 구간 통과한다.
+// 위계는 색이 아니라 크기(28px bold vs 12px)가 진다.
+//
+// 2026-09-12(3차): 스탯 3분할 section의 골드 4변 프레임(border-border + elev-ring)을
+// `.panel-surface`(상단 골드 레일 + 깊이 그라디언트)로 교체(Q2 "A+B 결합" — SectionCard.tsx와
+// 동일 클래스, 대상 목록은 PLAN-panel-chrome-redesign-2026-09-12.md 참고).
 
 import Link from "next/link";
 import { fmtInt } from "@/lib/format";
-import HeroAmbient from "./HeroAmbient";
 import type { HeadlineStats } from "./logic";
 
 export interface HeroSummaryProps {
   stats: HeadlineStats;
-  /** 히어로 앰비언트 배경(HANDOFF §4-1). 미지정이면 그라디언트 워시만 — HeroAmbient.tsx 참고. */
-  ambientSplashUrl?: string | null;
 }
 
-export default function HeroSummary({ stats, ambientSplashUrl = null }: HeroSummaryProps) {
+export default function HeroSummary({ stats }: HeroSummaryProps) {
   const { noteEntityCount, noteItemCount, statCount, unannouncedCount } = stats;
 
   return (
-    <section
-      className="overflow-hidden rounded-lg border border-border"
-      style={{ boxShadow: "var(--elev-ring)" }}
-    >
-      <div className="relative overflow-hidden bg-bg p-5">
-        <HeroAmbient splashUrl={ambientSplashUrl} />
-        <p className="relative max-w-3xl text-2xl font-bold leading-tight text-fg">
+    <div className="flex flex-col gap-5">
+      <div className="pt-1">
+        <p className="ambient-hero-headline max-w-3xl text-2xl font-bold leading-tight text-fg">
           패치노트는{" "}
           <strong className="font-mono tabular-nums">
             {fmtInt(noteEntityCount)} 엔티티 / {fmtInt(noteItemCount)} 항목
@@ -34,12 +43,12 @@ export default function HeroSummary({ stats, ambientSplashUrl = null }: HeroSumm
           을 말했고, 통계는 <strong className="font-mono tabular-nums">{fmtInt(statCount)}개</strong> 변화를
           말합니다
         </p>
-        <p className="relative mt-3 max-w-2xl text-sm text-muted">
+        <p className="ambient-hero-sub mt-3 max-w-2xl text-sm text-fg">
           FDR q&lt;0.10 기준 · 1차축(픽·밴·아이템·골드·오브젝트) 유의 변화 집계 · 승률은 n≥200
           게이트 통과분만 제시
         </p>
       </div>
-      <div className="grid grid-cols-3 border-t border-border-soft bg-surface">
+      <section className="panel-surface grid grid-cols-3 overflow-hidden rounded-lg">
         <div className="border-r border-border-soft p-5">
           <strong className="block font-display text-3xl font-bold tabular-nums text-fg">
             {fmtInt(noteEntityCount)}
@@ -58,7 +67,7 @@ export default function HeroSummary({ stats, ambientSplashUrl = null }: HeroSumm
           </strong>
           <span className="text-sm text-muted">미공지</span>
         </Link>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

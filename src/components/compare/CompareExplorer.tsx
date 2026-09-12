@@ -78,8 +78,11 @@ export default function CompareExplorer({ pair, notes, rows, coverage, noteIcons
 
   return (
     <>
-      {/* 시안 .m-filter — 상태 칩과 라인 필터를 같은 필터바 줄에 둔다(홈과 동일한 어휘). */}
-      <div className="border-b border-border bg-surface-warm">
+      {/* 시안 .m-filter — 상태 칩과 라인 필터를 같은 필터바 줄에 둔다(홈과 동일한 어휘).
+          표면도 헤더와 같은 반투명 크롬(.glass-chrome-2) — 이 필터는 실제로 동작하므로
+          2026-09-12(3차) 크롬 1줄 통합 대상이 아니다(구 FilterBar와 달리 이 행은 유지). 헤더
+          1줄 + 이 행까지 불투명하면 전역 앰비언트 배경의 상단 밴드가 대조표에서만 가려진다. */}
+      <div className="glass-chrome-2 border-b">
         <Container className="flex flex-wrap items-center justify-between gap-3 py-3">
           <StatusFilterChips active={statusFilter} onChange={setStatusFilter} />
           <LaneFilter selected={laneFilter} onSelect={setLaneFilter} />
@@ -101,11 +104,9 @@ export default function CompareExplorer({ pair, notes, rows, coverage, noteIcons
             onSelect={setSelectedNoteId}
             icons={noteIcons}
           />
-          <section
-            className="overflow-hidden rounded-lg border border-border bg-surface"
-            style={{ boxShadow: "var(--elev-ring)" }}
-          >
-            <div className="flex items-center justify-between gap-4 border-b border-border-soft px-5 py-5">
+          {/* 2026-09-12(3차): 골드 4변 프레임 → .panel-surface(Q2 "A+B 결합"). */}
+          <section className="panel-surface overflow-hidden rounded-lg">
+            <div className="panel-head-wash flex items-center justify-between gap-4 border-b border-border-soft px-5 py-5">
               <div>
                 <span className="block text-xs font-bold text-muted">우선 1 · 선언↔관측</span>
                 <h2 className="font-display text-lg font-bold text-fg">델타 테이블</h2>

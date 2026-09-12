@@ -32,6 +32,21 @@
   --danger: #cf4740;
   --game-wash: #0a1626;
   --game-glow: #c8a355;
+  /* 반투명 크롬(2026-09-12) — 전역 앰비언트 배경이 상단 크롬 뒤로 비치게 한다.
+     확정 시안 v5 `.topbar`(background:rgba(3,13,24,.35) / border-bottom:rgba(36,44,58,.7))를
+     토큰 문법으로 옮긴 것. 소비는 src/styles/ambient.css의 .glass-* 클래스에서만 한다. */
+  --glass-chrome: color-mix(in srgb, var(--bg) 35%, transparent);
+  --glass-chrome-2: color-mix(in srgb, var(--surface-warm) 55%, transparent);
+  --glass-border: color-mix(in srgb, var(--border-soft) 70%, transparent);
+  /* 패널 트리트먼트(2026-09-12, 3차) — DESIGN-TOKENS.md 값·불변식 그대로 복사(SSOT는 그 파일).
+     골드 4변 프레임(--border 전체 테두리 + elev-ring) → 상단 골드 레일 + 깊이 그라디언트 채움.
+     소비는 src/styles/panel.css의 .panel-surface 클래스에서만 한다. */
+  --panel-fill-from: color-mix(in srgb, var(--surface-warm) 70%, var(--surface));
+  --panel-fill-via: var(--surface);
+  --panel-fill-to: color-mix(in srgb, var(--surface) 72%, var(--bg));
+  --panel-rail-from: var(--border);
+  --panel-rail-via: color-mix(in srgb, var(--border) 55%, transparent);
+  --panel-rail-to: transparent;
   --font-display: Inter, system-ui, sans-serif;
   --font-body: Inter, system-ui, sans-serif;
   --font-mono: "Roboto Mono", "SF Mono", ui-monospace, Menlo, monospace;
@@ -72,6 +87,9 @@
   --container-gutter-desktop: 36px;
   --container-gutter-tablet: 24px;
   --container-gutter-phone: 16px;
+  /* seed 경계 밖 신규 비-색 토큰(2026-09-12·3차) — 항목상세 전용 좁은 폭. seed 파일
+     (docs/design/seed/catalog-tokens.css)은 건드리지 않는다. */
+  --container-narrow: 1040px;
 }
 
 /* [data-game] 오버라이드 계약 (2026-09-10 확정, 미출하) — 중립 8종

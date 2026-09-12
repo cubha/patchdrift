@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Inter, Roboto_Mono } from "next/font/google";
+import AmbientBackground from "@/components/AmbientBackground";
+import { AmbientProvider } from "@/components/AmbientContext";
 import Header from "@/components/Header";
-import { listPatches, loadSummary } from "@/lib/data";
+import { getDefaultPair, listPatchPairs, listPatches, loadSummary } from "@/lib/data";
 import { fmtKst } from "@/lib/format";
 import "./globals.css";
 
@@ -38,16 +40,40 @@ function getSnapshotCaption(): string | null {
   return fmtKst(summary.meta.generatedAt);
 }
 
+/** 헤더 1줄 통합(2026-09-12·3차, Q1)이 흡수한 구 FilterBar 데이터 — page.tsx/compare/page.tsx가
+ * 각자 getDefaultPair()로 계산하던 것과 정확히 같은 계산이다(중복이지만 그 두 페이지도 자기
+ * 렌더에 pair가 필요해 각자 다시 계산한다 — snapshotCaption과 같은 기존 패턴). Header는
+ * 클라이언트 컴포넌트라 fs를 못 만지므로 여기서 계산해 prop으로 내려준다. */
+function getPairChromeData() {
+  const pairs = listPatchPairs();
+  const pair = getDefaultPair();
+  const summaryFrom = pair ? loadSummary(pair.from) : null;
+  const summaryTo = pair ? loadSummary(pair.to) : null;
+  return {
+    pairs,
+    currentPair: pair,
+    nBefore: summaryFrom?.data.matches ?? null,
+    nAfter: summaryTo?.data.matches ?? null,
+    aggregatedAt: summaryTo?.meta.generatedAt ?? null,
+  };
+}
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   const snapshotCaption = getSnapshotCaption();
+  const pairChrome = getPairChromeData();
   return (
     <html
       lang="ko"
       className={`${inter.variable} ${robotoMono.variable} dark h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-bg text-fg">
-        <Header snapshotCaption={snapshotCaption} />
-        {children}
+      <body className="relative flex min-h-full flex-col bg-bg text-fg">
+        <AmbientProvider>
+          <AmbientBackground />
+          <div className="relative z-[1] flex min-h-full flex-1 flex-col">
+            <Header snapshotCaption={snapshotCaption} {...pairChrome} />
+            {children}
+          </div>
+        </AmbientProvider>
       </body>
     </html>
   );

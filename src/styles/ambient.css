@@ -1,0 +1,247 @@
+/* src/styles/ambient.css
+ * 전역 앰비언트 배경(협곡 아이소메트릭 섬) — 확정 시안(아티팩트 "협곡 앰비언트 배경" v5)의
+ * `.stage[data-anchor]/.bleed/.wash/.camera/.duo/.reveal` 레이어 구조를 sitewide fixed 레이어로
+ * 이식한 것. 원 시안은 aspect-ratio:16/10.4로 고정된 박스(스테이지) 안에서 좌표를 실측했지만,
+ * 실제 배경은 position:fixed;inset:0로 임의 뷰포트 크기를 덮는다 — 그래서 세로 위치·마스크
+ * 반경은 뷰포트 비율(%) 대신 뷰포트 상단에서의 절대 높이(vh/px 혼합)로 다시 잡았다. 이렇게
+ * 해야 뷰포트가 세로로 길어져도(좁은 화면) 섬이 늘어나 화면 하단까지 끌려가지 않고 상단 배너
+ * 영역에만 머문다.
+ */
+
+.ambient-root {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--bg);
+}
+
+/* ---------- 1. 색 번짐(wash) — 원본을 작게 줄여 미리 블러한 이미지를 cover로 깔아
+   화면 구석까지 이미지 색을 채운다(런타임 blur() 필터 없음 — public/bg/island-wash.jpg 자체가
+   이미 blur된 초소형 자산). ---------- */
+.ambient-wash {
+  position: absolute;
+  inset: -8%;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 50% 0%;
+  opacity: 0.85;
+}
+
+/* ---------- 2. 선명 플레이트(카메라 컨테이너) — 뷰포트 상단에 고정 높이 밴드로 앵커. ---------- */
+.ambient-camera {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* 사각 경계가 화면에 닿기 전에 투명해지도록 상단 중앙 기준 타원 마스크. 세로 반경은 px 고정 —
+     뷰포트 세로 길이와 무관하게 항상 같은 높이에서 사라진다. */
+  -webkit-mask-image: radial-gradient(
+    ellipse 62% 560px at 50% 0%,
+    #000 0%, /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+    #000 26%, /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+    rgba(0, 0, 0, 0.55) 58%,
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    ellipse 62% 560px at 50% 0%,
+    #000 0%, /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+    #000 26%, /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+    rgba(0, 0, 0, 0.55) 58%,
+    transparent 100%
+  );
+}
+.ambient-cam-inner {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: min(1320px, 128vw);
+  transform-origin: 50% 0%;
+  transform: translate(-50%, -6%) scale(var(--z, 1)) translate(var(--tx, 0%), var(--ty, 0%));
+  transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  will-change: transform;
+}
+.ambient-island {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: none;
+}
+/* 마커(.ambient-marker)는 2026-09-12 /verify-impl 실측으로 제거됐다 — 시안 v5에서는 라인 필터로
+   리스트가 짧아져 드러난 지형 위에 마커가 앉았지만, 구현의 좌측 스트림은 고정 높이 + 내부
+   스크롤이라 그 빈 지형이 생기지 않아 마커가 켜지는 세 라인 전부에서 콘텐츠에 100% 가려졌다.
+   사유·근거는 AmbientBackground.tsx의 해당 주석 참고. */
+
+/* ---------- 3. 브랜드 글로우 ---------- */
+.ambient-glow {
+  position: absolute;
+  inset: 0;
+  mix-blend-mode: screen;
+  opacity: 0.5;
+  background: radial-gradient(ellipse 56% 320px at 50% 0%, color-mix(in srgb, var(--game-glow) 20%, transparent), transparent 70%);
+}
+
+/* ---------- 4. 스크림 — 콘텐츠 대비 확보 ---------- */
+.ambient-scrim {
+  position: absolute;
+  inset: 0;
+  /* 정지점은 뷰포트 상단(y=0) 기준 절대 px다 — 2026-09-12(3차) 크롬 1줄 통합으로 헤더가
+     144px→57px(-87px)로 줄면서 히어로/상세 헤더 텍스트가 같은 시각적 위치에서도 이 스크림
+     기준으로는 더 위(옅은 지점)로 올라갔다. 실측(Playwright + 픽셀 휘도): 홈 히어로 보조문단이
+     --fg로도 최악 2.99:1(AA 4.5:1 미달, 해당 줄 면적의 0.49% — 섬 아트의 좁은 하이라이트
+     글린트 하나)까지 떨어졌다. 정지점을 크롬 감소분만큼(-87px) 당겨 이전과 동등한 스크림
+     두께를 회복한다. */
+  background:
+    linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--bg) 8%, transparent) 0%,
+      color-mix(in srgb, var(--bg) 30%, transparent) 333px,
+      color-mix(in srgb, var(--bg) 62%, transparent) 633px,
+      var(--bg) 873px
+    );
+}
+
+/* ---------- 5. 그레인 — 다크 블루 밴딩 제거 ---------- */
+.ambient-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.055;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- 항목상세 전용: 지형(좌하단) + 챔피언 스플래시(우상단 duo톤) ---------- */
+.ambient-terrain-corner {
+  position: absolute;
+  left: -10%;
+  bottom: -12%;
+  width: 62%;
+  height: 78%;
+  background-repeat: no-repeat;
+  background-size: contain;
+  background-position: 0% 100%;
+  opacity: 0.5;
+  -webkit-mask-image: radial-gradient(ellipse 78% 76% at 30% 74%, #000 0%, #000 26%, rgba(0, 0, 0, 0.55) 58%, transparent 88%); /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+  mask-image: radial-gradient(ellipse 78% 76% at 30% 74%, #000 0%, #000 26%, rgba(0, 0, 0, 0.55) 58%, transparent 88%); /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+}
+.ambient-duo {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 100%;
+  /* width·background는 2026-09-12(3차) 시안(rift-bg-v5.html .duo) 파라미터로 이식 — 62% +
+     블렌드 바탕 var(--surface)(시안 값과 동일한 색). 이전 46vw는 항목상세가 Container 1320px를 꽉
+     채우던 시절 기준값이라 지금은 무의미해졌다(같은 라운드 ST-PC4가 상세 폭을 1040px로 좁힌다).
+     background 누락이 실제 결정적 원인이었다 — .ambient-duo img가 mix-blend-mode:screen인데
+     이 바탕이 없으면(이전 상태) 뒤에 비치는 어두운 페이지 배경과 직접 스크린 합성돼 형체가 거의
+     사라진다. "상세 스플래시가 시안과 달리 안 보인다"는 사용자 지적의 실제 원인이 이 누락이었다.
+     시안의 right:-4%/top:-6%/height:104%(캔버스를 프레임 밖으로 살짝 밀어 마스크 페이드를 더
+     넓게 쓰는 값)는 이번 라운드에서 비채택 — 항목상세가 카드형 레이아웃이라 프레임 기준이
+     시안(자유 캔버스)과 다르고, 필요성이 실측되지 않았다(PLAN 참고). */
+  background: var(--surface);
+  width: 62%;
+  overflow: hidden;
+  -webkit-mask-image: radial-gradient(ellipse 68% 62% at 68% 44%, #000 0%, #000 18%, rgba(0, 0, 0, 0.5) 48%, transparent 82%); /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+  mask-image: radial-gradient(ellipse 68% 62% at 68% 44%, #000 0%, #000 18%, rgba(0, 0, 0, 0.5) 48%, transparent 82%); /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+}
+.ambient-duo img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 18%;
+  filter: grayscale(1) contrast(1.02) brightness(1.55);
+  mix-blend-mode: screen;
+}
+.ambient-duo .ambient-duo-tint {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  mix-blend-mode: multiply;
+  opacity: 0.88;
+}
+
+/* ---------- 인트로 리빌 ---------- */
+.ambient-reveal {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  -webkit-mask-image: radial-gradient(ellipse 60% 620px at 50% 0%, #000 0%, #000 24%, rgba(0, 0, 0, 0.5) 55%, transparent 100%); /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+  mask-image: radial-gradient(ellipse 60% 620px at 50% 0%, #000 0%, #000 24%, rgba(0, 0, 0, 0.5) 55%, transparent 100%); /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+}
+.ambient-reveal video,
+.ambient-reveal img {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: min(1320px, 128vw);
+  transform: translateX(-50%);
+  height: auto;
+}
+
+@media (max-width: 640px) {
+  .ambient-camera,
+  .ambient-reveal {
+    -webkit-mask-image: radial-gradient(ellipse 90% 380px at 50% 0%, #000 0%, #000 22%, rgba(0, 0, 0, 0.5) 55%, transparent 100%); /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+    mask-image: radial-gradient(ellipse 90% 380px at 50% 0%, #000 0%, #000 22%, rgba(0, 0, 0, 0.5) 55%, transparent 100%); /* design-lint-ignore: CSS mask 알파(표시 여부)일 뿐 시각 색상 아님 */
+  }
+  .ambient-terrain-corner {
+    width: 84%;
+    height: 50%;
+  }
+  .ambient-duo {
+    width: 66vw;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-cam-inner {
+    transition: none;
+  }
+}
+
+/* ---------- 반투명 크롬(2026-09-12) ----------
+ * 확정 시안 v5 `.topbar`는 배경이 비치는 반투명 바다(rgba(3,13,24,.35) + blur(3px)).
+ * 구현은 불투명 --surface/--surface-warm이라 전역 앰비언트 배경의 상단 밴드(섬 지형이 실제로
+ * 존재하는 y 0~560px 구간)를 헤더+필터바가 통째로 덮고 있었다 — 배경이 보이는 자리가 히어로
+ * 카드 위아래 틈뿐이었다(2026-09-12 사용자 지적).
+ * Tailwind 유틸이 아니라 여기 두는 이유: backdrop-filter 설정을 한 곳에 모으고, blur 반경을
+ * Tailwind arbitrary 값으로 소비처마다 흩뿌리지 않기 위함(Spec 검사의 토큰 우회 경고 대상).
+ * 이 파일은 globals.css에서 unlayered로 import되므로 Tailwind @layer utilities보다 우선한다. */
+.glass-chrome,
+.glass-chrome-2 {
+  border-color: var(--glass-border);
+  /* 시안 값은 blur(3px)이지만 그건 스크롤이 없는 정적 데모 기준이다 — 실제로는 sticky 헤더
+     아래로 본문이 지나가고, 3px은 그 글자를 못 뭉개서 헤더 텍스트와 겹쳐 읽혔다(실측).
+     반경을 키워 배경을 "서리 유리"로 만든다: 지형은 형태로 남고 지나가는 본문은 색 얼룩이 된다.
+     프리픽스는 적지 않는다 — Lightning CSS(Tailwind v4)가 타깃에 맞춰 붙이는데, 직접 쓰면
+     표준 속성 쪽을 지워버린다(실측: -webkit-만 남아 Chrome에서 blur가 아예 안 걸렸다). */
+  backdrop-filter: blur(16px) saturate(1.1);
+}
+.glass-chrome {
+  background: var(--glass-chrome);
+}
+.glass-chrome-2 {
+  background: var(--glass-chrome-2);
+}
+
+/* 히어로 헤드라인은 시안 `.hero`처럼 패널 없이 배경 위에 직접 앉는다 — 섬이 가장 밝은 지점에서도
+ * 본문이 읽히도록 시안의 text-shadow를 그대로 승계한다. */
+.ambient-hero-headline {
+  text-shadow: 0 2px 18px rgba(3, 13, 24, 0.75);
+}
+.ambient-hero-sub {
+  text-shadow: 0 1px 12px rgba(3, 13, 24, 0.8);
+}
+
+/* 항목상세 판정 헤더(2026-09-12·3차, Q4)도 같은 방식으로 카드 밖 배경 위 텍스트다 — 다만 이
+ * 배경은 히어로의 색 번짐 워시가 아니라 .ambient-duo 스플래시(grayscale+brightness(1.55)+screen,
+ * 시안 값 그대로)라 히어로보다 밝다. 시안 `.detail h3`/`.detail .sub`의 그림자 값을 그대로
+ * 승계 — 히어로(18px/.75, 12px/.8)보다 한 단계 강하다(20px/.8, 12px/.85). */
+.ambient-detail-headline {
+  text-shadow: 0 2px 20px rgba(3, 13, 24, 0.8);
+}
+.ambient-detail-sub {
+  text-shadow: 0 1px 12px rgba(3, 13, 24, 0.85);
+}

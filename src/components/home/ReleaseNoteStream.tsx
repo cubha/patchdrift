@@ -4,12 +4,16 @@
 // 된다 — CompareExplorer.tsx와 동일한 서버-로드/클라이언트-필터 분리 패턴).
 // 데이터(그룹·아이콘·라인·스펠아이콘·노트상태)는 전부 page.tsx가 빌드 타임에 준비해 props로
 // 내려준다 — 이 컴포넌트 자체는 fs를 읽지 않는다.
+//
+// 선택 라인 상태는 2026-09-12부터 로컬 useState가 아니라 AmbientContext(useAmbient)가 소유한다
+// — 같은 값을 layout.tsx의 전역 배경(AmbientBackground)이 라인 카메라 이동에 그대로 쓴다
+// (advisor 검토: 배경을 두 번 렌더해 상태를 동기화하는 대신 소유권을 한 곳에 둔다).
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { DeltaRecord, LanePosition } from "@/pipeline/types";
-import type { LaneAxis } from "@/lib/lane";
 import LaneFilter from "@/components/LaneFilter";
+import { useAmbient } from "@/components/AmbientContext";
 import ReleaseNoteRow from "./ReleaseNoteRow";
 import type { ReleaseStreamGroup } from "./releaseStream";
 import type { StreamEntityIcon } from "./releaseStreamEntity";
@@ -37,7 +41,7 @@ function groupKey(group: ReleaseStreamGroup): string {
 }
 
 export default function ReleaseNoteStream({ entries, spellIcons, noteDeltas, patch, qAlpha }: ReleaseNoteStreamProps) {
-  const [selectedLane, setSelectedLane] = useState<LaneAxis>("all");
+  const { selectedLane, setSelectedLane } = useAmbient();
 
   const filtered = useMemo(() => {
     if (selectedLane === "all") return entries;
@@ -48,14 +52,15 @@ export default function ReleaseNoteStream({ entries, spellIcons, noteDeltas, pat
     <div className="flex h-full min-h-0 flex-col gap-4">
       <LaneFilter selected={selectedLane} onSelect={setSelectedLane} />
       {filtered.length === 0 ? (
-        <p className="rounded-lg border border-border bg-surface p-5 text-sm text-muted">
+        <p className="panel-surface rounded-lg p-5 text-sm text-muted">
           이 라인에서는 관측된 변화가 없습니다
         </p>
       ) : (
-        <ul
-          className="min-h-0 flex-1 overflow-y-auto rounded-lg border border-border bg-surface"
-          style={{ boxShadow: "var(--elev-ring)" }}
-        >
+        // panel-surface(2026-09-12·3차)의 background는 border box 기준 고정(기본
+        // background-attachment:scroll)이라 이 <ul> 자체가 스크롤 컨테이너여도 레일·채움이
+        // 콘텐츠와 함께 스크롤해 사라지지 않는다 — 대신 채움이 스크롤 전체 높이가 아니라 보이는
+        // 프레임 높이에 맞춰져 프레임 vignette처럼 읽힌다(의도된 부수효과, panel.css 주석 참고).
+        <ul className="panel-surface min-h-0 flex-1 overflow-y-auto rounded-lg">
           {filtered.map((entry) => (
             <ReleaseNoteRow
               key={groupKey(entry.group)}

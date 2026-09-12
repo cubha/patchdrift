@@ -3,7 +3,7 @@
 // 음수는 하이픈(-)이 아니라 유니코드 마이너스(U+2212, −)로 표기한다 — 타이포그래피 관례이자
 // 표에서 하이픈/마이너스 혼용을 없애기 위함(UX-BRIEF 델타 표기 전반에 일관 적용).
 
-import type { DeltaMetric, Interval, LanePosition, MatchStatus, TeamPosition } from "@/pipeline/types";
+import type { DeltaEntityType, DeltaMetric, Interval, LanePosition, MatchStatus, TeamPosition } from "@/pipeline/types";
 
 const MINUS = "−";
 
@@ -120,6 +120,22 @@ const METRIC_LABELS: Record<DeltaMetric, string> = {
 
 export function metricLabel(metric: string): string {
   return METRIC_LABELS[metric as DeltaMetric] ?? metric;
+}
+
+/** `DeltaEntityType` 5종 → 한글 라벨. 항목상세 브레드크럼("대조표 › 챔피언 › 노틸러스")이
+ * 쓴다(2026-09-12 /verify-impl 보완 — 원시안 2종 모두 브레드크럼을 그렸는데 구현에 없었다).
+ * 대조표 좌 내비의 섹션 탭 라벨(`compare/logic.ts` NAV_SECTIONS)과 어휘를 맞춘다 — 다만 그쪽은
+ * 3탭(champion/item/system)만 다루는 별개 축이라 키 집합이 달라 합치지 않았다. */
+const ENTITY_TYPE_LABELS: Record<DeltaEntityType, string> = {
+  champion: "챔피언",
+  item: "아이템",
+  objective: "오브젝트",
+  lane: "라인",
+  summary: "매치 평균",
+};
+
+export function entityTypeLabel(entityType: string): string {
+  return ENTITY_TYPE_LABELS[entityType as DeltaEntityType] ?? entityType;
 }
 
 /**

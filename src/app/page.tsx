@@ -7,7 +7,6 @@
 import type { DeltaRecord } from "@/pipeline/types";
 import { loadDdragonSafe } from "@/pipeline/match/ddragon";
 import Container from "@/components/Container";
-import FilterBar from "@/components/FilterBar";
 import HeroSummary from "@/components/home/HeroSummary";
 import ReleaseNoteStream, { type ReleaseStreamEntry } from "@/components/home/ReleaseNoteStream";
 import SideMatchAverages from "@/components/home/SideMatchAverages";
@@ -18,11 +17,9 @@ import { computeHeadline } from "@/components/home/logic";
 import { computeLaneDistribution } from "@/components/home/laneDistribution";
 import { buildReleaseStream } from "@/components/home/releaseStream";
 import { resolveStreamEntityIcon } from "@/components/home/releaseStreamEntity";
-import { heroSplashUrl, resolveHeroSplashEntityKey } from "@/components/home/heroSplash";
 import { lanesForEntityKey } from "@/lib/lane";
 import {
   getDefaultPair,
-  listPatchPairs,
   loadDeltas,
   loadNotes,
   loadObjectives,
@@ -32,7 +29,6 @@ import {
 
 export default function Home() {
   const pair = getDefaultPair();
-  const pairs = listPatchPairs();
 
   const deltas = pair ? loadDeltas(pair.from, pair.to) : null;
   const notesTo = pair ? loadNotes(pair.to) : null;
@@ -62,20 +58,13 @@ export default function Home() {
   const unannouncedRows = (deltas?.rows ?? []).filter((row) => row.status === "unannounced");
   const laneDistribution = computeLaneDistribution(unannouncedRows);
 
-  const ambientSplashUrl = heroSplashUrl(resolveHeroSplashEntityKey(deltas?.rows ?? []));
-
   return (
-    <div className="flex flex-1 flex-col bg-bg">
-      <FilterBar
-        pairs={pairs}
-        currentPair={pair}
-        nBefore={summaryFrom?.data.matches ?? null}
-        nAfter={summaryTo?.data.matches ?? null}
-        aggregatedAt={summaryTo?.meta.generatedAt ?? null}
-      />
+    <div className="flex flex-1 flex-col">
+      {/* 크롬(패치 쌍·고정 표본·n/집계 캡션)은 2026-09-12(3차)부터 layout.tsx의 Header가
+          1줄로 통합해 그린다 — 이 페이지가 별도로 FilterBar를 렌더하지 않는다. */}
       <main className="flex-1">
         <Container className="flex flex-col gap-6 py-8">
-          <HeroSummary stats={headline} ambientSplashUrl={ambientSplashUrl} />
+          <HeroSummary stats={headline} />
           <StreamColumnLayout
             left={
               <ReleaseNoteStream

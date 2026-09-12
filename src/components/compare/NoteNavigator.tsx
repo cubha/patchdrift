@@ -38,11 +38,9 @@ export default function NoteNavigator({
   const visible = filterNotesBySearch(sectionFiltered, searchQuery);
 
   return (
-    <section
-      className="overflow-hidden rounded-lg border border-border bg-surface"
-      style={{ boxShadow: "var(--elev-ring)" }}
-    >
-      <div className="border-b border-border-soft px-5 py-5">
+    // 2026-09-12(3차): 골드 4변 프레임 → .panel-surface(src/styles/panel.css, Q2 "A+B 결합").
+    <section className="panel-surface overflow-hidden rounded-lg">
+      <div className="panel-head-wash border-b border-border-soft px-5 py-5">
         <h2 className="font-display text-lg font-bold text-fg">패치노트 항목</h2>
       </div>
       <div className="flex gap-2 px-5 pt-4" role="tablist" aria-label="패치노트 섹션">

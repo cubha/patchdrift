@@ -34,6 +34,10 @@ function cdnBase(version: string): string {
   return `https://ddragon.leagueoflegends.com/cdn/${version}`;
 }
 
+// 스플래시(cdn/img/champion/splash/)는 버전 경로가 없다 — 다른 이미지(cdn/{v}/img/...)와
+// 경로 규약이 다르므로 cdnBase()를 쓰면 안 된다(공식 CDN 구조, DDragon 문서 확인).
+const SPLASH_BASE = "https://ddragon.leagueoflegends.com/cdn/img/champion/splash";
+
 export async function fetchLatestVersion(fetchImpl: typeof fetch = fetch): Promise<string> {
   const res = await fetchImpl(VERSIONS_URL);
   if (!res.ok) {
@@ -305,6 +309,25 @@ export async function main(): Promise<void> {
     else champFailed += 1;
   });
 
+  // 항목상세 페이지 앰비언트 스플래시(챔피언 항목만, entityType==="champion") 자산 — 등장한
+  // 챔피언 전원분을 미리 받아 둔다(정적 export라 런타임 fetch 불가, generateStaticParams가
+  // 빌드 타임에 전부 프리렌더). public/dd/splash/{championId}_0.jpg 계약은 heroSplash.ts가
+  // 이미 전제하던 것을 그대로 재사용.
+  let splashDownloaded = 0;
+  let splashSkipped = 0;
+  let splashFailed = 0;
+
+  await mapWithConcurrency(Array.from(championIds), DOWNLOAD_CONCURRENCY, async (championId) => {
+    const champion = ddragon.champions.byKey(championId);
+    if (!champion) return; // missingChampionMapping은 위 챔피언 아이콘 루프에서 이미 보고
+    const url = `${SPLASH_BASE}/${champion.id}_0.jpg`;
+    const dest = path.join(PUBLIC_DD_DIR, "splash", `${champion.id}_0.jpg`);
+    const result = await downloadImageIfMissing(url, dest, fetchImpl);
+    if (result === "downloaded") splashDownloaded += 1;
+    else if (result === "skipped") splashSkipped += 1;
+    else splashFailed += 1;
+  });
+
   let itemDownloaded = 0;
   let itemSkipped = 0;
   let itemFailed = 0;
@@ -328,6 +351,9 @@ export async function main(): Promise<void> {
 
   console.log(
     `[run-ddragon] champion images: downloaded=${champDownloaded} skipped=${champSkipped} failed=${champFailed} missing-mapping=${missingChampionMapping.length}`
+  );
+  console.log(
+    `[run-ddragon] champion splash: downloaded=${splashDownloaded} skipped=${splashSkipped} failed=${splashFailed}`
   );
   console.log(
     `[run-ddragon] item images: downloaded=${itemDownloaded} skipped=${itemSkipped} failed=${itemFailed} missing-mapping=${missingItemMapping.length}`

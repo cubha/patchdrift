@@ -26,9 +26,10 @@ import EntityIcon from "@/components/EntityIcon";
 import SectionCard from "@/components/SectionCard";
 import StatusBadge from "@/components/StatusBadge";
 import { listPatchPairs, loadChampions, loadDeltas, loadItems, loadNotes, type PatchPair } from "@/lib/data";
-import { fmtInt, itemIdFromSlug, itemSlug } from "@/lib/format";
+import { entityTypeLabel, fmtInt, itemIdFromSlug, itemSlug } from "@/lib/format";
 import type { DeltaRecord, PatchNoteItem } from "@/pipeline/types";
 import { loadDdragonSafe } from "@/pipeline/match/ddragon";
+import AmbientDetailSplash from "@/components/item/AmbientDetailSplash";
 import CausesPanel from "@/components/item/CausesPanel";
 import ItemChart from "@/components/item/ItemChart";
 import NoteContrastPanel from "@/components/item/NoteContrastPanel";
@@ -44,6 +45,7 @@ import {
 import { resolveNoteContrast } from "@/components/item/noteContrast";
 import { resolveStoredCi } from "@/components/item/storedCi";
 import { snapshotHash } from "@/components/item/snapshotHash";
+import { championSplashUrl } from "@/components/item/detailSplash";
 
 interface ItemPageProps {
   params: Promise<{ id: string }>;
@@ -110,7 +112,9 @@ export function generateStaticParams(): Array<{ id: string }> {
 
 function EmptyState() {
   return (
-    <div className="flex flex-1 flex-col bg-bg">
+    <div className="flex flex-1 flex-col">
+      {/* 직전 페이지가 챔피언 상세였다면 배경에 남은 스플래시를 지운다. */}
+      <AmbientDetailSplash url={null} />
       <main className="flex flex-1 items-center justify-center py-24 text-sm text-muted">
         표시할 항목 데이터가 없습니다.
       </main>
@@ -150,55 +154,78 @@ export default async function ItemDetailPage({ params }: ItemPageProps) {
   const noteContrast = resolveNoteContrast(delta, notes, pair.to);
   const rawDeltas = readDeltasRaw(pair);
   const hash = rawDeltas ? snapshotHash(rawDeltas) : null;
+  const splashUrl = championSplashUrl(delta);
 
   return (
-    <div className="flex flex-1 flex-col bg-bg">
+    <div className="flex flex-1 flex-col">
+      <AmbientDetailSplash url={splashUrl} />
       <main>
-        <Container className="flex flex-col gap-6 py-8">
-          <section className="overflow-hidden rounded-lg border border-border bg-surface" style={{ boxShadow: "var(--elev-ring)" }}>
-            <div className="flex flex-wrap items-center gap-4 p-5">
-              <EntityIcon
-                entityType={delta.entityType}
-                entityKey={delta.entityKey}
-                name={delta.entityName}
-                size={72}
-                className="rounded-md text-lg"
-              />
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="font-display text-xl font-bold text-fg">
-                    {delta.entityName} — {displayMetricLabel(delta)}
-                  </h1>
-                  <StatusBadge status={delta.status} />
-                </div>
-                <p className="mt-2 text-lg text-fg-2">
-                  {pair.from}→{pair.to} {displayMetricLabel(delta)}{" "}
-                  <span className="num font-bold text-fg">
-                    {formatMetricValue(delta.before, kind)}
-                  </span>{" "}
-                  →{" "}
-                  <span className="num font-bold text-fg">
-                    {formatMetricValue(delta.after, kind)}
-                  </span>{" "}
-                  {suppressDelta ? (
-                    <span className="text-sm font-bold text-muted">
-                      (표본 부족 — 델타 미제시, n({fmtInt(delta.n.before)}/{fmtInt(delta.n.after)}))
-                    </span>
-                  ) : (
-                    <>(<DeltaValue delta={delta.delta} ci={delta.ci} kind={kind} />)</>
-                  )}
-                </p>
+        {/* width="narrow"(1040px, 2026-09-12·3차 Q3 "안 L1") — 전역 Container(1320px)는
+            그대로 두고 이 페이지만 좁힌다. 1440px에서 우측 여백이 60→200px로 넓어져
+            .ambient-duo(상세 스플래시) 가시 면적이 실제로 늘어난다. */}
+        <Container width="narrow" className="flex flex-col gap-6 py-8">
+          {/* 2026-09-12(3차) Q4: 판정 헤더를 불투명 bg-surface 카드에서 벗겨 홈 히어로와 같은
+              방식으로 배경(상세 스플래시) 위 텍스트로 뺐다(HeroSummary.tsx 전례). text-shadow는
+              .ambient-detail-headline/-sub(src/styles/ambient.css) — 히어로보다 강한 값을 쓴다,
+              duo 스플래시가 brightness(1.55)+screen이라 히어로 배경보다 밝기 때문이다. */}
+          {/* 브레드크럼 — 원시안 2종(배경 테마 v5 `.detail .crumb`, 방향 제안 항목상세 목업)이
+              모두 그렸는데 구현에만 없던 것을 2026-09-12 /verify-impl 화면 대조로 잡아 보완했다.
+              진입 경로가 대조표 행 클릭이므로(UX-BRIEF §2 화면 흐름) 첫 마디는 대조표 링크다. */}
+          <nav aria-label="위치" className="ambient-detail-sub pt-1 font-mono text-xs text-fg-2">
+            <Link href="/compare/" className="hover:text-fg">
+              대조표
+            </Link>
+            <span className="px-1.5 text-muted" aria-hidden="true">
+              ›
+            </span>
+            {entityTypeLabel(delta.entityType)}
+            <span className="px-1.5 text-muted" aria-hidden="true">
+              ›
+            </span>
+            {delta.entityName}
+          </nav>
+          <div className="flex flex-wrap items-center gap-4">
+            <EntityIcon
+              entityType={delta.entityType}
+              entityKey={delta.entityKey}
+              name={delta.entityName}
+              size={72}
+              className="rounded-md text-lg"
+            />
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="ambient-detail-headline font-display text-xl font-bold text-fg">
+                  {delta.entityName} — {displayMetricLabel(delta)}
+                </h1>
+                <StatusBadge status={delta.status} />
               </div>
-              <div className="ml-auto">
-                <Link
-                  href="/methodology/#discord"
-                  className="inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-5 text-sm font-bold text-accent-on hover:opacity-90"
-                >
-                  디스코드로 전송
-                </Link>
-              </div>
+              <p className="ambient-detail-sub mt-2 text-lg text-fg-2">
+                {pair.from}→{pair.to} {displayMetricLabel(delta)}{" "}
+                <span className="num font-bold text-fg">
+                  {formatMetricValue(delta.before, kind)}
+                </span>{" "}
+                →{" "}
+                <span className="num font-bold text-fg">
+                  {formatMetricValue(delta.after, kind)}
+                </span>{" "}
+                {suppressDelta ? (
+                  <span className="text-sm font-bold text-muted">
+                    (표본 부족 — 델타 미제시, n({fmtInt(delta.n.before)}/{fmtInt(delta.n.after)}))
+                  </span>
+                ) : (
+                  <>(<DeltaValue delta={delta.delta} ci={delta.ci} kind={kind} />)</>
+                )}
+              </p>
             </div>
-          </section>
+            <div className="ml-auto">
+              <Link
+                href="/methodology/#discord"
+                className="inline-flex min-h-10 items-center justify-center rounded-md bg-accent px-5 text-sm font-bold text-accent-on hover:opacity-90"
+              >
+                디스코드로 전송
+              </Link>
+            </div>
+          </div>
 
           {/* items-start 제거 — 좌/우 컬럼 높이를 grid 기본 stretch로 맞추고, 각 컬럼의
               마지막 카드(추정 원인 LLM · 원천 매치)가 flex-1로 남는 높이를 흡수해 하단을

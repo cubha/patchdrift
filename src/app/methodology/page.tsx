@@ -79,7 +79,7 @@ export default function MethodologyPage() {
   });
 
   return (
-    <div className="flex flex-1 flex-col bg-bg">
+    <div className="flex flex-1 flex-col">
       <main>
         <Container className="flex flex-col gap-6 py-8">
           <SectionCard eyebrow="우선 1 · 신뢰" title="데이터 파이프라인">
