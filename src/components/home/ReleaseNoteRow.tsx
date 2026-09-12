@@ -115,19 +115,17 @@ export default function ReleaseNoteRow({
   // 델타 행이 카드 안에서 두 번 렌더된다(2026-09-11 결함).
   const remainingDeltas = isUnannounced ? excludeObservation(group.deltas, observation) : [];
 
-  // 2026-09-13(6차 연속, 사용자 지적 "메인화면 좌측섹션 투명화가 진행안되어잇어서그랫어") —
-  // 미공지 행의 강조가 완전 불투명 `bg-surface-warm`이었다. 미공지는 스트림 최상단에 정렬되므로
-  // (releaseStream.ts, |delta| 내림차순 삽입) 스크롤 없이 보이는 행이 거의 전부 미공지였고, 그
-  // 행들의 불투명 채움이 부모 <ul>의 `panel-surface-glass`(R6.1) 위를 다 덮어 유리 효과가
-  // 사실상 안 보였다(실측: 픽셀이 정확히 --surface-warm #12213a로 고정, 배경 지형 변화가
-  // 전혀 반영 안 됨). DeltaTable.tsx의 `.row-highlight`(--row-highlight-fill, 반투명 골드
-  // 워시)와 동일 클래스로 교체 — 강조 신호는 왼쪽 골드 보더(border-l-accent)로 유지하고
-  // 채움만 유리 패널 아래로 지형이 비치도록 옅게 바꾼다.
+  // 미공지 행 강조(2026-09-13·6차 연속) — 채움 없이 왼쪽 골드 보더 하나로만 표시한다.
+  // 이력: 원래 불투명 `bg-surface-warm`이었고(미공지는 스트림 최상단 정렬이라 스크롤 없이 보이는
+  // 행이 거의 전부 미공지 → 부모 <ul>의 `panel-surface-glass`가 통째로 가려졌다), 이를 반투명
+  // 골드 워시(`.row-highlight`)로 한 번 바꿨더니 이번엔 좌측 패널만 금색으로 물들어 우측 패널과
+  // 이질감이 생겼다(사용자 지적 "왜 좌측섹션만 금색이냐, 전부 통일하라고"). 채움을 아예 빼면
+  // 배경 처리가 사이트 전체에서 동일해지고, 강조는 `border-l-accent`가 이미 충분히 수행한다.
   return (
     <li
       className={
         isUnannounced
-          ? "row-highlight border-b border-l-4 border-border-soft border-l-accent last:border-b-0"
+          ? "border-b border-l-4 border-border-soft border-l-accent last:border-b-0"
           : "border-b border-border-soft last:border-b-0"
       }
     >

@@ -82,8 +82,14 @@ export default function CompareExplorer({ pair, notes, rows, coverage, noteIcons
       {/* 시안 .m-filter — 상태 칩과 라인 필터를 같은 필터바 줄에 둔다(홈과 동일한 어휘).
           표면도 헤더와 같은 반투명 크롬(.glass-chrome-2) — 이 필터는 실제로 동작하므로
           2026-09-12(3차) 크롬 1줄 통합 대상이 아니다(구 FilterBar와 달리 이 행은 유지). 헤더
-          1줄 + 이 행까지 불투명하면 전역 앰비언트 배경의 상단 밴드가 대조표에서만 가려진다. */}
-      <div className="glass-chrome-2 border-b">
+          1줄 + 이 행까지 불투명하면 전역 앰비언트 배경의 상단 밴드가 대조표에서만 가려진다.
+
+          2026-09-13(7차, R8 — 배치안 아티팩트 A안 "+120px", 홈 page.tsx와 동일 결정을 전 메뉴에
+          적용): 이 필터 바 자체를 위로 120px 띄운다 — 대조표엔 홈의 히어로 텍스트에 해당하는
+          장식 요소가 없어 이 필터 바가 "첫 블록"이다. 헤더 바로 아래 여백 없이 붙어 있던 걸
+          띄워 그 사이 지형이 더 드러나게 한다. 120px은 이 페이지 1회성 배치 수치라 대응 토큰이
+          없다(Container `width` prop·NoteNavigator의 640 고정값과 동일 성격). */}
+      <div className="glass-chrome-2 border-b mt-[120px]"> {/* design-lint-ignore: PLAN-deployed-ui-fix-2026-09-12.md R8 — 사용자 확정 +120px, 대응 토큰 없는 페이지별 배치 수치 */}
         <Container className="flex flex-wrap items-center justify-between gap-3 py-3">
           <StatusFilterChips active={statusFilter} onChange={setStatusFilter} />
           <LaneFilter selected={laneFilter} onSelect={setLaneFilter} />

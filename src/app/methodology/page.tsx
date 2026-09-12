@@ -82,10 +82,15 @@ export default function MethodologyPage() {
   // 판넬 그대로") — 이 페이지도 layout.tsx의 전역 앰비언트 배경을 받지만 첫 패널이 top≈89px
   // (헤더 바로 아래)부터 카메라 노출 밴드 전체를 불투명으로 덮고 있었다. 홈·`/compare/`와
   // 동일 근거로 6개 SectionCard 전부 `variant="glass"`.
+  //
+  // 2026-09-13(7차, R8 — 배치안 아티팩트 A안 "+120px", 홈 page.tsx와 동일 결정을 전 메뉴에
+  // 적용): 상단 패딩만 기존 32px에서 120px 더한 값으로 분리, 하단 여백은 그대로 유지. 이
+  // 페이지는 헤드라인 없이 패널이 바로 첫 블록이라 패널 자체가 120px 내려가는 것으로 홈의
+  // "블록 전체가 같이 내려가야" 요구를 동일하게 만족한다.
   return (
     <div className="flex flex-1 flex-col">
       <main>
-        <Container className="flex flex-col gap-6 py-8">
+        <Container className="flex flex-col gap-6 pt-[152px] pb-8"> {/* design-lint-ignore: PLAN-deployed-ui-fix-2026-09-12.md R8 — 사용자 확정 +120px, 대응 토큰 없는 페이지별 배치 수치 */}
           <SectionCard eyebrow="우선 1 · 신뢰" title="데이터 파이프라인" variant="glass">
             <PipelineDiagram steps={steps} />
           </SectionCard>

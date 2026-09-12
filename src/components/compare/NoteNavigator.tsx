@@ -95,8 +95,11 @@ export default function NoteNavigator({
                   type="button"
                   onClick={() => onSelect(item.id)}
                   aria-current={isSelected ? "true" : undefined}
+                  // 선택 표현(2026-09-13·6차 연속): `bg-surface-warm`(완전 불투명)이 유리 패널 안에서
+                  // 혼자 불투명 블록으로 남았다. 같은 "선택된 행"을 DeltaTable.tsx이 이미
+                  // `.row-highlight`(반투명 골드 워시)로 그리고 있으므로 양쪽 언어를 맞춘다.
                   className={`flex w-full items-start gap-3 border-l-2 px-5 py-3 text-left ${
-                    isSelected ? "border-accent bg-surface-warm" : "border-transparent"
+                    isSelected ? "row-highlight border-accent" : "border-transparent"
                   }`}
                 >
                   {icon.entityType && icon.entityKey ? (
