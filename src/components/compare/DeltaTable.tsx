@@ -1,6 +1,11 @@
 // src/components/compare/DeltaTable.tsx
 // 우 델타 테이블(2/3) — 프로토타입 `table.delta-table` 1:1(docs/design/prototype/02-comparison-table.html).
 // 순수 프레젠테이션 — 정렬 상태·선택 하이라이트는 부모 CompareExplorer가 소유.
+//
+// 2026-09-12(4차, R5): 본문을 640px 내부 스크롤(NoteNavigator.tsx의 `.note-item-list` 규약과
+// 동일값)로 감쌌다 — 이전엔 rows(최대 PAGE_SIZE=200행)가 전부 펼쳐져 페이지 전체가 13,000px
+// 넘게 길어졌다(사용자 실측 지적). `더 보기`/CoverageBar는 CompareExplorer.tsx에서 이 스크롤러
+// 밖(패널 푸터)에 그대로 둔다.
 
 import Link from "next/link";
 import type { DeltaRecord, LanePosition } from "@/pipeline/types";
@@ -70,43 +75,52 @@ export default function DeltaTable({ pair, rows, highlightNoteId, sortKey, sortD
   const fromLabel = pair?.from ?? "이전";
   const toLabel = pair?.to ?? "이후";
 
+  // sticky 헤더(2026-09-12·4차, R5) — 640px 내부 스크롤(아래 컨테이너)에서 헤더가 스크롤을 따라
+  // 사라지면 표를 읽을 수 없다. `border-collapse`(아래 <table>)와 `position:sticky`를 같이 쓰면
+  // th의 하단 border가 사라지는 알려진 상호작용이 있어(테두리가 collapse 규칙을 따라 sticky
+  // 레이어링 밖으로 밀림), `border-b`를 `shadow-[inset_0_-1px_0_var(--border-soft)]`로 대체한다
+  // — 색은 여전히 토큰 참조라 verify.sh Spec 하드코딩 검사에 걸리지 않는다. 헤더 배경은
+  // bg-surface(불투명 단색)로 — panel-surface의 그라디언트 채움을 그대로 쓰면 스크롤 시
+  // 헤더 영역만 평평한 띠로 끊겨 보인다.
+  const thBase =
+    "sticky top-0 z-10 whitespace-nowrap bg-surface px-4 py-3 text-left shadow-[inset_0_-1px_0_var(--border-soft)]";
   return (
-    <div className="overflow-x-auto">
+    <div className="max-h-[640px] overflow-auto"> {/* design-lint-ignore: 프로토타입 .note-item-list{max-height:640px}와 동일 규약(NoteNavigator.tsx 참고), 대응 토큰 없음 */}
       <table className="w-full border-collapse font-mono text-sm tabular-nums">
         <thead>
           <tr>
-            <th scope="col" className="whitespace-nowrap border-b border-border-soft px-4 py-3 text-left" />
-            <th scope="col" className="whitespace-nowrap border-b border-border-soft px-4 py-3 text-left font-body text-xs font-bold text-muted">
+            <th scope="col" className={thBase} />
+            <th scope="col" className={`${thBase} font-body text-xs font-bold text-muted`}>
               엔티티
             </th>
-            <th scope="col" className="whitespace-nowrap border-b border-border-soft px-4 py-3 text-left font-body text-xs font-bold text-muted">
+            <th scope="col" className={`${thBase} font-body text-xs font-bold text-muted`}>
               지표
             </th>
-            <th scope="col" className="whitespace-nowrap border-b border-border-soft px-4 py-3 text-left font-body text-xs font-bold text-muted">
+            <th scope="col" className={`${thBase} font-body text-xs font-bold text-muted`}>
               {fromLabel}
             </th>
-            <th scope="col" className="whitespace-nowrap border-b border-border-soft px-4 py-3 text-left font-body text-xs font-bold text-muted">
+            <th scope="col" className={`${thBase} font-body text-xs font-bold text-muted`}>
               {toLabel}
             </th>
-            <th scope="col" className="whitespace-nowrap border-b border-border-soft px-4 py-3 text-left font-body text-xs font-bold text-muted">
+            <th scope="col" className={`${thBase} font-body text-xs font-bold text-muted`}>
               <button type="button" onClick={() => onSort("absDelta")} className="inline-flex items-center gap-1">
                 Δ <span aria-hidden="true">{sortIndicator("absDelta", sortKey, sortDir)}</span>
               </button>
             </th>
-            <th scope="col" className="whitespace-nowrap border-b border-border-soft px-4 py-3 text-left font-body text-xs font-bold text-muted">
+            <th scope="col" className={`${thBase} font-body text-xs font-bold text-muted`}>
               <button type="button" onClick={() => onSort("q")} className="inline-flex items-center gap-1">
                 95% CI <span aria-hidden="true">{sortIndicator("q", sortKey, sortDir)}</span>
               </button>
             </th>
-            <th scope="col" className="whitespace-nowrap border-b border-border-soft px-4 py-3 text-left font-body text-xs font-bold text-muted">
+            <th scope="col" className={`${thBase} font-body text-xs font-bold text-muted`}>
               <button type="button" onClick={() => onSort("n")} className="inline-flex items-center gap-1">
                 n <span aria-hidden="true">{sortIndicator("n", sortKey, sortDir)}</span>
               </button>
             </th>
-            <th scope="col" className="whitespace-nowrap border-b border-border-soft px-4 py-3 text-left font-body text-xs font-bold text-muted">
+            <th scope="col" className={`${thBase} font-body text-xs font-bold text-muted`}>
               상태
             </th>
-            <th scope="col" className="whitespace-nowrap border-b border-border-soft px-4 py-3 text-left font-body text-xs font-bold text-muted">
+            <th scope="col" className={`${thBase} font-body text-xs font-bold text-muted`}>
               짝
             </th>
           </tr>

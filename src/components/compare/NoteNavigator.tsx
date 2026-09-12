@@ -2,6 +2,11 @@
 // 좌 내비게이터(1/3) — 프로토타입 `.tab-row`/`.nav-search`/`.note-item-list` 1:1
 // (docs/design/prototype/02-comparison-table.html). 순수 프레젠테이션 — 상태는 부모
 // CompareExplorer가 소유(섹션 탭·검색어·선택 항목 전부 콜백으로 위임).
+//
+// panel-surface-glass(2026-09-12·5차, R6 확대 — 사용자가 홈과 동일 스타일 쓰는 곳을 찾아
+// 통일하라고 지시): /compare/도 layout.tsx의 전역 앰비언트 배경을 그대로 받는데, 이 패널이
+// top≈143px부터 카메라 노출 밴드(y<873px) 전체를 불투명으로 덮고 있었다 — 홈에서 이미
+// "전면 유리화"로 방향을 바꿨으므로 같은 처리를 여기도 적용한다.
 
 import type { DeltaRecord, PatchNoteItem, PatchNoteSection } from "@/pipeline/types";
 import EntityIcon from "@/components/EntityIcon";
@@ -39,7 +44,7 @@ export default function NoteNavigator({
 
   return (
     // 2026-09-12(3차): 골드 4변 프레임 → .panel-surface(src/styles/panel.css, Q2 "A+B 결합").
-    <section className="panel-surface overflow-hidden rounded-lg">
+    <section className="panel-surface panel-surface-glass overflow-hidden rounded-lg">
       <div className="panel-head-wash border-b border-border-soft px-5 py-5">
         <h2 className="font-display text-lg font-bold text-fg">패치노트 항목</h2>
       </div>

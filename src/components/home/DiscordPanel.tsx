@@ -3,6 +3,11 @@
 // 실제 전송은 배치 스크립트(scripts/run-notify.ts, ST-13 소유) 몫이라 버튼은 방법론 페이지의
 // 디스코드 미리보기 섹션으로 가는 링크일 뿐이다(ST-11 프롬프트 명시) — 정적 export라 서버 액션도
 // 없다. 서버 컴포넌트.
+//
+// variant="glass"(2026-09-12·5차, R6 재지적): 카메라 밴드 한정 유리화(옵션 B)가 인접 패널과
+// 이질감을 만든다는 지적으로 홈의 모든 패널을 유리화하는 쪽으로 바뀌었다 — 이 패널은 카메라
+// 밴드(y<873px) 밖(top≈1081px)이라 뒤에 비칠 지형은 없지만, 사용자가 요구한 건 "카메라
+// 노출 여부와 무관한 전면 통일"이라 예외를 두지 않는다 — ReleaseNoteStream.tsx 주석 참고.
 
 import Link from "next/link";
 import { fmtKst } from "@/lib/format";
@@ -17,7 +22,7 @@ export interface DiscordPanelProps {
 
 export default function DiscordPanel({ generatedAt }: DiscordPanelProps) {
   return (
-    <SectionCard title="디스코드로 공유">
+    <SectionCard title="디스코드로 공유" variant="glass">
       <div className="flex flex-col items-start gap-3 p-5">
         <p className="text-sm text-muted">
           미공지 변화·공지 불일치 항목을 요약해 서버로 전송합니다.

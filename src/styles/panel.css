@@ -24,6 +24,44 @@
   background-position: 0 0, 0 0;
 }
 
+/* 구간 한정 유리화(2026-09-12·5차, R6 — bg-visibility-proposal.html "옵션 B") — 카메라 노출
+ * 밴드(y<873px) 안의 패널만 .panel-surface 위에 추가로 붙인다(className="panel-surface
+ * panel-surface-glass" — 소스 순서상 이 규칙이 뒤에 오므로 배경·보더를 덮어쓴다).
+ *
+ * 2026-09-12(5차, 수정) — 아티팩트 목업 그대로(border-top 2px 단색 + 배경 알파 단일색)로 처음
+ * 넣었더니 사용자가 실제 배치 화면에서 "일부 섹션은 투명도·색이 달라 통일감이 없다"고 지적했다
+ * (릴리즈노트 스트림 옆에 매치평균이 바로 붙어 있어 레일 처리가 다르면 한 눈에 이질감이 두드러짐
+ * — 아티팩트는 목업 카드 단독 비교였어서 이 인접 배치를 못 봤다). 그래서 상단 레일을
+ * .panel-surface와 동일한 골드 그라디언트 페이드로 맞춘다(단색 대신) — 두 상태가 "같은
+ * 컴포넌트의 두 변형"으로 읽히게 하고, 채움(fill)만 기능상 불가피하게 다르게 남긴다(유리는
+ * backdrop-filter로 뒤를 비춰야 하니 알파 단일색, 불투명은 깊이감을 위한 그라디언트 — 이 차이는
+ * 시각적 통일감과 무관하게 목적이 다름). 보더 색은 --glass-border를 유지한다(투명 채움 위에
+ * 완전 불투명 --border-soft를 얹으면 채움과 경계가 어긋나 보인다).
+ */
+.panel-surface-glass {
+  background-image: linear-gradient(90deg, var(--panel-rail-from) 0%, var(--panel-rail-via) 45%, var(--panel-rail-to) 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 2px;
+  background-position: 0 0;
+  background-color: var(--panel-glass-fill);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px) saturate(1.15);
+}
+
+/* --muted 위 대비 강제(2026-09-12·5차, R6 전면 유리화 확대 후 실측) — .panel-surface-glass는
+ * 뒤에 비치는 지형 밝기가 라인·스크롤 위치마다 달라 --muted가 어디서든 AA 4.5:1을
+ * 만족한다고 보장할 수 없다. 실측: 히어로 밴드(밝은 잔디, alpha 46%) 4.01~4.23:1, 릴리즈노트
+ * 리스트 하단(더 어두운 구간, alpha 46%) 4.43:1 — 전부 미달·근접 미달. alpha를 올려 해결하려면
+ * 히어로 밴드 커버에 0.85+가 필요해 "유리" 정체성이 사라진다(계산: docs/plan/verify-spec
+ * 참고). 그래서 알파가 아니라 유리 패널 안에서만 --muted를 --fg-2로 강제 치환한다 — 같은
+ * 조건에서 fg-2는 7.3~8.1:1로 넉넉히 통과. `.text-muted`는 Tailwind 유틸이지만 이 파일이
+ * globals.css에 unlayered로 import돼(위 .glass-chrome 주석과 동일 근거) 항상 우선한다.
+ * 불투명 패널(.panel-surface 단독)은 대상이 아니다 — 거기서는 --muted가 이미 5.00:1로 안전
+ * (DESIGN-TOKENS.md 불변식 ①). */
+.panel-surface-glass .text-muted {
+  color: var(--fg-2);
+}
+
 /* 패널 헤드의 옅은 골드 워시 — 방향 제안 아티팩트 B안(`.t-b .pnl-head`)의 구성요소인데
  * 2026-09-12(3차) 구현에서 빠졌던 것을 /verify-impl 화면 대조로 잡아 보완했다(A+B 결합 채택인데
  * B의 일부만 들어가 있었다). 레일이 상단 2px 가로 페이드라면 이건 헤드 블록 전체에 걸리는
