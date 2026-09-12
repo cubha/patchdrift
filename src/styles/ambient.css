@@ -55,7 +55,22 @@
   position: absolute;
   left: 50%;
   top: 0;
-  width: min(1320px, 128vw);
+  /* 폭 공식(2026-09-12·4차, R1) — 이전 min(1320px,128vw)는 뷰포트 1320px 초과 시 1320px로
+     고정돼, .ambient-camera(overflow:hidden, 부모 기준 62% 가로 반경 마스크)의 페이드 완료
+     지점(반경 100% 스톱 = 뷰포트폭×0.62, 즉 반폭 필요치)보다 래스터 경계가 먼저 노출됐다 —
+     그 지점에서 선명한 섬이 뚝 끊기고 흐릿한 .ambient-wash로 바뀌는 하드 시임이 "좌우가
+     잘려있음"의 실제 원인(Playwright 실측: 1440px에서 마스크 알파 ≈0.34 지점에 경계 노출,
+     1920px ≈0.59, 2560px ≈0.78).
+     처방은 상한(1320px)을 완전히 제거하고 128vw로 고정한다 — 반폭이 항상 64vw가 되어 마스크
+     페이드 완료 반경(62vw)을 모든 뷰포트에서 넘어선다(2vw 여유). 최초 시도했던
+     `min(max(110vw,1320px),128vw)`는 1320px 초과 구간에서 110vw(반폭 55vw)로 수렴해 필요
+     반경(62vw)에 못 미쳐 시임을 없애지 못했다 — Playwright 실측(1280/1440/1920/2560px)으로
+     이 계산 오류를 잡아 128vw 단일값으로 교체했다. ≤1031px(옛 128vw<1320px 구간)는 이
+     변경으로 값이 완전히 동일해 회귀가 없다. laneCamera.ts는 건드리지 않는다(tx/ty는 이
+     박스 자기 폭 기준 %라 폭이 바뀌어도 같은 지형을 계속 가리킨다). 새 이미지 생성은 이
+     환경에 도구가 없어 시도했으나(미러링·투명 페이드 둘 다 시각적으로 더 나쁨 — 세션 기록
+     참고) 채택하지 않았다. */
+  width: 128vw;
   transform-origin: 50% 0%;
   transform: translate(-50%, -6%) scale(var(--z, 1)) translate(var(--tx, 0%), var(--ty, 0%));
   transition: transform 900ms cubic-bezier(0.22, 0.61, 0.36, 1);
@@ -175,7 +190,10 @@
   position: absolute;
   left: 50%;
   top: 0;
-  width: min(1320px, 128vw);
+  /* .ambient-cam-inner와 동일한 R1 폭 공식(위 주석 참고, 최종 128vw 단일값) — 이 레이어도
+     overflow:hidden 컨테이너 + 반경 마스크(60% 620px) 조합이라 같은 하드 시임 결함을 갖고
+     있었다. 반폭 64vw는 이 마스크의 60vw 반경도 여유(4vw)를 두고 넘는다. */
+  width: 128vw;
   transform: translateX(-50%);
   height: auto;
 }

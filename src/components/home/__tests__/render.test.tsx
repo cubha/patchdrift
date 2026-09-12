@@ -10,6 +10,7 @@ import { AmbientProvider } from "@/components/AmbientContext";
 import HeroSummary from "../HeroSummary";
 import LaneGapPanel from "../LaneGapPanel";
 import ReleaseNoteStream, { type ReleaseStreamEntry } from "../ReleaseNoteStream";
+import StreamLaneFilter from "../StreamLaneFilter";
 import SideMatchAverages from "../SideMatchAverages";
 import DiscordPanel from "../DiscordPanel";
 
@@ -30,12 +31,20 @@ describe("HeroSummary — 빈 상태(모든 수치 0)", () => {
 });
 
 describe("ReleaseNoteStream — 빈 상태", () => {
-  it("그룹이 없으면 라인 필터만 남기고 빈 상태 문구를 렌더한다", () => {
+  // 2026-09-12(4차, R2): 라인 필터가 StreamLaneFilter.tsx로 분리되면서 이 컴포넌트는 더 이상
+  // 필터를 렌더하지 않는다(StreamColumnLayout의 별도 그리드 행이 필터를 담당) — 명세 변경.
+  // 필터 렌더 단언은 아래 "StreamLaneFilter" 케이스로 옮겼다.
+  it("그룹이 없으면 빈 상태 문구만 렌더한다", () => {
     const { container } = render(
       withAmbient(<ReleaseNoteStream entries={[]} spellIcons={null} noteDeltas={{}} patch={null} />)
     );
     expect(container.textContent).toContain("이 라인에서는 관측된 변화가 없습니다");
-    // 라인 필터 6종(전체/탑/정글/미드/원딜/서포터)은 데이터가 없어도 항상 렌더된다.
+  });
+});
+
+describe("StreamLaneFilter", () => {
+  it("라인 필터 6종(전체/탑/정글/미드/원딜/서포터)을 항상 렌더한다", () => {
+    const { container } = render(withAmbient(<StreamLaneFilter />));
     expect(container.querySelectorAll('button[role="button"], button').length).toBeGreaterThanOrEqual(6);
   });
 });

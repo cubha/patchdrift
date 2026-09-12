@@ -47,6 +47,17 @@
   --panel-rail-from: var(--border);
   --panel-rail-via: color-mix(in srgb, var(--border) 55%, transparent);
   --panel-rail-to: transparent;
+  /* 구간 한정 유리화(2026-09-12·5차, R6 — 방향 제안 아티팩트 bg-visibility-proposal.html
+     "옵션 B · 권장") — 카메라 노출 밴드(.ambient-scrim이 --bg로 완전히 닫히는 y<873px) 안의
+     최초 1~2개 패널(히어로 스탯·매치 평균)만 헤더와 동일한 유리 레시피로 바꾼다. #0a1626은
+     하드코딩이 아니라 --surface의 현재 값(주석 그대로) — var(--surface)로 대체해 토큰 결합.
+     소비는 src/styles/panel.css의 .panel-surface-glass 클래스에서만 한다. */
+  --panel-glass-fill: color-mix(in srgb, var(--surface) 46%, transparent);
+  /* 커스텀 스크롤바(2026-09-12·4차) — DESIGN-TOKENS.md 값 verbatim 복사. 소비는
+     src/styles/scrollbar.css에서만 한다. */
+  --scrollbar-thumb: var(--border);
+  --scrollbar-thumb-hover: var(--accent);
+  --scrollbar-track: color-mix(in srgb, var(--bg) 45%, transparent);
   --font-display: Inter, system-ui, sans-serif;
   --font-body: Inter, system-ui, sans-serif;
   --font-mono: "Roboto Mono", "SF Mono", ui-monospace, Menlo, monospace;
@@ -90,6 +101,7 @@
   /* seed 경계 밖 신규 비-색 토큰(2026-09-12·3차) — 항목상세 전용 좁은 폭. seed 파일
      (docs/design/seed/catalog-tokens.css)은 건드리지 않는다. */
   --container-narrow: 1040px;
+  --scrollbar-size: 10px;
 }
 
 /* [data-game] 오버라이드 계약 (2026-09-10 확정, 미출하) — 중립 8종

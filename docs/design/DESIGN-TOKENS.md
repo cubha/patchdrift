@@ -48,6 +48,13 @@
   --panel-rail-from: var(--border);
   --panel-rail-via: color-mix(in srgb, var(--border) 55%, transparent);
   --panel-rail-to: transparent;
+  /* 구간 한정 유리화(2026-09-12·5차, R6 "옵션 B") — 카메라 노출 밴드(y<873px) 안의 최초
+     1~2개 패널(히어로 스탯·매치평균)만 헤더와 같은 레시피로 바꾼다. 이 알파는 위 불변식
+     ①·②의 적용 대상이 아니다 — 뒤에 비치는 게 고정 --surface가 아니라 가변 지형이라
+     라인·뷰포트에 따라 실제 대비가 흔들린다(실측: --muted 라벨이 일부 라인에서 4.0~4.2:1로
+     AA 미달 — 해당 라벨은 --fg-2로 올려 대응, src/components/home/HeroSummary.tsx 참고).
+     소비는 src/styles/panel.css의 .panel-surface-glass에서만 한다. */
+  --panel-glass-fill: color-mix(in srgb, var(--surface) 46%, transparent);
   --font-display: Inter, system-ui, sans-serif;
   --font-body: Inter, system-ui, sans-serif;
   --font-mono: "Roboto Mono", "SF Mono", ui-monospace, Menlo, monospace;
@@ -131,7 +138,11 @@
 | `--panel-fill-from` | derived (srgb, surface-warm 70%→surface) | 패널 깊이 그라디언트 상단(≈#101e34, L=0.0129) | muted 4.61:1(Playwright 실측 — 계산치 4.59:1과 근사 일치, `docs/plan/verify-spec/ST-panel-chrome-redesign-2026-09-12.md` 참고) | ✓ (신규 2026-09-12·3차) |
 | `--panel-fill-via` | `var(--surface)` | 패널 깊이 그라디언트 중간(#0a1626) | muted 5.00:1 | ✓ (신규 2026-09-12·3차) |
 | `--panel-fill-to` | derived (srgb, surface 72%→bg) | 패널 깊이 그라디언트 바닥(≈#081322, bg보다 밝음) | — | ✓ (신규 2026-09-12·3차) |
+| `--panel-glass-fill` | derived (srgb, surface 46%) | 전면 유리화(2026-09-12·5차 연속 — 사용자 재지적으로 카메라 밴드 한정 "옵션 B"에서 홈·`/compare/`의 모든 `.panel-surface`로 확대) | 가변(뒤 지형에 따라 흔들림 — `--muted` 위 실측 4.01~4.43:1로 AA 근접·미달) → `.panel-surface-glass .text-muted{color:var(--fg-2)}`(panel.css)로 중앙 대응, 재측정 7.3~9.7:1 | ✓ (신규 2026-09-12·5차) |
 | `--panel-rail-from`/`-via`/`-to` | border → border 55% → transparent | 패널 상단 2px 골드 레일(알파 페이드) | — | ✓ (신규 2026-09-12·3차) |
+| `--scrollbar-thumb` | `var(--border)` (#8c6b33) | 커스텀 스크롤바 thumb — 계산치 surface 대비 3.42:1 / bg 대비 3.97:1(WCAG 1.4.11 비텍스트 3:1 통과, `color-mix`로 희석 금지 — 1.8~2.6:1로 떨어짐) | 3.42:1(surface) | ✓ (신규 2026-09-12·4차) |
+| `--scrollbar-thumb-hover` | `var(--accent)` | 스크롤바 thumb hover/active | 7.64:1 | ✓ (신규 2026-09-12·4차) |
+| `--scrollbar-track` | derived (srgb, bg 45%→transparent) | 커스텀 스크롤바 트랙 | — | ✓ (신규 2026-09-12·4차) |
 
 > **기각안** (되살리지 말 것): V1 헥스텍 골드 / V2 마법공학 청록 / V3 협곡 나이트(원안 — `--muted` 3.52:1·`--border` 2.85:1로 WCAG 미달) / 구 `#38bdf8`(하늘색이라 LoL로 안 읽힘). 시안에 비교용으로만 남아 있다.
 > **뱃지 색상각 트레이드오프**: `--accent`(40°)와 `--warn`(38°)이 채도만 다르고 색상각이 사실상 같다. 뱃지는 항상 라벨 텍스트를 동반하므로 색은 보조 단서 — 대조표에서 두 뱃지가 동시에 뜨는 실화면을 보고 구분이 부족하면 형태(보더 두께·점 모양)로 보조 구분을 추가한다(선제 적용 금지).
@@ -154,6 +165,7 @@
 | `--section-y-desktop/tablet/phone` | 80 / 60 / 42px | ○ |
 | `--container-max` / gutters | 1320px / 36 · 24 · 16px | ✓ (phone ○) |
 | `--container-narrow` | 1040px | ✓ (신규 2026-09-12·3차 — 항목상세 전용, seed 비-색 경계 확장) |
+| `--scrollbar-size` | 10px | ✓ (신규 2026-09-12·4차 — 커스텀 스크롤바 두께, seed 비-색 경계 확장) |
 
 ## Radius
 | 토큰 | 값 | 사용 |

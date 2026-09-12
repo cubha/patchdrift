@@ -1,0 +1,50 @@
+/* src/styles/scrollbar.css
+ * 테마 커스텀 스크롤바(2026-09-12·4차, R4) — 순수 CSS, 신규 의존성 없음. 전역 적용(window
+ * 스크롤 + 홈 릴리즈노트 스트림 · 대조표 노트 내비게이터 · 델타테이블 · 방법론 표의 모든
+ * overflow 스크롤러가 한 규칙으로 커버된다).
+ *
+ * Chrome 121+ 우선순위 함정(load-bearing) — `scrollbar-color`/`scrollbar-width`가 `auto`가
+ * 아니면 그 순간부터 `::-webkit-scrollbar` 규칙 전체가 무시된다(표준 속성이 레거시 의사요소를
+ * 덮어씀). 두 방식을 나란히 선언하는 흔한 패턴은 Chrome에서 커스텀 스크롤바를 조용히 무력화한다.
+ * 그래서 표준 속성(`scrollbar-color`/`scrollbar-width`)은 `::-webkit-scrollbar`를 지원하지
+ * 않는 브라우저(Firefox)에만 `@supports not selector(...)`로 격리해 적용한다.
+ * 출처: https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/::-webkit-scrollbar,
+ * https://makandracards.com/makandra/617528-chrome-121-supported-spec-compliant-scrollbar-properties
+ *
+ * scrollbar-color/scrollbar-width 상속 차이(scope-critic이 잡은 실측 결함, 2026-09-12) —
+ * `scrollbar-color`는 상속 속성이라 `html`에 한 번만 선언해도 중첩 스크롤 컨테이너까지
+ * 계산값이 전파되지만, `scrollbar-width`는 **비상속**이라 `html`에만 두면 중첩 컨테이너(델타
+ * 테이블·노트 내비게이터·릴리즈노트 리스트)는 Firefox 기본 굵기로 남는다 — 색은 맞고 두께만
+ * 안 먹는 상태. 그래서 `scrollbar-width`만 `*`로 전 요소에 개별 적용한다(색은 html 하나로
+ * 충분하니 중복 선언하지 않는다). 출처: https://lists.w3.org/Archives/Public/public-css-archive/2021Jul/0208.html
+ * (CSSWG가 scrollbar-width를 의도적으로 비상속으로 결정한 경위)
+ */
+
+::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: var(--radius-pill);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  html {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+  }
+  * {
+    scrollbar-width: thin;
+  }
+}

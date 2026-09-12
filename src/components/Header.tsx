@@ -8,6 +8,13 @@
 // 현재 경로 강조에 usePathname이 필요해 클라이언트 컴포넌트로 둔다. snapshotCaption은 서버
 // (layout.tsx)가 data.ts로 미리 계산해 prop으로 내려준다(이 컴포넌트 자신은 fs를 만지지 않는다).
 //
+// 2026-09-12(4차, R3): 그룹간 gap을 4(16px)→6(24px)로 넓혔다(내부 nav gap-5=20px보다 좁았던
+// 위계 역전을 바로잡음 — 프로토타입 01-briefing-home.html .site-nav 규약: 내부 20px/분리 24px).
+// nav 링크에 pt-1.5를 추가해 border-b-2 pb-1(하단 6px)이 만드는 광학적 처짐을 보정하고, 모든
+// 그룹 래퍼를 min-h-8(=select의 기존 높이)로 통일해 로고 기준 수직 중앙이 실제로 맞도록 했다
+// (items-center만으로는 그룹별 내부 높이가 달라 어긋나 보였다 — 사용자 실측 지적). min-h-8은
+// 기존 select 높이와 같아 헤더 총 높이 57px가 바뀌지 않는다(.ambient-scrim 재보정 불필요).
+//
 // 2026-09-12(3차, 방향 제안 아티팩트 Q1 "안 N2"): 별도 필터 바(구 FilterBar.tsx, 2줄 144px)를
 // 이 헤더 1줄로 흡수했다. 실측 근거 — 그 바의 컨트롤 4개 중 실제로 동작하는 게 0개였다: 티어·
 // 지역·큐는 파이프라인이 KR·Master+·솔로/듀오 단일 표본만 수집해 disabled 고정 옵션 1개였고,
@@ -100,12 +107,12 @@ export default function Header({
 
   return (
     <header className="glass-chrome sticky top-0 z-20 border-b">
-      <Container className="flex flex-wrap items-center gap-4 py-3">
-        <Link href="/" className="flex items-center gap-2">
+      <Container className="flex flex-wrap items-center gap-6 py-3">
+        <Link href="/" className="flex min-h-8 items-center gap-2">
           <span className="h-2 w-2 rounded-pill bg-accent" aria-hidden="true" />
           <span className="font-display text-lg font-bold tracking-tight text-fg">patchgap</span>
         </Link>
-        <nav className="flex gap-5" aria-label="주요 내비게이션">
+        <nav className="flex min-h-8 items-center gap-5" aria-label="주요 내비게이션">
           {NAV_ITEMS.map((item) => {
             const active = isActive(pathname, item.href);
             return (
@@ -113,7 +120,7 @@ export default function Header({
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`border-b-2 pb-1 text-sm font-bold ${
+                className={`border-b-2 pt-1.5 pb-1 text-sm font-bold ${
                   active
                     ? "border-accent text-fg"
                     : "border-transparent text-muted hover:text-fg-2"
@@ -132,7 +139,7 @@ export default function Header({
                 시각 라벨을 뺐던 것을 2026-09-12 /verify-impl 화면 대조로 잡아 보완했다.
                 `<label>`로 감싸 클릭 시 select에 포커스가 가게 하고, 시각 라벨이 생겼으므로
                 select의 중복 aria-label은 뺀다(라벨이 접근성 이름을 제공한다). */}
-            <label className="flex items-center gap-2">
+            <label className="flex min-h-8 items-center gap-2">
               <span className="text-xs font-bold text-muted">패치</span>
               <select
                 className="min-h-8 rounded-sm border border-border bg-surface px-2 text-xs font-bold text-fg disabled:cursor-not-allowed disabled:opacity-70"
@@ -151,7 +158,7 @@ export default function Header({
               </select>
             </label>
 
-            <div role="group" aria-label="고정 표본" className="hidden items-center gap-1.5 md:flex">
+            <div role="group" aria-label="고정 표본" className="hidden min-h-8 items-center gap-1.5 md:flex">
               {FIXED_SAMPLE.map((label) => (
                 <span
                   key={label}
@@ -163,13 +170,17 @@ export default function Header({
             </div>
 
             {pairCaption ? (
-              <span className="ml-auto hidden whitespace-nowrap font-mono text-xs tabular-nums text-muted lg:inline">
+              /* 2026-09-12(4차, R3): lg(1024px)→xl(1280px)로 상향 — gap 확대(gap-4→gap-6) 후
+                 1024px에서 이 캡션까지 포함하면 한 줄에 다 안 들어가 헤더가 2줄로 줄바꿈되고
+                 높이가 57px→113px로 늘어난다(실측). 캡션을 더 넓은 폭에서만 보이게 해 1024px
+                 구간의 헤더 높이를 보존한다. */
+              <span className="ml-auto hidden min-h-8 items-center whitespace-nowrap font-mono text-xs tabular-nums text-muted xl:flex">
                 {pairCaption}
               </span>
             ) : null}
           </>
         ) : snapshotCaption ? (
-          <span className="ml-auto whitespace-nowrap font-mono text-xs tabular-nums text-muted">
+          <span className="ml-auto flex min-h-8 items-center whitespace-nowrap font-mono text-xs tabular-nums text-muted">
             스냅샷 · {snapshotCaption}
           </span>
         ) : null}

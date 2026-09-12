@@ -104,8 +104,10 @@ export default function CompareExplorer({ pair, notes, rows, coverage, noteIcons
             onSelect={setSelectedNoteId}
             icons={noteIcons}
           />
-          {/* 2026-09-12(3차): 골드 4변 프레임 → .panel-surface(Q2 "A+B 결합"). */}
-          <section className="panel-surface overflow-hidden rounded-lg">
+          {/* 2026-09-12(3차): 골드 4변 프레임 → .panel-surface(Q2 "A+B 결합").
+              2026-09-12(5차, R6 확대): panel-surface-glass 추가 — NoteNavigator.tsx 주석과
+              동일 근거(top≈143px부터 카메라 밴드 전체를 덮던 불투명 패널을 홈과 통일). */}
+          <section className="panel-surface panel-surface-glass overflow-hidden rounded-lg">
             <div className="panel-head-wash flex items-center justify-between gap-4 border-b border-border-soft px-5 py-5">
               <div>
                 <span className="block text-xs font-bold text-muted">우선 1 · 선언↔관측</span>

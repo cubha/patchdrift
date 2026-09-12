@@ -54,7 +54,7 @@ export default function SideMatchAverages({
   ];
 
   return (
-    <SectionCard title="매치 평균">
+    <SectionCard title="매치 평균" variant="glass">
       <div className="flex flex-col">
         {rows.map((row) => (
           <div

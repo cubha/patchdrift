@@ -9,6 +9,7 @@ import { loadDdragonSafe } from "@/pipeline/match/ddragon";
 import Container from "@/components/Container";
 import HeroSummary from "@/components/home/HeroSummary";
 import ReleaseNoteStream, { type ReleaseStreamEntry } from "@/components/home/ReleaseNoteStream";
+import StreamLaneFilter from "@/components/home/StreamLaneFilter";
 import SideMatchAverages from "@/components/home/SideMatchAverages";
 import DiscordPanel from "@/components/home/DiscordPanel";
 import LaneGapPanel from "@/components/home/LaneGapPanel";
@@ -63,9 +64,15 @@ export default function Home() {
       {/* 크롬(패치 쌍·고정 표본·n/집계 캡션)은 2026-09-12(3차)부터 layout.tsx의 Header가
           1줄로 통합해 그린다 — 이 페이지가 별도로 FilterBar를 렌더하지 않는다. */}
       <main className="flex-1">
-        <Container className="flex flex-col gap-6 py-8">
+        {/* 2026-09-12(5차, R6): pt-8→pt-14 — 사용자 지적("모든 섹션판넬이 화면 상단에 너무가까워서
+            BG를 가리니까")에 대한 배치 조정. HeroSummary.tsx의 gap-5→gap-8과 합쳐 최초 불투명
+            패널(릴리즈노트 스트림) 등장을 늦춰 앰비언트 배경의 상단 밴드가 더 오래 노출되게 한다.
+            pb-8은 그대로 유지(하단은 지적 대상이 아니었음 — Container className="width" prop과
+            같은 선례로 pt/pb를 분리). */}
+        <Container className="flex flex-col gap-6 pt-14 pb-8">
           <HeroSummary stats={headline} />
           <StreamColumnLayout
+            leftHeader={<StreamLaneFilter />}
             left={
               <ReleaseNoteStream
                 entries={streamEntries}

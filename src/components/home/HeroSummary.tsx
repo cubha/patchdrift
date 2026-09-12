@@ -20,6 +20,21 @@
 // 2026-09-12(3차): 스탯 3분할 section의 골드 4변 프레임(border-border + elev-ring)을
 // `.panel-surface`(상단 골드 레일 + 깊이 그라디언트)로 교체(Q2 "A+B 결합" — SectionCard.tsx와
 // 동일 클래스, 대상 목록은 PLAN-panel-chrome-redesign-2026-09-12.md 참고).
+//
+// 2026-09-12(5차, R6): 헤드라인↔스탯 패널 간격을 gap-5(20px)→gap-8(32px)로 넓혔다 — 사용자
+// 지적("모든 섹션판넬이 화면 상단에 너무가까워서 BG를 가리니까")에 대한 배치 조정의 일부
+// (Container 쪽 pt-8→pt-14와 합쳐 최초 불투명 패널 등장을 늦춘다, src/app/page.tsx 주석 참고).
+// 스탯 패널 자체는 방향 제안 아티팩트 "옵션 B"(구간 한정 유리화) 대상이라 `panel-surface-glass`도
+// 추가했다(y<873px 카메라 노출 밴드 안에 들어오는 최초 패널 중 하나 — 실측: 1440px에서 top≈203px).
+// SectionCard를 안 쓰는 이유는 이 section이 자체 헤더 없이 3분할 그리드만 그려 SectionCard의
+// panel-head-wash 구조와 안 맞기 때문(기존 3차 결정 유지) — 그래서 여기서는 variant prop이 아니라
+// 클래스를 직접 붙인다.
+// 라벨은 여기서 그냥 text-muted를 쓴다 — 유리화로 배경 알파가 지형에 섞이면서 --muted 대비가
+// 흔들리는 문제(전체 라인 4.01:1, 서포터 라인 4.23:1까지 하락, AA 4.5:1 미달, 실측)는 처음엔
+// 이 컴포넌트에서만 text-fg-2로 개별 치환했는데, 홈의 모든 패널을 유리화하면서 같은 문제가
+// ReleaseNoteStream 등 다른 곳에서도 반복돼 src/styles/panel.css의
+// `.panel-surface-glass .text-muted { color: var(--fg-2) }` 한 줄로 중앙화했다(개별 치환은
+// 되돌림). 대비 실측·근거는 그 CSS 주석 참고.
 
 import Link from "next/link";
 import { fmtInt } from "@/lib/format";
@@ -33,7 +48,7 @@ export default function HeroSummary({ stats }: HeroSummaryProps) {
   const { noteEntityCount, noteItemCount, statCount, unannouncedCount } = stats;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-8">
       <div className="pt-1">
         <p className="ambient-hero-headline max-w-3xl text-2xl font-bold leading-tight text-fg">
           패치노트는{" "}
@@ -48,7 +63,7 @@ export default function HeroSummary({ stats }: HeroSummaryProps) {
           게이트 통과분만 제시
         </p>
       </div>
-      <section className="panel-surface grid grid-cols-3 overflow-hidden rounded-lg">
+      <section className="panel-surface panel-surface-glass grid grid-cols-3 overflow-hidden rounded-lg">
         <div className="border-r border-border-soft p-5">
           <strong className="block font-display text-3xl font-bold tabular-nums text-fg">
             {fmtInt(noteEntityCount)}

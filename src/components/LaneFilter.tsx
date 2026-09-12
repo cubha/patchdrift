@@ -5,6 +5,12 @@
 // 2026-09-10 home/ → components/ 이동: 확정 시안이 대조표에도 같은 필터를 두므로 화면 전용
 // 디렉토리에 둘 수 없게 됐다(LaneGlyph와 같은 층).
 // 접근성: role="group" + 각 버튼 aria-pressed(HANDOFF UI 설계 명세).
+//
+// 선택 상태(2026-09-12·5차, R6 재지적): 원래 `bg-accent`(불투명 골드 채움)였는데, 홈의 모든
+// 패널을 유리화한 뒤 이 배지만 유일하게 완전 불투명 solid 블록으로 남아 사용자가 "여기만
+// 다른 bg 컬러에 투명도 0"이라고 재지적했다. Header.tsx의 활성 탭 표시(불투명 채움이 아니라
+// `border-accent text-fg`만 쓰는 밑줄 방식)와 같은 언어로 맞춘다 — `bg-accent/20`(반투명
+// 골드 워시) + `text-accent`로 바꿔 "선택됨"은 여전히 뚜렷하되 불투명 블록은 없앤다.
 
 import type { LaneAxis } from "@/lib/lane";
 import LaneGlyph from "@/components/LaneGlyph";
@@ -35,7 +41,7 @@ export default function LaneFilter({ selected, onSelect, className = "" }: LaneF
             onClick={() => onSelect(lane)}
             className={`inline-flex items-center gap-1.5 rounded-pill border px-3 py-1.5 font-mono text-xs font-bold transition-colors ${
               isSelected
-                ? "border-accent bg-accent text-accent-on"
+                ? "border-accent bg-accent/20 text-accent"
                 : "border-border-soft text-fg-2 hover:border-border hover:text-fg"
             }`}
           >
