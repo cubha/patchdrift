@@ -5,10 +5,13 @@
 // 없고(images.unoptimized=true 이미 설정) onError 폴백 제어가 <img>가 더 단순해 미사용.
 // objective/lane/summary 엔티티는 Data Dragon 자산이 없어 항상 폴백 박스(텍스트)로 렌더한다.
 // 파일 로드 실패(404 등) 시에도 동일 폴백으로 전환 — 클라이언트 컴포넌트가 필요한 유일한 이유.
+// 폴백 박스는 2026-09-12(6차, /verify-impl 재검증)부터 IconBox.tsx 공용 — 주석 참고
+// (SpellIcon.tsx·NoteNavigator.tsx 등과 동일 시각 역할을 각자 재구현하던 드리프트 정리).
 "use client";
 
 import { useState } from "react";
 import type { DeltaEntityType } from "@/pipeline/types";
+import IconBox from "@/components/IconBox";
 
 export interface EntityIconProps {
   entityType: DeltaEntityType;
@@ -42,18 +45,18 @@ export default function EntityIcon({
   const src = ddragonSrc(entityType, entityKey);
   const [errored, setErrored] = useState(false);
   const label = fallbackLabel ?? name.slice(0, 1);
-  const boxClass = `flex shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border bg-surface-warm font-display text-xs font-bold text-fg-2 ${className}`;
+  const boxClassName = `font-display text-xs font-bold ${className}`;
 
   if (!src || errored) {
     return (
-      <span style={{ width: size, height: size }} className={boxClass}>
+      <IconBox size={size} className={boxClassName}>
         {label}
-      </span>
+      </IconBox>
     );
   }
 
   return (
-    <span style={{ width: size, height: size }} className={boxClass}>
+    <IconBox size={size} className={boxClassName}>
       <img
         src={src}
         alt={name}
@@ -62,6 +65,6 @@ export default function EntityIcon({
         className="h-full w-full object-cover"
         onError={() => setErrored(true)}
       />
-    </span>
+    </IconBox>
   );
 }

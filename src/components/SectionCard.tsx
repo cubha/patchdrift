@@ -12,8 +12,14 @@
 // variant="glass"(2026-09-12·5차, R6 — bg-visibility-proposal.html "옵션 B"): 카메라 노출
 // 밴드(y<873px) 안에 들어오는 패널만 이 값을 받는다(현재는 SideMatchAverages 1곳). Container의
 // `width` prop과 같은 선례를 따라 새 컴포넌트를 만들지 않고 prop으로 분기한다.
+//
+// 표면 클래스 조합(2026-09-12·6차): "panel-surface panel-surface-glass" 리터럴을 여기서
+// 직접 조립하지 않고 panelSurfaceClass()(src/lib/panelSurface.ts)로 옮겼다 — SectionCard를
+// 쓰지 않는 다른 패널(NoteNavigator·CompareExplorer·HeroSummary·ReleaseNoteStream)도 같은
+// 함수를 호출해 리터럴 오타·누락 여지를 없앤다.
 
 import type { ReactNode } from "react";
+import { panelSurfaceClass } from "@/lib/panelSurface";
 
 export interface SectionCardProps {
   eyebrow?: string;
@@ -32,7 +38,7 @@ export default function SectionCard({
   className = "",
   variant = "opaque",
 }: SectionCardProps) {
-  const surfaceClass = variant === "glass" ? "panel-surface panel-surface-glass" : "panel-surface";
+  const surfaceClass = panelSurfaceClass(variant);
   return (
     <section className={`${surfaceClass} overflow-hidden rounded-lg ${className}`}>
       <div className="panel-head-wash flex items-center justify-between gap-4 border-b border-border-soft px-5 py-5">

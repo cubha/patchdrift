@@ -4,9 +4,12 @@
 // 파일명 조회(entity+skill → filename)는 서버 측(src/lib/data.ts의 loadSpellIcons +
 // src/pipeline/match/spell-icon.ts의 spellIconKey)에서 끝내고, 이 컴포넌트는 이미 해석된
 // filename만 받는다 — EntityIcon.tsx와 동일하게 onError 폴백 제어를 위해 클라이언트 컴포넌트.
+// 폴백 박스는 2026-09-12(6차, /verify-impl 재검증)부터 IconBox.tsx 공용 — 이전엔 이 파일만
+// 보더가 `border-border-soft`(EntityIcon 등 나머지 5곳은 `border-border`)로 갈라져 있었다.
 "use client";
 
 import { useState } from "react";
+import IconBox from "@/components/IconBox";
 
 export interface SpellIconProps {
   /** src/lib/data.ts의 loadSpellIcons()로 조회한 파일명(예: "VorpalSpikes.png"). 조회 실패(자산
@@ -29,18 +32,18 @@ export default function SpellIcon({
 }: SpellIconProps) {
   const [errored, setErrored] = useState(false);
   const label = fallbackLabel ?? name.slice(0, 1);
-  const boxClass = `flex shrink-0 items-center justify-center overflow-hidden rounded-sm border border-border-soft bg-surface-warm font-display text-xs font-bold text-fg-2 ${className}`;
+  const boxClassName = `font-display text-xs font-bold ${className}`;
 
   if (!filename || errored) {
     return (
-      <span style={{ width: size, height: size }} className={boxClass}>
+      <IconBox size={size} className={boxClassName}>
         {label}
-      </span>
+      </IconBox>
     );
   }
 
   return (
-    <span style={{ width: size, height: size }} className={boxClass}>
+    <IconBox size={size} className={boxClassName}>
       <img
         src={`/dd/spell/${filename}`}
         alt={name}
@@ -49,6 +52,6 @@ export default function SpellIcon({
         className="h-full w-full object-cover"
         onError={() => setErrored(true)}
       />
-    </span>
+    </IconBox>
   );
 }

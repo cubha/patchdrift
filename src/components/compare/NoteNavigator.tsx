@@ -10,8 +10,10 @@
 
 import type { DeltaRecord, PatchNoteItem, PatchNoteSection } from "@/pipeline/types";
 import EntityIcon from "@/components/EntityIcon";
+import IconBox from "@/components/IconBox";
 import StatusBadge from "@/components/StatusBadge";
 import type { StreamEntityIcon } from "@/components/home/releaseStreamEntity";
+import { panelSurfaceClass } from "@/lib/panelSurface";
 import { NAV_SECTIONS, filterNotesBySearch, filterNotesBySection, representativeStatus } from "./logic";
 
 export interface NoteNavigatorProps {
@@ -44,7 +46,8 @@ export default function NoteNavigator({
 
   return (
     // 2026-09-12(3차): 골드 4변 프레임 → .panel-surface(src/styles/panel.css, Q2 "A+B 결합").
-    <section className="panel-surface panel-surface-glass overflow-hidden rounded-lg">
+    // 2026-09-12(6차): 리터럴 대신 panelSurfaceClass() — src/lib/panelSurface.ts.
+    <section className={`${panelSurfaceClass("glass")} overflow-hidden rounded-lg`}>
       <div className="panel-head-wash border-b border-border-soft px-5 py-5">
         <h2 className="font-display text-lg font-bold text-fg">패치노트 항목</h2>
       </div>
@@ -99,12 +102,11 @@ export default function NoteNavigator({
                   {icon.entityType && icon.entityKey ? (
                     <EntityIcon entityType={icon.entityType} entityKey={icon.entityKey} name={item.entity} size={40} />
                   ) : (
-                    <span
-                      style={{ width: 40, height: 40 }}
-                      className="flex shrink-0 items-center justify-center rounded-sm border border-border bg-surface-warm font-display text-xs font-bold text-fg-2"
-                    >
+                    // 2026-09-12(6차, /verify-impl 재검증): EntityIcon.tsx 폴백과 동형이던 인라인
+                    // 마크업을 IconBox 공용 컴포넌트로 교체 — src/components/IconBox.tsx 참고.
+                    <IconBox size={40} className="font-display text-xs font-bold">
                       {item.entity.slice(0, 1)}
-                    </span>
+                    </IconBox>
                   )}
                   <span className="flex min-w-0 flex-1 flex-col items-start gap-1">
                     <span className="text-sm font-bold text-fg">{item.entity}</span>

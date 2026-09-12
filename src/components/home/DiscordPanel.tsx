@@ -29,7 +29,7 @@ export default function DiscordPanel({ generatedAt }: DiscordPanelProps) {
         </p>
         <Link
           href="/methodology/#discord"
-          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-accent px-5 text-sm font-bold text-accent-on transition-colors hover:bg-[var(--accent-hover)]"
+          className="inline-flex min-h-10 items-center justify-center gap-2 rounded-md bg-accent px-5 text-sm font-bold text-accent-on transition-colors hover:bg-accent-hover"
         >
           디스코드로 브리핑 보내기
         </Link>

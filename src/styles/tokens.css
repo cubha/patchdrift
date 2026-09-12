@@ -47,12 +47,35 @@
   --panel-rail-from: var(--border);
   --panel-rail-via: color-mix(in srgb, var(--border) 55%, transparent);
   --panel-rail-to: transparent;
+  /* 중첩 카드 깊이(2026-09-12·5차 연속 — 사용자 지적 "card도 단색 평면 디자인이라 너무
+     입체감이없어") — PipelineDiagram.tsx STEP 카드·GateGrid.tsx 게이트 카드처럼 패널 안에
+     또 들어가는 2차 카드가 `bg-surface-warm` 단일 평면색이었다. --panel-fill-*(1차 패널용,
+     surface 기준)과 같은 방향(위 밝게→아래 --bg 쪽으로 어둡게)이되 2차 카드는 surface-warm을
+     기준으로 삼아 1차 패널보다 밝은 톤을 유지한다(위계 구분 — 카드가 패널보다 밝아야 그 안에
+     들어있는 것으로 읽힌다). 골드 레일은 카드에 반복하지 않는다(레일=1차 패널의 시각 시그니처,
+     격자로 여러 개 나열되는 카드에 전부 붙이면 골드 선이 난립한다). 소비는
+     src/styles/panel.css의 .card-surface에서만 한다. */
+  --card-fill-from: color-mix(in srgb, var(--surface-warm), var(--fg) 6%);
+  --card-fill-via: var(--surface-warm);
+  --card-fill-to: color-mix(in srgb, var(--surface-warm), var(--bg) 25%);
   /* 구간 한정 유리화(2026-09-12·5차, R6 — 방향 제안 아티팩트 bg-visibility-proposal.html
      "옵션 B · 권장") — 카메라 노출 밴드(.ambient-scrim이 --bg로 완전히 닫히는 y<873px) 안의
      최초 1~2개 패널(히어로 스탯·매치 평균)만 헤더와 동일한 유리 레시피로 바꾼다. #0a1626은
      하드코딩이 아니라 --surface의 현재 값(주석 그대로) — var(--surface)로 대체해 토큰 결합.
      소비는 src/styles/panel.css의 .panel-surface-glass 클래스에서만 한다. */
   --panel-glass-fill: color-mix(in srgb, var(--surface) 46%, transparent);
+  /* 읽기전용 메타 칩(2026-09-12·6차) — Header.tsx의 고정 표본 칩(KR·Master+·솔로/듀오)이
+     `bg-[color-mix(in_oklab,var(--surface),transparent_40%)]`(arbitrary bracket, 토큰 우회)를
+     직접 써 왔다. verify.sh Spec 검사의 arbitrary 값 정규식(`#hex`/`Npx`/`Nrem`만 매칭)이
+     `color-mix(...)` 형태를 못 잡아 CI를 그대로 통과해 왔던 사각지대 — /verify-impl 재검증에서
+     발견. --panel-glass-fill(46% surface, srgb)보다 진하게(60% surface) 잡아 작은 칩 안 텍스트
+     대비를 유리 패널보다 더 확보한다. 소비는 src/styles/panel.css의 .meta-chip에서만 한다. */
+  --chip-fill: color-mix(in oklab, var(--surface), transparent 40%);
+  /* 대조표 행 하이라이트(2026-09-12·6차) — DeltaTable.tsx가 NoteNavigator에서 선택된 노트에
+     대응하는 행을 `bg-[color-mix(in_oklab,var(--accent),transparent_90%)]`(arbitrary bracket)로
+     칠해 왔다. 같은 verify.sh 사각지대(위 --chip-fill과 동일 근거)로 미검출. 소비는
+     src/styles/panel.css의 .row-highlight에서만 한다. */
+  --row-highlight-fill: color-mix(in oklab, var(--accent), transparent 90%);
   /* 커스텀 스크롤바(2026-09-12·4차) — DESIGN-TOKENS.md 값 verbatim 복사. 소비는
      src/styles/scrollbar.css에서만 한다. */
   --scrollbar-thumb: var(--border);

@@ -25,6 +25,11 @@
   --color-border-soft: var(--border-soft);
   --color-accent: var(--accent);
   --color-accent-on: var(--accent-on);
+  /* --color-accent-hover(2026-09-12·6차) — DiscordPanel.tsx가 이 매핑이 없어 hover:bg-accent-hover
+     유틸을 못 쓰고 hover:bg-[var(--accent-hover)](arbitrary bracket)로 우회하고 있었다. tokens.css
+     --accent-hover는 이미 존재했는데 @theme inline 누락으로 유일한 소비처가 토큰 우회를 강제당한
+     사례 — 컴포넌트 중복이 아니라 매핑 공백이 원인이라 컴포넌트화 대신 매핑을 채운다. */
+  --color-accent-hover: var(--accent-hover);
   --color-success: var(--success);
   --color-warn: var(--warn);
   --color-danger: var(--danger);

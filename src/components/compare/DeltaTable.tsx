@@ -12,6 +12,7 @@ import type { DeltaRecord, LanePosition } from "@/pipeline/types";
 import { itemHref, metricLabel, positionLabel } from "@/lib/format";
 import { parseLaneAxis } from "@/lib/lane";
 import EntityIcon from "@/components/EntityIcon";
+import IconBox from "@/components/IconBox";
 import LaneGlyph from "@/components/LaneGlyph";
 import StatusBadge from "@/components/StatusBadge";
 import { entityFallbackLabel, formatMetricValue } from "@/components/home/logic";
@@ -23,13 +24,12 @@ import { directionSymbol, formatCiCell, formatDeltaCell, formatNCell, shortNoteI
  * 박스를 라인 글리프 박스로 교체". */
 function RowIcon({ row, size }: { row: DeltaRecord; size: number }) {
   if (row.entityType === "lane") {
+    // 2026-09-12(6차, /verify-impl 재검증): IconBox 공용 컴포넌트 — ReleaseNoteRow.tsx의 동형
+    // 라인 글리프 박스와 함께 각자 손으로 재구현되던 것을 정리(src/components/IconBox.tsx 참고).
     return (
-      <span
-        style={{ width: size, height: size }}
-        className="flex shrink-0 items-center justify-center rounded-sm border border-border bg-surface-warm text-fg-2"
-      >
+      <IconBox size={size}>
         <LaneGlyph lane={row.entityKey as LanePosition} size={Math.round(size * 0.6)} labelled />
-      </span>
+      </IconBox>
     );
   }
   return (
@@ -139,9 +139,9 @@ export default function DeltaTable({ pair, rows, highlightNoteId, sortKey, sortD
               return (
                 <tr
                   key={row.id}
-                  className={`border-b border-border-soft ${
-                    highlighted ? "bg-[color-mix(in_oklab,var(--accent),transparent_90%)]" : ""
-                  }`}
+                  // 2026-09-12(6차, /verify-impl 재검증): bg-[color-mix(...)](arbitrary bracket)
+                  // → .row-highlight(src/styles/panel.css, --row-highlight-fill 토큰).
+                  className={`border-b border-border-soft ${highlighted ? "row-highlight" : ""}`}
                 >
                   <td className={`px-4 py-3 ${dir.colorClass}`}>{dir.symbol}</td>
                   <td className="px-4 py-3 font-body">

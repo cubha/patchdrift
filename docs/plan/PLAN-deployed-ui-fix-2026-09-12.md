@@ -96,3 +96,64 @@
 6. **의도적 보류**: `/item/[id]/`(항목 상세)도 `panel-surface`(SourceMatchesPanel·CausesPanel)를 쓰지만 배경 메커니즘이 다르다(`.ambient-duo` — 우측 62% 폭, 전체 높이 스플래시. 홈/대조표의 y<873px 카메라 밴드와 다른 기하) — 검증 없이 유리화하면 뒤에 비칠 게 없어 그냥 칙칙해질 위험이 있어 이번 라운드에서 제외. 동일 요청 시 별도 실측 후 처방.
 
 **검증**: `verify.sh --full` 통과(Spec/TS/ESLint/vitest/build/design-lint). 이 라운드 중 공유 머신 메모리 부족(스왑 소진)으로 `--full`이 3회 타임아웃됐으나 코드 원인 아님 — `--ts-only`로 각 단계 확인 후 최종 `--full` 통과로 마무리.
+
+---
+
+## R6.2 — 방법론 페이지 전면 유리화 + 디스코드 패널 조사 + 카드 입체감 (2026-09-12, 5차 연속)
+
+**요구사항 원문(사용자)**: "지금 진짜 개열받는게 뭔지알아? 니가 대조표 메뉴의 델타테이블 섹션은 말한대로 잘 바꿧으면서 브리핑 메뉴에 맨처음에 문제라고 얘기한데는 안수정했어... 심지어 브리핑메뉴에 디스코드로 공유 섹션과 방법론 메뉴에 모든섹션전부 불투명판넬 그대로잖아..... 먼저 파악부터해 대상. 수정할대상 확실히 정하고 그러고 수정해" → 뒤이어 "card도 단색 평면 디자인이라 너무 입체감이없어".
+
+**조사 결과**:
+1. **`DiscordPanel.tsx`** — `variant="glass"`는 R6.1에서 이미 적용·머지됐음을 grep+Vercel 배포 상태로 재확인(배포 지연 아님). 그런데도 시각적으로 거의 차이가 없는 이유: `.ambient-scrim`이 y=873px까지 진행하며 배경을 `--bg`로 완전히 닫는 설계(대비 안전장치)인데, DiscordPanel의 content-y≈1081은 그 지점을 한참 지난 구간이라 `backdrop-filter: blur()`가 비출 밝은 배경 픽셀 자체가 없다 — 코드 결함이 아니라 스크린 안 밝기 구조의 한계. 스크림 자체를 건드리는 건 전역 대비 안전장치를 흔드는 일이라 이번 라운드에서 임의로 변경하지 않고 사용자에게 그대로 보고.
+2. **방법론 페이지(`src/app/methodology/page.tsx`)** — 이전 라운드 전부 이 페이지를 건드린 적이 없어 6개 `SectionCard`(데이터 파이프라인/상태 정의/어댑터 매핑표/통계 게이트/디스코드 미리보기/고지)가 전부 `variant` 미지정(기본 opaque)이었다. 첫 패널 top≈89px(헤더 바로 아래)부터 카메라 노출 밴드 전체를 불투명으로 덮고 있었음을 실측 확인 — 진짜 누락. 6개 전부 `variant="glass"`로 전환.
+3. **카드 평면 디자인** — `PipelineDiagram.tsx`(STEP 4단)·`GateGrid.tsx`(통계 게이트 4개)가 `bg-surface-warm` 단색 평면이었다. 신규 토큰 `--card-fill-from/-via/-to`(surface-warm 기준, 1차 패널 그라디언트보다 밝게 유지해 "패널 안 카드" 위계 표현, 골드 레일은 반복 안 함)와 `.card-surface` 클래스(panel.css) 추가, 두 컴포넌트에 적용.
+
+**검증**: `.card-surface .text-muted`가 R6.1의 중앙화 규칙(`.panel-surface-glass .text-muted`)과 별개로 자동 보호되지 않아 별도 확인 필요했으나, 실측 결과 카드 자체는 `.panel-surface-glass` 후손이 아니라 무관 — 카드 단독 대비는 새 그라디언트 최저점(`--card-fill-to`)에서 8.44:1로 AA 통과(centralized `.text-muted` 규칙과 무관하게 카드 배경 자체가 충분히 밝음). `verify.sh --ts-only` 통과, `--full` 통과.
+
+**문서화 시점 참고**: 이 섹션은 R7(컴포넌트화) 착수 직전, 동일 세션 연속 라운드 정리 목적으로 사후 기록.
+
+---
+
+## R7 — 반복 판넬·카드·필터 배지 컴포넌트화 (2026-09-12, 6차)
+
+**요구사항 원문(사용자)**: "반복 사용되는 판넬이나 카드, Label, 뱃지, ... 등을 컴포넌트화하여 동일한 영역이 동일한 스타일을 보장할 수 있도록 수정 진행" — R6~R6.2에서 "동일 스타일이어야 할 영역이 실제로는 파일마다 다르다"는 지적이 5회 반복된 근본 원인이 각 파일이 className 문자열을 손으로 복붙해 왔기 때문이라는 진단하에, 재발 방지를 위한 컴포넌트/헬퍼 추출 요청.
+
+**전수 조사 결과(grep, `panel-surface`/`card-surface`/`rounded-full`/pill 형태/"adge" 전체)**:
+- **StatusBadge**: 이미 5개 소비처(`item/[id]`·`NoteNavigator`·`DeltaTable`·`ReleaseNoteRow`·`StatusDefinitionTable`) 전부 공용 컴포넌트를 재사용 중 — 드리프트 없음, 손댈 것 없음.
+- **필터 pill**: `LaneFilter.tsx`와 `StatusFilterChips.tsx`가 거의 동일한 pill 버튼 마크업을 각자 손으로 구현. `CompareExplorer.tsx:87-88`에서 **같은 필터 줄에 나란히** 렌더되는데도 padding(`py-1.5` vs `py-1`)·gap(`gap-1.5` vs `gap-1`)이 다르고, 선택 상태 배경이 `LaneFilter`는 토큰 유틸(`bg-accent/20`), `StatusFilterChips`는 arbitrary 값(`bg-[color-mix(in_oklab,var(--accent),transparent_88%)]`, 토큰 우회)으로 갈라져 있었음.
+- **중첩 카드**: `PipelineDiagram.tsx`(`border-border`)와 `GateGrid.tsx`(`border-border-soft`)가 같은 `.card-surface` 채움을 쓰면서 보더 색만 손으로 다르게 적어 놓은 상태.
+- **유리 패널 클래스 문자열**: `"panel-surface panel-surface-glass"` 리터럴이 `SectionCard.tsx`·`CompareExplorer.tsx`·`NoteNavigator.tsx`·`HeroSummary.tsx`·`ReleaseNoteStream.tsx`(2곳) 총 6곳에 그대로 복붙돼 있음 — 오타·누락(R6.1~R6.2에서 실제로 여러 번 발생) 재발 여지.
+
+**적용 처방**:
+1. **`FilterPill`** 신설(`src/components/FilterPill.tsx`) — 선택/비선택 스타일과 마크업을 단일 소유. `LaneFilter`·`StatusFilterChips`가 라벨 콘텐츠만 넘기도록 리팩터. 크기는 `LaneFilter` 쪽(더 넓게 쓰이던 값)으로 통일, `StatusFilterChips`의 arbitrary color-mix는 제거(토큰 유틸로 대체).
+2. **`Card`** 신설(`src/components/Card.tsx`) — `.card-surface` + 표준 보더(`border-border-soft`, 패널 레벨과 동일 관례)를 소유. `PipelineDiagram`·`GateGrid`가 이걸 감싸는 형태로 리팩터.
+3. **`panelSurfaceClass()`** 헬퍼 신설(`src/lib/panelSurface.ts`) — `"panel-surface"` / `"panel-surface panel-surface-glass"` 조합을 함수 하나로 고정. 6개 소비처 전부 이 함수 호출로 교체(리터럴 문자열 직접 작성 금지).
+
+**TDD 적격성 판단**: 전부 순수 프레젠테이션(분기 없는 className 조합·마크업 이동)이라 tdd-gate 절대제외(UI) 기준에 해당 — test-after로 진행, 신규 단위 테스트는 추가하지 않는다(기존 `src/__tests__/components.test.tsx`도 이 컴포넌트들을 다루지 않았음 확인).
+
+**검증**: Playwright로 `/compare/`(필터 줄 정렬)·`/methodology/`(카드 2종) 렌더 확인 — 시각적으로 정상. `verify.sh --full` 통과(Spec/TS/ESLint/vitest/build/design-lint 전부 통과). Spec 경고 2건(`ItemChart.tsx`·`DiscordEmbedPreview.tsx` arbitrary 값)은 이 라운드 이전부터 있던 것으로 무관·불변 — StatusFilterChips.tsx의 arbitrary `color-mix` 경고는 FilterPill 추출로 사라짐(부수 효과로 기존 경고 1건 해소).
+
+---
+
+## R7.1 — `/verify-impl` 재검증: grep 사각지대 추가 발견 (2026-09-12, 6차 연속)
+
+**요구사항 원문(사용자)**: "/verify-impl 진행. 특히 디자인이 기존부터 표준에 안맞게 작성되어있던 대상이나, 유사하게만 되어있어서 grep에 안잡혀서 놓친대상 없는지 면밀히 확인해봐" — R7의 grep 기반 조사(정확 문자열 매칭)가 놓쳤을 수 있는, **형태는 비슷하지만 문자열이 달라 걸리지 않은** 드리프트를 재검증.
+
+**발견 1 — verify.sh Spec 검사의 arbitrary 값 정규식 자체가 좁다**: `\[(#[0-9a-fA-F]{3,8}|[0-9]+(px|rem))\]`만 매칭해 `bg-[color-mix(...)]` 같은 함수형 arbitrary 값을 **구조적으로** 못 잡는다. 이 사각지대로 CI를 계속 통과해온 실사용처 3곳을 전수 스캔(`grep -oP '(bg|text|border|...)-\[[^\]]+\]'`)으로 확정:
+- `Header.tsx`(고정 표본 칩 KR/Master+/솔로듀오) — `bg-[color-mix(in_oklab,var(--surface),transparent_40%)]`, 정당화 주석 없음(진짜 누락).
+- `DeltaTable.tsx`(대조표 행 하이라이트) — `bg-[color-mix(in_oklab,var(--accent),transparent_90%)]`, 정당화 주석 없음(진짜 누락).
+- `DiscordPanel.tsx`(버튼 hover) — `hover:bg-[var(--accent-hover)]`. 원인이 다르다: `--accent-hover` 토큰 자체는 tokens.css에 있었지만 `globals.css`의 `@theme inline`에 매핑이 빠져 있어 `hover:bg-accent-hover` 유틸을 쓸 방법이 없었다(컴포넌트 중복이 아니라 인프라 공백).
+- (`DeltaTable.tsx`의 `shadow-[inset_0_-1px_0_var(--border-soft)]`는 검토 후 **드리프트 아님으로 판정** — 이미 상세 주석으로 정당화돼 있고(`border-collapse`+`sticky` 상호작용 회피, HANDOFF §R5), 토큰 var() 참조라 값 자체는 하드코딩이 아니며, 반복되는 다른 소비처가 없어 무시함.)
+
+**처방**: `Header.tsx`·`DeltaTable.tsx` 2곳은 신규 토큰(`--chip-fill`·`--row-highlight-fill`, tokens.css+DESIGN-TOKENS.md)과 CSS 클래스(`.meta-chip`·`.row-highlight`, panel.css)로 교체. `DiscordPanel.tsx`는 `globals.css`의 `@theme inline`에 `--color-accent-hover` 매핑을 추가해 arbitrary bracket 자체를 없애고 `hover:bg-accent-hover` 표준 유틸로 교체.
+
+**발견 2 — "카드"만 찾고 "아이콘 박스"는 놓침**: R7의 grep이 `card-surface`(그라디언트 카드)만 찾아, 시각적으로 동일한 역할("정사각 아바타/아이콘 박스" — 테두리+`bg-surface-warm`+중앙정렬)을 하는 완전히 다른 마크업 패밀리를 놓쳤다. 6개 소비처(`EntityIcon.tsx`·`SpellIcon.tsx`·`NoteNavigator.tsx`의 인라인 폴백·`DeltaTable.tsx`의 `RowIcon` 라인 박스·`ReleaseNoteRow.tsx`의 `FALLBACK_ICON_CLASS`+`CardIcon` 라인 박스)가 각자 거의 동일한 className 문자열을 손으로 복붙하고 있었고, 그 과정에서 `SpellIcon.tsx`만 `border-border-soft`(나머지 5곳은 `border-border`)로 갈라진 드리프트가 실재했다. 신규 `IconBox`(`src/components/IconBox.tsx`) 컴포넌트로 통합 — 6개 소비처 전부 이걸 감싸는 형태로 교체, 보더는 다수 쪽(`border-border`)으로 통일.
+
+**발견 3 — 미공지 행의 불투명 강조가 유리화를 사실상 무력화**: 사용자가 다시 "메인화면 좌측섹션 투명화가 진행안되어잇어서그랫어"로 재지적. 픽셀 실측(배경을 임시로 제거한 화면과 비교) 결과, `ReleaseNoteRow.tsx`의 미공지 행이 완전 불투명 `bg-surface-warm`(#12213a)을 깔고 있었고, 미공지는 스트림 최상단 정렬 로직(releaseStream.ts) 때문에 스크롤 없이 보이는 행 대부분을 차지해 부모 `<ul>`의 `panel-surface-glass`(R6.1)가 사실상 안 보였다. `.row-highlight`(DeltaTable.tsx에서 이미 이번 라운드에 도입한 반투명 골드 워시, `--row-highlight-fill`)로 교체 — 강조 신호는 `border-l-accent`(왼쪽 골드 보더)로 유지, 채움만 반투명화. Playwright로 지형 비침 확인, `.text-muted`도 중앙화 규칙(`.panel-surface-glass .text-muted`)이 그대로 cascade돼 `--fg-2`로 안전(rgb(195,183,159) 확인).
+
+**검토했지만 조치하지 않은 것(명시 — 무비판 무시 방지)**:
+- `SourceMatchesPanel.tsx`의 매치 ID 칩(`rounded-sm border-border-soft bg-surface-warm px-3 py-2 ...`) — 시각적으로 warm-chip 계열이지만 단일 소비처라 추출 실익 없음(과잉 추상화 방지 원칙).
+- `ItemChart.tsx`의 `h-[220px]`, `DiscordEmbedPreview.tsx`의 `max-w-[520px]` — 둘 다 verify.sh가 원래도 잡는 숫자형 arbitrary 값(px)이고, 반복되는 UI 패밀리가 아니라 각자의 고유 사이징 제약(차트 높이·디스코드 임베드 실물 폭 모사)이라 기존 판정대로 무관·불변 유지.
+- `CoverageBar.tsx`·`NoteNavigator.tsx`의 검색 input — 반복 소비처 없음(각 1곳) — 추출 보류.
+
+**검증**: Playwright로 `/`(헤더 메타 칩)·`/compare/`(행 하이라이트 클릭 재현) 렌더 확인 — 신규 토큰 2종·IconBox 6개 소비처 전부 정상. `verify.sh --full` 통과(Spec/TS/ESLint/vitest/build/design-lint). Spec 경고는 여전히 기존 2건(`ItemChart.tsx`·`DiscordEmbedPreview.tsx`, 무관·불변)뿐 — 이번 라운드에서 새로 고친 arbitrary 값 3곳(Header 칩·DeltaTable 하이라이트·DiscordPanel hover)은애초에 이 Spec 정규식에 안 걸렸으므로 경고 목록에서 사라진 게 아니라 "원래도 안 보이던 것"이 코드상으로 해소된 것 — design-lint(렌더 산출물 기준) 통과가 실질 증거.

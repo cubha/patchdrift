@@ -74,3 +74,23 @@
     transparent 60%
   );
 }
+
+/* 중첩 카드 깊이(2026-09-12·5차 연속, 사용자 지적 "card도 단색 평면 디자인이라 너무
+ * 입체감이없어") — PipelineDiagram.tsx STEP 카드·GateGrid.tsx 게이트 카드가 `bg-surface-warm`
+ * 단일 평면색이었다. .panel-surface와 같은 문법(180deg 그라디언트)이지만 --card-fill-*
+ * 토큰(surface-warm 기준, 1차 패널보다 밝게 유지)을 쓰고 골드 레일은 반복하지 않는다 —
+ * tokens.css .card-fill-* 주석 참고. */
+.card-surface {
+  background-image: linear-gradient(180deg, var(--card-fill-from) 0%, var(--card-fill-via) 45%, var(--card-fill-to) 100%);
+}
+
+/* 읽기전용 메타 칩 / 행 하이라이트(2026-09-12·6차, /verify-impl 재검증에서 발견) — 둘 다
+ * arbitrary Tailwind bracket(`bg-[color-mix(...)]`)로 직접 쓰던 걸 토큰+클래스로 옮겼다.
+ * tokens.css --chip-fill·--row-highlight-fill 주석 참고. */
+.meta-chip {
+  background-color: var(--chip-fill);
+}
+
+.row-highlight {
+  background-color: var(--row-highlight-fill);
+}
