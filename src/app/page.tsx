@@ -68,8 +68,15 @@ export default function Home() {
             BG를 가리니까")에 대한 배치 조정. HeroSummary.tsx의 gap-5→gap-8과 합쳐 최초 불투명
             패널(릴리즈노트 스트림) 등장을 늦춰 앰비언트 배경의 상단 밴드가 더 오래 노출되게 한다.
             pb-8은 그대로 유지(하단은 지적 대상이 아니었음 — Container className="width" prop과
-            같은 선례로 pt/pb를 분리). */}
-        <Container className="flex flex-col gap-6 pt-14 pb-8">
+            같은 선례로 pt/pb를 분리).
+
+            2026-09-13(7차, R8 — 배치안 아티팩트 A안, 사용자 확정 "+120px"): pt-14(56px)→
+            pt-44(176px, +120px). 처음엔 패널에만 marginTop을 줘 "헤드라인은 그대로, 패널만
+            아래로" 였는데, 사용자가 "히어로 영역 텍스트도 똑같이 내려와야" — 즉 헤드라인+패널을
+            한 블록으로 같이 내리는 쪽을 원했다. Container 최상단 패딩을 올리면 이 블록 전체가
+            같이 내려가므로 그 요구를 그대로 만족한다. 176px은 Tailwind 표준 스케일(11rem)이라
+            arbitrary 불필요. */}
+        <Container className="flex flex-col gap-6 pt-44 pb-8">
           <HeroSummary stats={headline} />
           <StreamColumnLayout
             leftHeader={<StreamLaneFilter />}

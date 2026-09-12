@@ -77,7 +77,9 @@ export default function HeroSummary({ stats }: HeroSummaryProps) {
           </strong>
           <span className="text-sm text-muted">유의 변화</span>
         </div>
-        <Link href="/compare/#unannounced" className="p-5 transition-colors hover:bg-surface-warm">
+        {/* hover 채움(2026-09-13·6차 연속): `bg-surface-warm`(완전 불투명)은 hover 순간 이 타일만
+            유리가 꺼져 보였다 — 유리 패널 안의 상태 표현은 전부 반투명으로 통일한다. */}
+        <Link href="/compare/#unannounced" className="p-5 transition-colors hover:bg-accent/10">
           <strong className="block font-display text-3xl font-bold tabular-nums text-accent">
             {fmtInt(unannouncedCount)}
           </strong>
