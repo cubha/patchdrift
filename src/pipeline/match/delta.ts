@@ -633,6 +633,35 @@ function buildSummaryDraft(before: AggregatedPatch, after: AggregatedPatch): Raw
 }
 
 /**
+ * raw 매치 데이터(`data/raw/{to}/matches.jsonl`)가 없어 `buildDeltas`(정확히는
+ * `sampleMatchIdsByEntity`)가 `evidence.matchIds`를 채우지 못한 델타에 한해, 이전에 커밋된
+ * 동일 id 델타 파일에서 matchIds를 승계한다(2026-09-13, PLAN
+ * unannounced-effect-size-floor-2026-09-13.md ②-4). CI가 매 패치 쌍마다 raw를 재수집·보존하지는
+ * 않으므로(예: 26.17→26.18의 26.18 raw는 로컬·CI 모두에 없을 수 있다), 무손실이 아닌 재생성이
+ * "모든 판정문은 원천 링크를 가진다"(CLAUDE.md) 불변식을 조용히 깨는 것을 막는다.
+ *
+ * `matchIds`가 이미 채워진 행(raw가 실제로 존재해 정상 생성된 경우)은 절대 덮어쓰지 않는다 —
+ * 새로 계산된 값이 항상 우선한다. lane/objective/summary처럼 애초에 `sampleKey`가 없는 행은
+ * 이전 파일에서도 `matchIds`가 비어 있으므로 자연히 승계 대상이 아니다. 반환하는
+ * `carriedOverCount`는 호출부(run-match.ts)가 로그로 남겨 승계 발생을 눈에 띄게 한다 — 조용히
+ * 넘어가지 않는다(CLAUDE.md "미구현/열화 상태는 숨기지 않는다" 원칙과 동일 정신).
+ */
+export function carryOverMatchIds(
+  newDeltas: readonly DeltaRecord[],
+  oldDeltasById: ReadonlyMap<string, DeltaRecord>
+): { deltas: DeltaRecord[]; carriedOverCount: number } {
+  let carriedOverCount = 0;
+  const deltas = newDeltas.map((record) => {
+    if (record.evidence.matchIds.length > 0) return record;
+    const old = oldDeltasById.get(record.id);
+    if (!old || old.evidence.matchIds.length === 0) return record;
+    carriedOverCount++;
+    return { ...record, evidence: { ...record.evidence, matchIds: old.evidence.matchIds } };
+  });
+  return { deltas, carriedOverCount };
+}
+
+/**
  * 두 패치 집계의 통계 델타를 계산한다. 반환 레코드는 아직 패치노트와 짝지어지지 않은 상태 —
  * `status`는 전부 `"no-change"`(자리표시자), `matchedNoteId(s)`/`causes`는 비어 있다. 실제 판정은
  * entity-match.ts(1단) → verdict.ts(assignStatus)가 채운다.

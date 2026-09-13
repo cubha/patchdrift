@@ -18,6 +18,7 @@ import {
   representativeStatus,
   shortNoteId,
   sortRows,
+  STATUS_FILTERS,
 } from "../logic";
 
 function delta(overrides: Partial<DeltaRecord>): DeltaRecord {
@@ -155,6 +156,32 @@ describe("representativeStatus", () => {
     ];
     expect(representativeStatus("note:1", rows)).toBe("unannounced");
   });
+
+  it("below-threshold는 no-change보다 우선하지만 unannounced보다는 아니다(2026-09-13, Record 전환 회귀가드 — 예전 indexOf 구현은 미등록 상태를 -1로 최우선 오판정했다)", () => {
+    const rows = [
+      delta({ id: "1", matchedNoteIds: ["note:1"], status: "no-change" }),
+      delta({ id: "2", matchedNoteIds: ["note:1"], status: "below-threshold" }),
+    ];
+    expect(representativeStatus("note:1", rows)).toBe("below-threshold");
+
+    const rows2 = [
+      delta({ id: "3", matchedNoteIds: ["note:1"], status: "below-threshold" }),
+      delta({ id: "4", matchedNoteIds: ["note:1"], status: "unannounced" }),
+    ];
+    expect(representativeStatus("note:1", rows2)).toBe("unannounced");
+  });
+});
+
+describe("STATUS_FILTERS — below-threshold·indirect-effect 칩(2026-09-13 신규)", () => {
+  it("below-threshold 칩이 '임계 미달' 라벨로 존재한다", () => {
+    const entry = STATUS_FILTERS.find((f) => f.key === "below-threshold");
+    expect(entry?.label).toBe("임계 미달");
+  });
+
+  it("indirect-effect 칩이 '간접 영향' 라벨로 존재한다", () => {
+    const entry = STATUS_FILTERS.find((f) => f.key === "indirect-effect");
+    expect(entry?.label).toBe("간접 영향");
+  });
 });
 
 describe("directionSymbol", () => {
@@ -211,6 +238,8 @@ describe("computeCoverage", () => {
       matchedCount: 0,
       unannouncedCount: 0,
       lowSampleCount: 0,
+      belowThresholdCount: 0,
+      indirectEffectCount: 0,
     });
   });
 
@@ -221,6 +250,8 @@ describe("computeCoverage", () => {
       delta({ id: "2", status: "unannounced" }),
       delta({ id: "3", status: "insufficient-sample" }),
       delta({ id: "4", status: "no-change" }),
+      delta({ id: "5", status: "below-threshold" }),
+      delta({ id: "6", status: "indirect-effect" }),
     ];
     expect(computeCoverage(rows, notes)).toEqual({
       noteEntityCount: 1,
@@ -228,6 +259,8 @@ describe("computeCoverage", () => {
       matchedCount: 1,
       unannouncedCount: 1,
       lowSampleCount: 1,
+      belowThresholdCount: 1,
+      indirectEffectCount: 1,
     });
   });
 });

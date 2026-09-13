@@ -10,12 +10,14 @@ import path from "node:path";
 import { fetchPatchNotesHtml, parsePatchNotes } from "../src/pipeline/match/patchnotes-parser";
 import { notesFile } from "../src/pipeline/shared/paths";
 import { loadDdragon } from "../src/pipeline/match/ddragon";
-import { buildDeltas, loadAggregatedPatch, type AggregatedPatch } from "../src/pipeline/match/delta";
+import { buildDeltas, carryOverMatchIds, loadAggregatedPatch, type AggregatedPatch } from "../src/pipeline/match/delta";
 import type { DdragonData } from "../src/pipeline/match/ddragon";
 import { matchDeterministic } from "../src/pipeline/match/entity-match";
 import { applyVerdicts, indexNotesById, sortDeltas, writeDeltas } from "../src/pipeline/match/verdict";
 import { inferIndirectCandidates, type LlmMatchOptions, type LlmRunSummary } from "../src/pipeline/match/llm-match";
-import type { DeltaRecord, MatchStatus, PatchId, PatchNoteItem, PatchNoteSection } from "../src/pipeline/types";
+import { reclassifyIndirectEffects } from "../src/pipeline/match/indirect-effect";
+import { deltasFile, matchesJsonl } from "../src/pipeline/shared/paths";
+import type { DeltaRecord, DeltasFile, MatchStatus, PatchId, PatchNoteItem, PatchNoteSection } from "../src/pipeline/types";
 import { isMainModule, parseCliArgs } from "./shared/cli";
 
 export interface RunMatchArgs {
@@ -114,6 +116,8 @@ export interface RunMatchPipelineResult {
   /** LLM 2단 실행 전(1단 결정론 판정 직후, 이미 정렬된 상태) 상태 분포 — 로그용. */
   statusAfterVerdict: Partial<Record<MatchStatus, number>>;
   llmSummary?: LlmRunSummary;
+  /** 3단 간접 영향 재분류 건수(ST-IE3, 2026-09-13) — `--no-llm`이면 항상 0. */
+  indirectEffectCount: number;
 }
 
 /**
@@ -140,6 +144,7 @@ export async function runMatchPipeline(params: RunMatchPipelineParams): Promise<
   const statusAfterVerdict = countByStatus(deltas);
 
   let llmSummary: LlmRunSummary | undefined;
+  let indirectEffectCount = 0;
   if (!params.noLlm) {
     const result = await inferIndirectCandidates(deltas, params.notes, params.ddragon, {
       maxDeltas: params.llmMax,
@@ -149,9 +154,23 @@ export async function runMatchPipeline(params: RunMatchPipelineParams): Promise<
     // 이미 정렬된 상태가 그대로 유지된다 — 재정렬 불필요.
     deltas = result.deltas;
     llmSummary = result.summary;
+
+    // 3단(ST-IE3, 2026-09-13) — LLM이 채운 causes를 근거로 "간접 영향"을 분리한다. verdict
+    // 단계에서는 causes가 구조적으로 비어 있어 불가능하므로 여기가 유일한 지점이다
+    // (src/pipeline/match/indirect-effect.ts 헤더 참고). status가 바뀌면 정렬 우선순위도
+    // 바뀌므로 **반드시 재정렬**해야 "항상 정렬된 상태로 반환" 계약이 유지된다.
+    const reclassified = reclassifyIndirectEffects(deltas, indexNotesById(params.notes));
+    deltas = sortDeltas(reclassified.deltas);
+    indirectEffectCount = reclassified.reclassifiedCount;
   }
 
-  return { deltas, mappingFailures: matchOutcome.mappingFailures, statusAfterVerdict, llmSummary };
+  return {
+    deltas,
+    mappingFailures: matchOutcome.mappingFailures,
+    statusAfterVerdict,
+    llmSummary,
+    indirectEffectCount,
+  };
 }
 
 export async function main(): Promise<void> {
@@ -194,7 +213,33 @@ export async function main(): Promise<void> {
     console.log(`[run-match] --no-llm — 2단 스킵`);
   }
 
+  if (pipelineResult.indirectEffectCount > 0) {
+    console.log(
+      `[run-match] 3단 간접 영향 재분류: ${pipelineResult.indirectEffectCount}건(unannounced → indirect-effect)`
+    );
+  }
+
   console.log(`[run-match] 최종 상태 분포:`, countByStatus(pipelineResult.deltas));
+
+  // evidence.matchIds 승계 — data/raw/{to}/matches.jsonl이 없어(gitignore, CI가 매 패치 쌍마다
+  // raw를 재수집·보존하지는 않음) buildDeltas가 matchIds를 못 채운 행에 한해, 이전에 커밋된
+  // 동일 id 델타에서 승계한다("모든 판정문은 원천 링크를 가진다" 불변식 보호). carryOverMatchIds
+  // 자체가 "이미 채워진 행은 덮지 않음"을 보장하므로, raw 존재 여부를 별도로 분기하지 않고 이전
+  // 파일이 있으면 항상 시도한다(무손실 재생성이면 자연히 0건 승계로 끝난다).
+  let finalDeltas = pipelineResult.deltas;
+  const oldDeltasPath = deltasFile(args.from, args.to);
+  if (fs.existsSync(oldDeltasPath)) {
+    const oldFile = JSON.parse(fs.readFileSync(oldDeltasPath, "utf8")) as DeltasFile;
+    const oldById = new Map(oldFile.rows.map((row) => [row.id, row] as const));
+    const carryOver = carryOverMatchIds(finalDeltas, oldById);
+    finalDeltas = carryOver.deltas;
+    if (carryOver.carriedOverCount > 0) {
+      console.log(
+        `[run-match] ⚠️ evidence.matchIds ${carryOver.carriedOverCount}건을 이전 파일에서 승계 ` +
+          `(data/raw/${args.to}/matches.jsonl 없음 — ${matchesJsonl(args.to)})`
+      );
+    }
+  }
 
   if (args.dryRun) {
     console.log(`[run-match] --dry-run — 파일 기록 생략`);
@@ -204,7 +249,7 @@ export async function main(): Promise<void> {
   const result = writeDeltas({
     from: args.from,
     to: args.to,
-    deltas: pipelineResult.deltas,
+    deltas: finalDeltas,
     llm: pipelineResult.llmSummary
       ? {
           calls: pipelineResult.llmSummary.calls,

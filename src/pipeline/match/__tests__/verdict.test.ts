@@ -80,6 +80,54 @@ describe("assignStatus", () => {
   });
 });
 
+describe("assignStatus — 효과크기 바닥 (2026-09-13 신규)", () => {
+  it("유의 + 짝 없음 + pickRate |delta|=0.015(바닥 0.02 미달) → below-threshold(unannounced 아님)", () => {
+    const d = delta({ metric: "pickRate", delta: 0.015, ci: [0.005, 0.025] });
+    expect(assignStatus(d, null)).toBe("below-threshold");
+  });
+
+  it("유의 + 짝 없음 + pickRate |delta|=0.025(바닥 초과) → 그대로 unannounced", () => {
+    const d = delta({ metric: "pickRate", delta: 0.025, ci: [0.015, 0.035] });
+    expect(assignStatus(d, null)).toBe("unannounced");
+  });
+
+  it("설계 정정 회귀 가드 — 유의 + 짝 있음(일치) + 바닥 미달이어도 announced-consistent 그대로다"
+    + "(바닥을 isSignificant()에 걸면 이 케이스가 announced-inconsistent로 뒤집히는 회귀가 생긴다)", () => {
+    const d = delta({ metric: "pickRate", delta: 0.005, ci: [0.001, 0.009] });
+    expect(assignStatus(d, CONSISTENT_MATCH)).toBe("announced-consistent");
+  });
+
+  it("설계 정정 회귀 가드 — 유의 + 짝 있음(불일치) + 바닥 미달이어도 announced-inconsistent 그대로다", () => {
+    const d = delta({ metric: "pickRate", delta: 0.005, ci: [0.001, 0.009] });
+    expect(assignStatus(d, INCONSISTENT_MATCH)).toBe("announced-inconsistent");
+  });
+
+  it("adoptionRate 상대기준 — before=0.04, delta=0.009(상대 22.5%, 미달) → below-threshold", () => {
+    const d = delta({ metric: "adoptionRate", before: 0.04, delta: 0.009, ci: [0.005, 0.013] });
+    expect(assignStatus(d, null)).toBe("below-threshold");
+  });
+
+  it("adoptionRate 상대기준 — before=0.04, delta=0.011(상대 27.5%, 충족) → unannounced", () => {
+    const d = delta({ metric: "adoptionRate", before: 0.04, delta: 0.011, ci: [0.007, 0.015] });
+    expect(assignStatus(d, null)).toBe("unannounced");
+  });
+
+  it("연속 지표(goldAt14)는 이번 스코프 바닥=0 — 유의 + 짝 없음이면 여전히 unannounced", () => {
+    const d = delta({ metric: "goldAt14", before: 6000, delta: 72, ci: [16, 128] });
+    expect(assignStatus(d, null)).toBe("unannounced");
+  });
+
+  it("insufficient-sample(n 게이트)이 효과크기 바닥보다 우선한다", () => {
+    const d = delta({
+      metric: "winRate",
+      n: { before: 50, after: 300 },
+      delta: 0.05,
+      ci: [0.01, 0.09],
+    });
+    expect(assignStatus(d, null)).toBe("insufficient-sample");
+  });
+});
+
 describe("applyVerdicts", () => {
   it("매칭 결과로 status/matchedNoteId(s)/evidence.noteAnchor를 채운다", () => {
     const notes: PatchNoteItem[] = [
@@ -145,6 +193,18 @@ describe("sortDeltas", () => {
     const sorted = sortDeltas(deltas).map((d) => d.id);
     // unannounced 그룹 내에서는 |delta| 내림차순: d(0.5) 앞에, b(0.01) 뒤
     expect(sorted).toEqual(["d", "b", "f", "c", "e", "a"]);
+  });
+
+  it("below-threshold는 unannounced보다 아래, insufficient-sample보다 위다(2026-09-13 신규)", () => {
+    const rows: Array<{ status: MatchStatus; delta: number | null; id: string }> = [
+      { status: "insufficient-sample", delta: null, id: "i" },
+      { status: "unannounced", delta: 0.5, id: "u" },
+      { status: "below-threshold", delta: 0.01, id: "t" },
+      { status: "no-change", delta: 0.9, id: "n" },
+    ];
+    const deltas = rows.map((r) => delta({ id: r.id, status: r.status, delta: r.delta }));
+    const sorted = sortDeltas(deltas).map((d) => d.id);
+    expect(sorted).toEqual(["u", "t", "i", "n"]);
   });
 });
 

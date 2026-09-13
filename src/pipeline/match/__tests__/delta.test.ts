@@ -2,11 +2,18 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { buildDeltas, loadAggregatedPatch, meanDiffPValue, sampleMatchIdsByEntity } from "../delta";
+import {
+  buildDeltas,
+  carryOverMatchIds,
+  loadAggregatedPatch,
+  meanDiffPValue,
+  sampleMatchIdsByEntity,
+} from "../delta";
 import type { AggregatedPatch } from "../delta";
 import type { DdragonChampion, DdragonData, DdragonItem } from "../ddragon";
 import type {
   ChampionStat,
+  DeltaRecord,
   ItemStat,
   LaneGoldStat,
   MatchSlim,
@@ -14,6 +21,28 @@ import type {
   ObjectiveStat,
   PatchSummary,
 } from "../../types";
+
+function deltaRecord(overrides: Partial<DeltaRecord>): DeltaRecord {
+  return {
+    id: "champion:Aatrox:pickRate",
+    entityType: "champion",
+    entityKey: "Aatrox",
+    entityName: "아트록스",
+    metric: "pickRate",
+    before: 0.1,
+    after: 0.12,
+    delta: 0.02,
+    ci: [0.01, 0.03],
+    n: { before: 10000, after: 10000 },
+    q: 0.01,
+    status: "unannounced",
+    matchedNoteId: null,
+    matchedNoteIds: [],
+    causes: [],
+    evidence: { matchIds: [], aggregatePath: "#", noteAnchor: null },
+    ...overrides,
+  };
+}
 
 function champAllRow(overrides: Partial<ChampionStat>): ChampionStat {
   return {
@@ -508,5 +537,55 @@ describe("실데이터 스모크 — 26.17 vs 26.17 자기 자신", () => {
       expect(d.ci[0]).toBeLessThanOrEqual(0);
       expect(d.ci[1]).toBeGreaterThanOrEqual(0);
     }
+  });
+});
+
+// ─── carryOverMatchIds — raw 부재 시 evidence.matchIds 승계(2026-09-13, PLAN ②-4) ───
+describe("carryOverMatchIds", () => {
+  it("새 델타의 matchIds가 비어 있고 이전 델타에 값이 있으면 승계한다", () => {
+    const fresh = [deltaRecord({ id: "a", evidence: { matchIds: [], aggregatePath: "#", noteAnchor: null } })];
+    const oldById = new Map([
+      ["a", deltaRecord({ id: "a", evidence: { matchIds: ["m1", "m2"], aggregatePath: "#", noteAnchor: null } })],
+    ]);
+    const { deltas, carriedOverCount } = carryOverMatchIds(fresh, oldById);
+    expect(deltas[0].evidence.matchIds).toEqual(["m1", "m2"]);
+    expect(carriedOverCount).toBe(1);
+  });
+
+  it("새 델타에 이미 matchIds가 있으면 덮어쓰지 않는다(새 계산이 항상 우선)", () => {
+    const fresh = [deltaRecord({ id: "a", evidence: { matchIds: ["fresh1"], aggregatePath: "#", noteAnchor: null } })];
+    const oldById = new Map([
+      ["a", deltaRecord({ id: "a", evidence: { matchIds: ["old1", "old2"], aggregatePath: "#", noteAnchor: null } })],
+    ]);
+    const { deltas, carriedOverCount } = carryOverMatchIds(fresh, oldById);
+    expect(deltas[0].evidence.matchIds).toEqual(["fresh1"]);
+    expect(carriedOverCount).toBe(0);
+  });
+
+  it("이전 파일에 같은 id가 없으면 빈 배열 그대로 둔다", () => {
+    const fresh = [deltaRecord({ id: "a", evidence: { matchIds: [], aggregatePath: "#", noteAnchor: null } })];
+    const { deltas, carriedOverCount } = carryOverMatchIds(fresh, new Map());
+    expect(deltas[0].evidence.matchIds).toEqual([]);
+    expect(carriedOverCount).toBe(0);
+  });
+
+  it("이전 델타도 matchIds가 비어 있으면(lane/objective/summary 등 sampleKey 없는 행) 승계하지 않는다", () => {
+    const fresh = [deltaRecord({ id: "lane:BOTTOM:goldAt14", evidence: { matchIds: [], aggregatePath: "#", noteAnchor: null } })];
+    const oldById = new Map([
+      ["lane:BOTTOM:goldAt14", deltaRecord({ id: "lane:BOTTOM:goldAt14", evidence: { matchIds: [], aggregatePath: "#", noteAnchor: null } })],
+    ]);
+    const { deltas, carriedOverCount } = carryOverMatchIds(fresh, oldById);
+    expect(deltas[0].evidence.matchIds).toEqual([]);
+    expect(carriedOverCount).toBe(0);
+  });
+
+  it("원본 배열을 변경하지 않는다(불변)", () => {
+    const original = deltaRecord({ id: "a", evidence: { matchIds: [], aggregatePath: "#", noteAnchor: null } });
+    const fresh = [original];
+    const oldById = new Map([
+      ["a", deltaRecord({ id: "a", evidence: { matchIds: ["m1"], aggregatePath: "#", noteAnchor: null } })],
+    ]);
+    carryOverMatchIds(fresh, oldById);
+    expect(original.evidence.matchIds).toEqual([]);
   });
 });

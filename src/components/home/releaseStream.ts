@@ -93,6 +93,12 @@ function groupUnannouncedDeltas(rows: DeltaRecord[]): UnannouncedStreamGroup[] {
  * 슬롯 0(첫 노트 그룹 앞)에도 배정하므로 스트림 최상단은 |delta| 최대 미공지로 시작한다 —
  * HANDOFF §1-1 수용 기준("상단 스크린샷만 보고 패치노트 요약 사이트로 오인되면 실패")을
  * 분산 배치에서도 유지하기 위한 것이다.
+ *
+ * ⚠️ U(미공지 그룹 수) < M+1(슬롯 수)이면 `floor(1*U/slots)`가 0이 되어 슬롯 0이 비고, 위 불변식이
+ * 깨진다(2026-09-13 — 효과크기 바닥 도입으로 미공지 건수가 크게 줄면서 실측 확인). U>0이면
+ * 슬롯 0에 최소 1건을 강제한다 — 이후 슬롯의 upTo는 그대로 공식값을 쓰므로(이미 배정된 taken을
+ * 넘지 않으면 그 슬롯은 그냥 0건), 마지막 슬롯은 항상 `floor(slots*U/slots)=U`로 수렴해 총량은
+ * 보존된다(승격이 항목을 잃거나 중복시키지 않음).
  */
 function interleave(
   matched: MatchedStreamGroup[],
@@ -103,7 +109,8 @@ function interleave(
   const out: ReleaseStreamGroup[] = [];
   let taken = 0;
   for (let slot = 0; slot < slots; slot += 1) {
-    const upTo = Math.floor(((slot + 1) * total) / slots);
+    let upTo = Math.floor(((slot + 1) * total) / slots);
+    if (slot === 0 && total > 0 && upTo === 0) upTo = 1;
     while (taken < upTo) {
       out.push(unannounced[taken]);
       taken += 1;

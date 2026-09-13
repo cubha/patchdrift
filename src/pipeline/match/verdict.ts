@@ -9,16 +9,27 @@
 //   2) 유의(q<FDR_ALPHA && CI가 0을 포함하지 않음):
 //        노트 짝 있음 → 방향 일치("consistent") → "announced-consistent"
 //                       불일치/중립           → "announced-inconsistent"
-//        노트 짝 없음 → "unannounced"
+//        노트 짝 없음 → 효과크기 바닥(aggregate/stats.ts meetsEffectFloor) 충족 → "unannounced"
+//                                                                       미달 → "below-threshold"
 //   3) 비유의:
 //        노트 짝 있음 → "announced-inconsistent"(노트는 변경을 말했지만 관측 변화가 유의하지 않음)
 //        노트 짝 없음 → "no-change"(ST-08 신규 상태 — "잡음 델타"를 "미공지 변화"와 구분)
+//
+// ⚠️ 효과크기 바닥은 "짝 없음" 분기에만 건다 — isSignificant() 자체에 넣지 않는다(2026-09-13
+// 설계 정정, docs/plan/PLAN-unannounced-effect-size-floor-2026-09-13.md ②-1). isSignificant()를
+// false로 만들면 노트 짝이 있는 델타가 아래 3)번(비유의) 분기로 떨어져 "announced-inconsistent"가
+// 되는데, 픽/밴 |delta| 중앙값(0.76%p)이 바닥(2~3%p)보다 작아 정상적으로 공지-일치한 델타 다수가
+// "공지-불일치"로 뒤집히는 회귀가 생긴다. isSignificant()는 순수 통계 판정으로 유지하고
+// `src/pipeline/shared/significance.ts`의 isSignificantDelta와 의미를 계속 일치시킨다(below-
+// threshold 행도 "통계적으로 유의한 변화"로 계속 집계되는 것은 의도된 동작 — "실재하지만 실무상
+// 무시 가능한 규모"라는 정의와 일치).
 
 import fs from "node:fs";
 import path from "node:path";
 import type { DeltaRecord, DeltasFileMeta, MatchStatus, PatchId, PatchNoteItem } from "../types";
 import { DATA_ROOT } from "../shared/paths";
-import { FDR_ALPHA, passesSampleGate } from "../aggregate/stats";
+import { FDR_ALPHA, meetsEffectFloor, passesSampleGate } from "../aggregate/stats";
+import { STATUS_SORT_PRIORITY } from "../shared/status-order";
 import type { EntityMatchInfo, EntityMatchOutcome } from "./entity-match";
 
 function isSignificant(delta: DeltaRecord): boolean {
@@ -40,7 +51,9 @@ export function assignStatus(delta: DeltaRecord, match: EntityMatchInfo | null):
   const hasNote = match !== null && match.noteIds.length > 0;
 
   if (isSignificant(delta)) {
-    if (!hasNote) return "unannounced";
+    if (!hasNote) {
+      return meetsEffectFloor(delta.metric, delta.delta, delta.before) ? "unannounced" : "below-threshold";
+    }
     return match!.directionAgreement === "consistent" ? "announced-consistent" : "announced-inconsistent";
   }
 
@@ -84,16 +97,10 @@ export function indexNotesById(notes: readonly PatchNoteItem[]): Map<string, Pat
   return map;
 }
 
-/** deltas/{from}_{to}.json 정렬 우선순위 — 숫자가 작을수록 먼저(위쪽에 노출). */
-const STATUS_SORT_PRIORITY: Record<MatchStatus, number> = {
-  unannounced: 0,
-  "announced-inconsistent": 1,
-  "announced-consistent": 2,
-  "insufficient-sample": 3,
-  "no-change": 4,
-};
-
-/** status 우선순위 → |delta| 내림차순(PLAN ③ ST-08 행 정렬 규칙). delta===null은 맨 뒤로 민다. */
+/** status 우선순위 → |delta| 내림차순(PLAN ③ ST-08 행 정렬 규칙). delta===null은 맨 뒤로 민다.
+ * 우선순위 값 자체는 `src/pipeline/shared/status-order.ts` 단일 소스(STATUS_SORT_PRIORITY)를
+ * 쓴다 — compare/logic.ts(클라이언트)의 대표 상태 판정도 같은 파일을 참조해 두 곳이 갈라지지
+ * 않는다(2026-09-13, below-threshold 도입). */
 export function sortDeltas(deltas: readonly DeltaRecord[]): DeltaRecord[] {
   return [...deltas].sort((a, b) => {
     const priorityDiff = STATUS_SORT_PRIORITY[a.status] - STATUS_SORT_PRIORITY[b.status];

@@ -11,6 +11,9 @@ import {
   WIN_RATE_MIN_N,
   FDR_ALPHA,
   Z_95,
+  EFFECT_SIZE_FLOORS,
+  meetsEffectFloor,
+  proportionNumerator,
 } from "../stats";
 
 describe("wilsonInterval", () => {
@@ -235,5 +238,97 @@ describe("summarize", () => {
     expect(n).toBe(8);
     expect(mean).toBeCloseTo(5, 6);
     expect(sd).toBeCloseTo(2.13809, 4);
+  });
+});
+
+describe("meetsEffectFloor — 단위는 비율(0~1)이지 %p(1~100)가 아니다", () => {
+  it("pickRate: |delta|=0.015(1.5%p)는 바닥(0.02) 미달 → false", () => {
+    expect(meetsEffectFloor("pickRate", 0.015, 0.1)).toBe(false);
+  });
+
+  it("pickRate: |delta|=0.025(2.5%p)는 바닥(0.02) 초과 → true", () => {
+    expect(meetsEffectFloor("pickRate", 0.025, 0.1)).toBe(true);
+  });
+
+  it("pickRate: |delta|=0.02(정확히 바닥)는 충족(>=) → true", () => {
+    expect(meetsEffectFloor("pickRate", 0.02, 0.1)).toBe(true);
+  });
+
+  it("banRate: 바닥은 0.03 — 0.029는 false, 0.031은 true", () => {
+    expect(meetsEffectFloor("banRate", 0.029, 0.5)).toBe(false);
+    expect(meetsEffectFloor("banRate", 0.031, 0.5)).toBe(true);
+  });
+
+  it("winRate: 바닥은 0.02 — 부호 무관(음수 delta)", () => {
+    expect(meetsEffectFloor("winRate", -0.025, 0.5)).toBe(true);
+    expect(meetsEffectFloor("winRate", -0.015, 0.5)).toBe(false);
+  });
+
+  it("adoptionRate: 상대기준 — before=0.04, delta=0.009(상대 22.5%)는 미달", () => {
+    expect(meetsEffectFloor("adoptionRate", 0.009, 0.04)).toBe(false);
+  });
+
+  it("adoptionRate: before=0.04, delta=0.011(상대 27.5%)는 충족", () => {
+    expect(meetsEffectFloor("adoptionRate", 0.011, 0.04)).toBe(true);
+  });
+
+  it("adoptionRate: before=0, delta!==0 → 상대변화 무한대이므로 통과", () => {
+    expect(meetsEffectFloor("adoptionRate", 0.002, 0)).toBe(true);
+  });
+
+  it("adoptionRate: before=0, delta=0 → 변화 없음이므로 미달", () => {
+    expect(meetsEffectFloor("adoptionRate", 0, 0)).toBe(false);
+  });
+
+  it("adoptionRate: before가 null이면 근거 없음 → 미달(무근거 통과 금지)", () => {
+    expect(meetsEffectFloor("adoptionRate", 0.02, null)).toBe(false);
+  });
+
+  it("delta가 null이면 측정 불가 → 항상 미달", () => {
+    expect(meetsEffectFloor("pickRate", null, 0.1)).toBe(false);
+  });
+
+  it("goldAt10/goldAt14/firstSec/avgDurationSec: 이번 스코프 바닥=0 → 어떤 0 아닌 delta도 통과", () => {
+    expect(meetsEffectFloor("goldAt10", 0.5, 6000)).toBe(true);
+    expect(meetsEffectFloor("goldAt14", -0.5, 6000)).toBe(true);
+    expect(meetsEffectFloor("firstSec", 1, 480)).toBe(true);
+    expect(meetsEffectFloor("avgDurationSec", 0.1, 1800)).toBe(true);
+  });
+
+  it("연속지표도 delta===0이면 미달(변화 자체가 없음)", () => {
+    expect(meetsEffectFloor("goldAt10", 0, 6000)).toBe(false);
+  });
+
+  it("EFFECT_SIZE_FLOORS는 DeltaMetric 8종을 전수 커버한다", () => {
+    expect(Object.keys(EFFECT_SIZE_FLOORS).sort()).toEqual(
+      [
+        "pickRate",
+        "banRate",
+        "winRate",
+        "adoptionRate",
+        "goldAt10",
+        "goldAt14",
+        "firstSec",
+        "avgDurationSec",
+      ].sort()
+    );
+  });
+});
+
+describe("proportionNumerator — 비율×분모 역산(반올림)", () => {
+  it("rate=0.1234, denominator=10000 → 1234", () => {
+    expect(proportionNumerator(0.1234, 10000)).toBe(1234);
+  });
+
+  it("rate=null이면 분자를 알 수 없음 → null", () => {
+    expect(proportionNumerator(null, 10000)).toBeNull();
+  });
+
+  it("denominator=0이면 분자는 0(정의상)", () => {
+    expect(proportionNumerator(0.5, 0)).toBe(0);
+  });
+
+  it("반올림 경계 — 0.00005*10000=0.5 → banker's round 아닌 Math.round(0.5)=1", () => {
+    expect(proportionNumerator(0.00005, 10000)).toBe(1);
   });
 });

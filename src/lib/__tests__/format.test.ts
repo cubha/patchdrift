@@ -119,12 +119,13 @@ describe("fmtKst", () => {
 });
 
 describe("statusLabel", () => {
-  it("4개 알려진 상태 + no-change를 한글 라벨로 매핑한다", () => {
+  it("4개 알려진 상태 + no-change + below-threshold를 한글 라벨로 매핑한다", () => {
     expect(statusLabel("announced-consistent")).toBe("공지-일치");
     expect(statusLabel("announced-inconsistent")).toBe("공지-불일치");
     expect(statusLabel("unannounced")).toBe("미공지");
     expect(statusLabel("insufficient-sample")).toBe("표본 부족");
     expect(statusLabel("no-change")).toBe("변화 없음");
+    expect(statusLabel("below-threshold")).toBe("임계 미달");
   });
 
   it("알려지지 않은 상태값은 원본을 그대로 반환한다(크래시 없음)", () => {

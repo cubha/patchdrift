@@ -14,7 +14,9 @@ import SideMatchAverages from "@/components/home/SideMatchAverages";
 import DiscordPanel from "@/components/home/DiscordPanel";
 import LaneGapPanel from "@/components/home/LaneGapPanel";
 import StreamColumnLayout from "@/components/home/StreamColumnLayout";
+import IndirectEffectPanel from "@/components/home/IndirectEffectPanel";
 import { computeHeadline } from "@/components/home/logic";
+import { selectIndirectEffects } from "@/components/home/indirectEffects";
 import { computeLaneDistribution } from "@/components/home/laneDistribution";
 import { buildReleaseStream } from "@/components/home/releaseStream";
 import { resolveStreamEntityIcon } from "@/components/home/releaseStreamEntity";
@@ -59,6 +61,10 @@ export default function Home() {
   const unannouncedRows = (deltas?.rows ?? []).filter((row) => row.status === "unannounced");
   const laneDistribution = computeLaneDistribution(unannouncedRows);
 
+  // 간접 영향(ST-IE7) — 릴리즈 스트림에는 넣지 않고(옵션 B) 하단 전용 섹션에서 인과 체인으로
+  // 노출한다. 선택·해석은 indirectEffects.ts가 끝낸다.
+  const indirectEffects = selectIndirectEffects(deltas, notesTo);
+
   return (
     <div className="flex flex-1 flex-col">
       {/* 크롬(패치 쌍·고정 표본·n/집계 캡션)은 2026-09-12(3차)부터 layout.tsx의 Header가
@@ -102,6 +108,7 @@ export default function Home() {
               </>
             }
           />
+          <IndirectEffectPanel entries={indirectEffects} />
         </Container>
       </main>
     </div>

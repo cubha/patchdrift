@@ -15,7 +15,7 @@ import Container from "@/components/Container";
 import SectionCard from "@/components/SectionCard";
 import { getDefaultPair, loadDeltas, loadNotes, loadSummary } from "@/lib/data";
 import { fmtKst } from "@/lib/format";
-import { FDR_ALPHA, WIN_RATE_MIN_N } from "@/pipeline/aggregate/stats";
+import { EFFECT_SIZE_FLOORS, FDR_ALPHA, WIN_RATE_MIN_N } from "@/pipeline/aggregate/stats";
 import { countRelevantNoteEntities } from "@/pipeline/shared/notes-count";
 import AdapterMatrix from "@/components/methodology/AdapterMatrix";
 import DiscordEmbedPreview from "@/components/methodology/DiscordEmbedPreview";
@@ -96,7 +96,14 @@ export default function MethodologyPage() {
           </SectionCard>
 
           <SectionCard eyebrow="우선 1 · 해석" title="상태 정의" variant="glass">
-            <StatusDefinitionTable minN={WIN_RATE_MIN_N} alpha={FDR_ALPHA} />
+            <StatusDefinitionTable
+              minN={WIN_RATE_MIN_N}
+              alpha={FDR_ALPHA}
+              pickFloor={EFFECT_SIZE_FLOORS.pickRate.value}
+              banFloor={EFFECT_SIZE_FLOORS.banRate.value}
+              winFloor={EFFECT_SIZE_FLOORS.winRate.value}
+              itemRelFloor={EFFECT_SIZE_FLOORS.adoptionRate.value}
+            />
           </SectionCard>
 
           {/* 확장성의 증명 — HANDOFF-redesign-2026-09-10.md §4-4. 셀렉터가 아니라 어댑터
