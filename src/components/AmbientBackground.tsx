@@ -56,15 +56,18 @@ function useIntroReveal(enabled: boolean): boolean {
 
 export default function AmbientBackground() {
   const pathname = usePathname();
-  const { selectedLane, detailSplashUrl } = useAmbient();
+  const { detailSplashUrl } = useAmbient();
   const reducedMotion = useReducedMotion();
 
   const isHome = pathname === "/";
   const isItemDetail = pathname?.startsWith("/item/") ?? false;
   const showDetailSplash = isItemDetail && detailSplashUrl !== null;
 
-  const lane = isHome ? selectedLane : "all";
-  const { tx, ty, scale } = laneCameraTransform(lane);
+  // 라인 카메라(2026-09-13·6차 연속, 사용자 결정) — 라인 필터 선택에 따라 배경이 확대·이동하던
+  // 동작을 제거했다. 실사용 검증 후 "시점이동하는건 없는게 맞을거같다. 오히려 어지러워" —
+  // 코드는 유지 초반 "우선 유지, 다시 검증해보고 판단" 상태였는데 이번에 그 검증이 끝났다.
+  // laneCamera.ts는 이제 "전체" 프레이밍(고정값)만 반환한다.
+  const { tx, ty, scale } = laneCameraTransform();
 
   const introPlaying = useIntroReveal(isHome && !reducedMotion);
   const [introEnded, setIntroEnded] = useState(false);
