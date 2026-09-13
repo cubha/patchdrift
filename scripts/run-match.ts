@@ -10,12 +10,13 @@ import path from "node:path";
 import { fetchPatchNotesHtml, parsePatchNotes } from "../src/pipeline/match/patchnotes-parser";
 import { notesFile } from "../src/pipeline/shared/paths";
 import { loadDdragon } from "../src/pipeline/match/ddragon";
-import { buildDeltas, loadAggregatedPatch, type AggregatedPatch } from "../src/pipeline/match/delta";
+import { buildDeltas, carryOverMatchIds, loadAggregatedPatch, type AggregatedPatch } from "../src/pipeline/match/delta";
 import type { DdragonData } from "../src/pipeline/match/ddragon";
 import { matchDeterministic } from "../src/pipeline/match/entity-match";
 import { applyVerdicts, indexNotesById, sortDeltas, writeDeltas } from "../src/pipeline/match/verdict";
 import { inferIndirectCandidates, type LlmMatchOptions, type LlmRunSummary } from "../src/pipeline/match/llm-match";
-import type { DeltaRecord, MatchStatus, PatchId, PatchNoteItem, PatchNoteSection } from "../src/pipeline/types";
+import { deltasFile, matchesJsonl } from "../src/pipeline/shared/paths";
+import type { DeltaRecord, DeltasFile, MatchStatus, PatchId, PatchNoteItem, PatchNoteSection } from "../src/pipeline/types";
 import { isMainModule, parseCliArgs } from "./shared/cli";
 
 export interface RunMatchArgs {
@@ -196,6 +197,26 @@ export async function main(): Promise<void> {
 
   console.log(`[run-match] 최종 상태 분포:`, countByStatus(pipelineResult.deltas));
 
+  // evidence.matchIds 승계 — data/raw/{to}/matches.jsonl이 없어(gitignore, CI가 매 패치 쌍마다
+  // raw를 재수집·보존하지는 않음) buildDeltas가 matchIds를 못 채운 행에 한해, 이전에 커밋된
+  // 동일 id 델타에서 승계한다("모든 판정문은 원천 링크를 가진다" 불변식 보호). carryOverMatchIds
+  // 자체가 "이미 채워진 행은 덮지 않음"을 보장하므로, raw 존재 여부를 별도로 분기하지 않고 이전
+  // 파일이 있으면 항상 시도한다(무손실 재생성이면 자연히 0건 승계로 끝난다).
+  let finalDeltas = pipelineResult.deltas;
+  const oldDeltasPath = deltasFile(args.from, args.to);
+  if (fs.existsSync(oldDeltasPath)) {
+    const oldFile = JSON.parse(fs.readFileSync(oldDeltasPath, "utf8")) as DeltasFile;
+    const oldById = new Map(oldFile.rows.map((row) => [row.id, row] as const));
+    const carryOver = carryOverMatchIds(finalDeltas, oldById);
+    finalDeltas = carryOver.deltas;
+    if (carryOver.carriedOverCount > 0) {
+      console.log(
+        `[run-match] ⚠️ evidence.matchIds ${carryOver.carriedOverCount}건을 이전 파일에서 승계 ` +
+          `(data/raw/${args.to}/matches.jsonl 없음 — ${matchesJsonl(args.to)})`
+      );
+    }
+  }
+
   if (args.dryRun) {
     console.log(`[run-match] --dry-run — 파일 기록 생략`);
     return;
@@ -204,7 +225,7 @@ export async function main(): Promise<void> {
   const result = writeDeltas({
     from: args.from,
     to: args.to,
-    deltas: pipelineResult.deltas,
+    deltas: finalDeltas,
     llm: pipelineResult.llmSummary
       ? {
           calls: pipelineResult.llmSummary.calls,

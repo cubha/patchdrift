@@ -5,7 +5,7 @@
 // 시그니처만 본다. 근거: docs/research/RESEARCH-patchgap-2026-09-05.md §3-2,
 // docs/plan/PLAN-patchgap.md ①F2·②제약("n≥200 게이트 + Newcombe CI 비중첩 + BH-FDR q<0.10").
 
-import type { Interval } from "../types";
+import type { DeltaMetric, Interval } from "../types";
 
 /** 승률 최소 n 게이트(§2 제약). 표본이 이 미만이면 "insufficient-sample"로 떨어진다. */
 export const WIN_RATE_MIN_N = 200;
@@ -163,6 +163,78 @@ export function betaBinomialShrink(
 /** 승률 최소 n 게이트 — 전/후 둘 다 minN 이상이어야 통과. */
 export function passesSampleGate(nBefore: number, nAfter: number, minN = WIN_RATE_MIN_N): boolean {
   return nBefore >= minN && nAfter >= minN;
+}
+
+// ─── 효과크기 바닥(effect-size floor) — 미공지 판정 2차 게이트 ───
+//
+// 통계적 유의성(q<FDR_ALPHA && CI가 0을 안 포함)만으로는 미공지를 판정할 수 없다: n≈10,000
+// 표본에서는 0.2%p 픽률 변화도 유의해진다. 픽/밴은 경기당 고정 슬롯(제로섬)이라 한 챔피언의
+// 상승이 다수 챔피언의 강제 하락으로 상쇄되고, 그 하락분이 개별적으로 "유의"하게 잡혀 전부
+// 미공지로 계상되는 실측 결함이 있었다(2026-09-13, 26.16→26.17 미공지 277건 중 84%가 픽/밴,
+// |delta| 중앙값 0.76%p — docs/plan/PLAN-unannounced-effect-size-floor-2026-09-13.md ①).
+// 이 바닥은 "짝 없음(미공지 후보)" 판정에만 적용한다 — 소비처(verdict.assignStatus)가 강제한다.
+//
+// 단위 주의: delta/before는 전부 비율(0~1)이다. %p(1~100 스케일)가 아니다 — delta.ts가 만드는
+// pickRate/banRate/winRate/adoptionRate 델타는 전부 `n/분모` 형태의 비율 차이다(UI가 표시 시점에만
+// ×100 한다). 여기 상수도 반드시 같은 스케일(0.02 = 2.0%p)로 정의한다.
+export interface EffectFloor {
+  /** "absolute" = |delta| >= value(비율 단위) · "relative" = |delta|/|before| >= value */
+  kind: "absolute" | "relative";
+  value: number;
+}
+
+/**
+ * `DeltaMetric` 8종 전수 — 새 metric이 추가되면 tsc가 이 Record 누락을 컴파일 타임에 잡는다
+ * (types.ts METRIC_KIND/METRIC_LABELS와 동일한 SSOT 관례). 연속 지표(goldAt10/goldAt14/firstSec/
+ * avgDurationSec)는 이번 스코프에서 임계값을 조정하지 않는다 — `value: 0`은 "바닥 없음"을 하드
+ * 코딩 스킵이 아니라 "임계값=0"이라는 값으로 표현해 기존 동작을 그대로 보존한다(delta===0만
+ * 걸러짐 = 원래도 변화가 없던 케이스).
+ */
+export const EFFECT_SIZE_FLOORS: Record<DeltaMetric, EffectFloor> = {
+  pickRate: { kind: "absolute", value: 0.02 },
+  banRate: { kind: "absolute", value: 0.03 },
+  winRate: { kind: "absolute", value: 0.02 },
+  adoptionRate: { kind: "relative", value: 0.25 },
+  goldAt10: { kind: "absolute", value: 0 },
+  goldAt14: { kind: "absolute", value: 0 },
+  firstSec: { kind: "absolute", value: 0 },
+  avgDurationSec: { kind: "absolute", value: 0 },
+};
+
+/**
+ * 효과크기 바닥 충족 여부. `delta===null`(측정 불가)은 항상 미달 — "무근거 문장은 회색" 원칙과
+ * 같은 이유로 측정 불가를 미공지로 승격시키지 않는다. relative 바닥은 `before===null`이면 근거가
+ * 없으므로 미달, `before===0`이고 `delta!==0`이면 상대변화가 정의상 무한대이므로 통과시킨다(절대
+ * 바닥이 아니라 상대 바닥을 쓰는 지표에서만 발생 — 채택률처럼 극저 베이스에서 신규 등장한 변화를
+ * 놓치지 않기 위함. q/CI 게이트가 이미 그 앞단에서 미세 표본 잡음을 걸러낸 뒤라는 전제).
+ */
+export function meetsEffectFloor(
+  metric: DeltaMetric,
+  delta: number | null,
+  before: number | null
+): boolean {
+  if (delta === null) return false;
+  const floor = EFFECT_SIZE_FLOORS[metric];
+  if (floor.kind === "absolute") {
+    return Math.abs(delta) >= floor.value && delta !== 0;
+  }
+  // relative
+  if (before === null) return false;
+  if (before === 0) return delta !== 0;
+  return Math.abs(delta) / Math.abs(before) >= floor.value;
+}
+
+/**
+ * 비율(rate)과 분모(denominator)로부터 원시 분자(횟수)를 역산한다 — `delta.ts`의 banRate 역산
+ * (`Math.round(banRate * totalMatches)`)과 동일한 원칙을 헬퍼로 공유해, pickRate/adoptionRate/
+ * winRate 분자도 verdict 단계에서 참조 가능하게 한다. `DeltaRecord`에 필드를 추가하지 않고
+ * 파생 계산으로 해결한 이유는 PLAN ②-2 참고 — 소비자 없는 필드가 커밋 대상 JSON 스키마를
+ * 불필요하게 부풀리기 때문이다.
+ */
+export function proportionNumerator(rate: number | null, denominator: number): number | null {
+  if (rate === null) return null;
+  if (denominator === 0) return 0;
+  return Math.round(rate * denominator);
 }
 
 /**

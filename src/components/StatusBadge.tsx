@@ -1,8 +1,9 @@
 // src/components/StatusBadge.tsx
 // 상태 뱃지 — DESIGN-TOKENS.md "상태 색 문법(구현 불변식)" 4종 + "no-change"(변화 없음, ST-08
-// types.ts 확장) 1종 = 5종. 프로토타입 `.badge`/`.badge-*` 1:1(색만 토큰 유틸로 재구현).
-// status는 MatchStatus로 좁히지 않고 string을 받는다 — 아직 정의되지 않은 미래 상태값이 와도
-// (statusLabel과 동일한 방어적 원칙) 무너지지 않고 뉴트럴 처리한다.
+// types.ts 확장) + "below-threshold"(임계 미달, 2026-09-13 신규) = 6종. 프로토타입
+// `.badge`/`.badge-*` 1:1(색만 토큰 유틸로 재구현). status는 MatchStatus로 좁히지 않고 string을
+// 받는다 — 아직 정의되지 않은 미래 상태값이 와도(statusLabel과 동일한 방어적 원칙) 무너지지 않고
+// 뉴트럴 처리한다.
 
 import { statusLabel } from "@/lib/format";
 
@@ -11,11 +12,16 @@ export interface StatusBadgeProps {
   className?: string;
 }
 
+/** 신규 토큰 0개 — `border-border-soft`/`--fg-2`는 기존 네임스페이스에 이미 존재한다(CLAUDE.md
+ * "임의 값 추가 금지" 원칙, verify.sh Spec 규칙 하드코딩 색 검사 통과). "below-threshold"는
+ * `unannounced`(accent, 최상)보다 약하고 `no-change`(border-soft+muted, 최약)보다 강한 중간
+ * 단계 — 실재하는 유의 변화이지만 실무상 무시 가능한 규모라는 의미를 색 강도로 표현한다. */
 const STATUS_CLASSES: Record<string, string> = {
   "announced-consistent": "border-border text-fg-2",
   "announced-inconsistent": "border-danger text-danger",
   unannounced: "border-accent text-accent",
   "insufficient-sample": "border-warn text-warn",
+  "below-threshold": "border-border-soft text-fg-2",
   "no-change": "border-border-soft text-muted",
 };
 

@@ -1,7 +1,7 @@
 // src/components/methodology/StatusDefinitionTable.tsx
-// 방법론 페이지 "상태 정의" 표(ST-12 ②) — 프로토타입 04 `.definition-table` 5행
-// (공지-일치/공지-불일치/미공지/표본 부족/변화 없음, DESIGN-TOKENS.md 상태 색 문법).
-// 뱃지는 공용 StatusBadge를 재사용해 색 문법이 한 곳(StatusBadge)에서만 정의되도록 한다.
+// 방법론 페이지 "상태 정의" 표(ST-12 ②) — 프로토타입 04 `.definition-table` 5행 + "임계 미달"
+// (below-threshold, 2026-09-13 신규) 1행 = 6행. 뱃지는 공용 StatusBadge를 재사용해 색 문법이
+// 한 곳(StatusBadge)에서만 정의되도록 한다.
 
 import StatusBadge from "@/components/StatusBadge";
 import type { MatchStatus } from "@/pipeline/types";
@@ -15,9 +15,27 @@ interface DefinitionRow {
 export interface StatusDefinitionTableProps {
   minN: number;
   alpha: number;
+  /** 효과크기 바닥(비율, 0~1) — `aggregate/stats.ts` EFFECT_SIZE_FLOORS와 값이 어긋나지
+   * 않도록 호출부(methodology/page.tsx)가 그 상수에서 직접 주입한다(하드코딩 금지). */
+  pickFloor: number;
+  banFloor: number;
+  winFloor: number;
+  /** 아이템 채택률 바닥은 상대변화 기준(예: 0.25 = 상대 25%) — 절대 %p가 아니다. */
+  itemRelFloor: number;
 }
 
-function buildRows(minN: number, alpha: number): DefinitionRow[] {
+function pct(ratio: number): string {
+  return `${(ratio * 100).toFixed(0)}%`;
+}
+
+function buildRows(
+  minN: number,
+  alpha: number,
+  pickFloor: number,
+  banFloor: number,
+  winFloor: number,
+  itemRelFloor: number
+): DefinitionRow[] {
   return [
     {
       status: "announced-consistent",
@@ -32,7 +50,14 @@ function buildRows(minN: number, alpha: number): DefinitionRow[] {
     {
       status: "unannounced",
       definition: "패치노트에 대응하는 조항이 없는 유의 변화",
-      condition: `짝 없음 · q<${alpha}`,
+      condition: `짝 없음 · q<${alpha} · 효과크기 바닥 이상`,
+    },
+    {
+      status: "below-threshold",
+      definition: "통계적으로는 유의하나 실무상 무시 가능한 규모(효과크기 바닥 미달)",
+      condition: `짝 없음 · q<${alpha} · |Δ|<바닥(픽 ${pct(pickFloor)}p/밴 ${pct(banFloor)}p/승 ${pct(
+        winFloor
+      )}p, 채택률 상대 ${pct(itemRelFloor)})`,
     },
     {
       status: "insufficient-sample",
@@ -47,8 +72,15 @@ function buildRows(minN: number, alpha: number): DefinitionRow[] {
   ];
 }
 
-export default function StatusDefinitionTable({ minN, alpha }: StatusDefinitionTableProps) {
-  const rows = buildRows(minN, alpha);
+export default function StatusDefinitionTable({
+  minN,
+  alpha,
+  pickFloor,
+  banFloor,
+  winFloor,
+  itemRelFloor,
+}: StatusDefinitionTableProps) {
+  const rows = buildRows(minN, alpha, pickFloor, banFloor, winFloor, itemRelFloor);
   return (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">

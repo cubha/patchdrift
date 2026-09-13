@@ -86,13 +86,15 @@ export function fmtKst(iso: string): string {
   return `${y}-${mo}-${d} ${h}:${mi} KST`;
 }
 
-/** MatchStatus 4종 + 미래 확장값("no-change" 등)을 수용하는 상태 라벨. 알려지지 않은 값은
- * 크래시 대신 원본 문자열을 그대로 반환한다(ST-08/09가 아직 만들지 않은 상태값이 와도 안전). */
+/** MatchStatus 6종(4종 + "no-change" + "below-threshold")을 수용하는 상태 라벨. 알려지지 않은
+ * 값은 크래시 대신 원본 문자열을 그대로 반환한다(ST-08/09가 아직 만들지 않은 상태값이 와도
+ * 안전). "below-threshold"(2026-09-13 신규) = 통계적으로 유의하지만 효과크기 바닥 미달. */
 const STATUS_LABELS: Record<MatchStatus, string> = {
   "announced-consistent": "공지-일치",
   "announced-inconsistent": "공지-불일치",
   unannounced: "미공지",
   "insufficient-sample": "표본 부족",
+  "below-threshold": "임계 미달",
   "no-change": "변화 없음",
 };
 

@@ -8,18 +8,22 @@ import type { NotesFile } from "@/lib/data";
 import { fmtCiHalf, fmtDeltaInt, fmtDeltaSec, fmtInt, fmtPp } from "@/lib/format";
 import { absDelta, countRelevantNoteEntities, metricKind } from "@/components/home/logic";
 import { parseLaneAxis, type LaneAxis } from "@/lib/lane";
+import { STATUS_SORT_PRIORITY } from "@/pipeline/shared/status-order";
 
-/** 상태 필터 칩 5종(UX-BRIEF "02 대조표" 필터 바) — "no-change"는 칩이 없다(전체=필터 없음이라
- * no-change 행도 "전체"에서는 그대로 보인다, ST-11.md 구현 결정 참고). `key`를 `MatchStatus |
- * "all"`로 좁혀(2026-09-05 리팩토링) 오타로 존재하지 않는 상태값을 넣으면 컴파일 타임에 잡는다 —
- * `filterByStatus`/`CompareExplorer.tsx`의 `statusFilter` 상태는 URL 해시에서도 올 수 있어 여전히
- * `string`을 받는다(런타임 값이라 타입으로 좁힐 수 없음). */
+/** 상태 필터 칩 6종(UX-BRIEF "02 대조표" 필터 바) — "no-change"는 칩이 없다(전체=필터 없음이라
+ * no-change 행도 "전체"에서는 그대로 보인다, ST-11.md 구현 결정 참고). `below-threshold`는
+ * 2026-09-13 신규 — 통계적으로 유의하지만 효과크기 바닥 미달인 델타(기본 접힘/비강조, 대조표
+ * 탭에서만 명시적으로 선택해야 보인다). `key`를 `MatchStatus | "all"`로 좁혀(2026-09-05 리팩토링)
+ * 오타로 존재하지 않는 상태값을 넣으면 컴파일 타임에 잡는다 — `filterByStatus`/
+ * `CompareExplorer.tsx`의 `statusFilter` 상태는 URL 해시에서도 올 수 있어 여전히 `string`을
+ * 받는다(런타임 값이라 타입으로 좁힐 수 없음). */
 export const STATUS_FILTERS: ReadonlyArray<{ key: MatchStatus | "all"; label: string }> = [
   { key: "all", label: "전체" },
   { key: "announced-consistent", label: "공지-일치" },
   { key: "announced-inconsistent", label: "공지-불일치" },
   { key: "unannounced", label: "미공지" },
   { key: "insufficient-sample", label: "표본 부족" },
+  { key: "below-threshold", label: "임계 미달" },
 ];
 
 export function filterByStatus(rows: DeltaRecord[], key: string): DeltaRecord[] {
@@ -92,24 +96,18 @@ export function filterNotesBySearch(items: PatchNoteItem[], query: string): Patc
   );
 }
 
-/** 상태 우선순위(ST-08 verdict.sortDeltas와 동일 순서) — 노트 1건에 델타가 여럿 걸려 있을 때
- * "대표 상태"를 고르는 데 쓴다. */
-const STATUS_PRIORITY: MatchStatus[] = [
-  "unannounced",
-  "announced-inconsistent",
-  "announced-consistent",
-  "insufficient-sample",
-  "no-change",
-];
-
 /** 노트 id → 그 노트와 짝지어진 델타들의 "대표 상태"(우선순위 최상위 1개). 짝지어진 델타가 하나도
- * 없으면 null(호출부가 "관측 없음" muted로 렌더). */
+ * 없으면 null(호출부가 "관측 없음" muted로 렌더). 우선순위는 `shared/status-order.ts`의
+ * `STATUS_SORT_PRIORITY`(verdict.ts와 공유하는 단일 소스)를 쓴다 — 이전엔 로컬 `MatchStatus[]`
+ * 배열 + `indexOf`였는데, 배열에 없는 상태값은 `indexOf`가 -1을 반환해 그 상태가 "최우선"으로
+ * 오판정되는 결함이 있었다(tsc가 못 잡음, 2026-09-13 below-threshold 도입 시 발견). exhaustive
+ * `Record`는 새 status가 여기 등록되지 않으면 tsc가 컴파일 타임에 잡는다. */
 export function representativeStatus(noteId: string, rows: DeltaRecord[]): MatchStatus | null {
   let best: MatchStatus | null = null;
   let bestRank = Infinity;
   for (const row of rows) {
     if (!row.matchedNoteIds.includes(noteId)) continue;
-    const rank = STATUS_PRIORITY.indexOf(row.status);
+    const rank = STATUS_SORT_PRIORITY[row.status];
     if (rank < bestRank) {
       bestRank = rank;
       best = row.status;
@@ -178,16 +176,22 @@ export interface CoverageStats {
   matchedCount: number;
   unannouncedCount: number;
   lowSampleCount: number;
+  /** 2026-09-13 신규 — 통계적으로 유의하지만 효과크기 바닥 미달(`below-threshold`)인 건수.
+   * `unannouncedCount`(여전히 `status==='unannounced'`만)와 별도 카운트로 노출해 CoverageBar가
+   * 기본 비강조로 덧붙인다. */
+  belowThresholdCount: number;
 }
 
 export function computeCoverage(rows: DeltaRecord[], notes: NotesFile | null): CoverageStats {
   let matchedCount = 0;
   let unannouncedCount = 0;
   let lowSampleCount = 0;
+  let belowThresholdCount = 0;
   for (const row of rows) {
     if (row.status === "announced-consistent" || row.status === "announced-inconsistent") matchedCount++;
     else if (row.status === "unannounced") unannouncedCount++;
     else if (row.status === "insufficient-sample") lowSampleCount++;
+    else if (row.status === "below-threshold") belowThresholdCount++;
   }
   return {
     noteEntityCount: countRelevantNoteEntities(notes),
@@ -195,5 +199,6 @@ export function computeCoverage(rows: DeltaRecord[], notes: NotesFile | null): C
     matchedCount,
     unannouncedCount,
     lowSampleCount,
+    belowThresholdCount,
   };
 }

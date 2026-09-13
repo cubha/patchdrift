@@ -287,16 +287,26 @@ export interface PatchNoteItem {
 }
 
 /**
- * 델타(관측 변화)의 판정 상태 — UX-BRIEF의 4개 상태 뱃지 + `"no-change"`(ST-08 신규, 아래 참고).
+ * 델타(관측 변화)의 판정 상태 — UX-BRIEF의 4개 상태 뱃지 + `"no-change"`(ST-08 신규) +
+ * `"below-threshold"`(2026-09-13 신규, 아래 참고).
  * `"no-change"`: 비유의(q>=FDR_ALPHA 이거나 CI가 0 포함)이고 패치노트 짝도 없는 델타 — "노트도
  * 없고 통계적으로도 변화가 없다"는 뜻으로, `unannounced`(짝 없음+유의)와는 구별해야 한다(그렇지
  * 않으면 소음 델타가 전부 "미공지 변화"로 잘못 뜬다). 하류(UI)는 회색으로 표시한다.
+ * `"below-threshold"`: 짝 없음 + 통계적으로 유의(q<FDR_ALPHA, CI가 0 미포함)하지만 효과크기
+ * 바닥(`aggregate/stats.ts` `EFFECT_SIZE_FLOORS`/`meetsEffectFloor`) 미달인 델타. n≈10,000
+ * 규모에서는 0.2%p 픽률 변화도 통계적으로 유의해지므로(실측: 픽/밴은 경기당 고정 슬롯인 제로섬
+ * 구조라 한 챔피언의 변화가 다수 챔피언의 강제 반대 방향 이동으로 상쇄되고, 그 이동분이 개별
+ * 적으로 유의하게 잡힘) `no-change`(비유의)와는 다른 의미다 — "실재하는 변화이지만 실무상 무시
+ * 가능한 규모"라는 뜻. `unannounced`로 승격시키지 않는다(docs/plan/
+ * PLAN-unannounced-effect-size-floor-2026-09-13.md). 정렬 우선순위는
+ * `src/pipeline/shared/status-order.ts` 단일 소스를 따른다.
  */
 export type MatchStatus =
   | "announced-consistent"
   | "announced-inconsistent"
   | "unannounced"
   | "insufficient-sample"
+  | "below-threshold"
   | "no-change";
 
 /**

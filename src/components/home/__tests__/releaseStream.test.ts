@@ -240,4 +240,28 @@ describe("buildReleaseStream", () => {
     expect(stream.map((g) => g.entity).sort()).toEqual(["바텀", "첫 용"].sort());
     expect(stream.every((g) => g.kind === "unannounced")).toBe(true);
   });
+
+  it("U < M+1(슬롯 수)이면 슬롯 0에 최소 1건을 보장한다(2026-09-13, 효과크기 바닥 도입으로 U가 급감할 수 있어 스트림 최상단 불변식 §1-1이 깨지는 것을 막는다)", () => {
+    // 노트 3그룹 → 슬롯 4개. 미공지는 2건뿐(U=2 < M+1=4) — 균등분산 공식 그대로면
+    // floor(1*2/4)=0이라 슬롯 0이 비어 스트림이 노트로 시작한다(단언식 §1-1 위반).
+    const notes = notesFile([
+      note({ id: "n1", entity: "노트1" }),
+      note({ id: "n2", entity: "노트2" }),
+      note({ id: "n3", entity: "노트3" }),
+    ]);
+    const deltas = deltasFile([
+      delta({ id: "champion:U1:pickRate", entityKey: "U1", entityName: "미공지큰", status: "unannounced", delta: -0.5 }),
+      delta({ id: "champion:U2:pickRate", entityKey: "U2", entityName: "미공지작은", status: "unannounced", delta: 0.1 }),
+    ]);
+    const stream = buildReleaseStream(notes, deltas);
+    expect(stream[0]).toEqual({ kind: "unannounced", entity: "미공지큰", deltas: [deltas.rows[0]] });
+    // 전체 총량은 그대로 보존된다(강제 승격이 항목을 잃거나 중복시키지 않음).
+    expect(stream.filter((g) => g.kind === "unannounced").flatMap((g) => (g.kind === "unannounced" ? g.deltas : []))).toHaveLength(2);
+  });
+
+  it("U=0(미공지 없음)이면 강제 보정이 발동하지 않고 노트로 그대로 시작한다", () => {
+    const notes = notesFile([note({ id: "n1", entity: "노트1" })]);
+    const stream = buildReleaseStream(notes, deltasFile([]));
+    expect(stream).toEqual([{ kind: "matched", entity: "노트1", notes: notes.items }]);
+  });
 });
