@@ -1,10 +1,13 @@
 // src/lib/laneCamera.ts
-// 라인 카메라 — 아이소메트릭 섬 배경 위에서 선택된 라인으로 확대 이동하기 위한 순수 좌표 변환.
-// 초점(fx/fy)·줌(z)은 확정 시안(아티팩트 "협곡 앰비언트 배경" v5, LAYER 2 · 라인 카메라)이
-// 1280×720 렌더 위에서 실측한 값을 그대로 승계한다 — 임의 조정 금지, 재실측이 필요하면 시안을
-// 먼저 갱신한다. AmbientBackground.tsx가 `--tx/--ty/--z` CSS 커스텀 프로퍼티로 그대로 꽂는다.
-
-import type { LaneAxis } from "./lane";
+// 앰비언트 배경 카메라 — 협곡 확정 시안(아티팩트 "협곡 앰비언트 배경" v5, LAYER 2)의 "전체"
+// 초점(fx=0.48, fy=0.42, z=1.0)을 고정 프레이밍으로 쓴다. AmbientBackground.tsx가 `--tx/--ty/--z`
+// CSS 커스텀 프로퍼티로 그대로 꽂는다.
+//
+// 2026-09-13(6차 연속, 사용자 결정) — 라인 필터 선택에 따라 배경이 라인별 초점으로 확대·이동
+// 하던 동작을 제거했다. 실사용 검증 후 "시점이동하는건 없는게 맞을거같다. 오히려 어지러워" —
+// 세션 초반엔 "우선 유지, 다시 검증해보고 판단"이었는데 이번에 그 검증이 끝났다. 라인별 초점
+// 표(TOP/JUNGLE/MIDDLE/BOTTOM/UTILITY, fx/fy/z 실측값)는 전부 제거하고 "전체" 프레이밍만
+// 고정값으로 남긴다 — 라인을 눌러도 배경은 움직이지 않는다.
 
 export interface LaneCameraTransform {
   /** translateX 퍼센트 — cam-inner 자기 폭 기준(양수=오른쪽 이동). */
@@ -15,27 +18,9 @@ export interface LaneCameraTransform {
   scale: number;
 }
 
-interface FocalPoint {
-  fx: number;
-  fy: number;
-  z: number;
-}
+const BASE_CAMERA: LaneCameraTransform = { tx: 2, ty: 8, scale: 1.0 };
 
-const FOCAL_POINTS: Record<LaneAxis, FocalPoint> = {
-  all: { fx: 0.48, fy: 0.42, z: 1.0 },
-  TOP: { fx: 0.44, fy: 0.255, z: 1.55 },
-  JUNGLE: { fx: 0.41, fy: 0.395, z: 1.62 },
-  MIDDLE: { fx: 0.485, fy: 0.42, z: 1.66 },
-  BOTTOM: { fx: 0.515, fy: 0.575, z: 1.55 },
-  UTILITY: { fx: 0.6, fy: 0.515, z: 1.66 },
-};
-
-/** 라인 축 → 카메라 변환(tx/ty/scale). 소수점 둘째 자리까지 반올림(시안의 `.toFixed(2)`와 동일). */
-export function laneCameraTransform(lane: LaneAxis): LaneCameraTransform {
-  const { fx, fy, z } = FOCAL_POINTS[lane];
-  return {
-    tx: Math.round((0.5 - fx) * 100 * 100) / 100,
-    ty: Math.round((0.5 - fy) * 100 * 100) / 100,
-    scale: z,
-  };
+/** 고정 카메라 프레이밍("전체" 초점, fx=0.48/fy=0.42/z=1.0 그대로). */
+export function laneCameraTransform(): LaneCameraTransform {
+  return BASE_CAMERA;
 }
