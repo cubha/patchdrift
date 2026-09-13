@@ -15,6 +15,7 @@ import type { DdragonData } from "../src/pipeline/match/ddragon";
 import { matchDeterministic } from "../src/pipeline/match/entity-match";
 import { applyVerdicts, indexNotesById, sortDeltas, writeDeltas } from "../src/pipeline/match/verdict";
 import { inferIndirectCandidates, type LlmMatchOptions, type LlmRunSummary } from "../src/pipeline/match/llm-match";
+import { reclassifyIndirectEffects } from "../src/pipeline/match/indirect-effect";
 import { deltasFile, matchesJsonl } from "../src/pipeline/shared/paths";
 import type { DeltaRecord, DeltasFile, MatchStatus, PatchId, PatchNoteItem, PatchNoteSection } from "../src/pipeline/types";
 import { isMainModule, parseCliArgs } from "./shared/cli";
@@ -115,6 +116,8 @@ export interface RunMatchPipelineResult {
   /** LLM 2단 실행 전(1단 결정론 판정 직후, 이미 정렬된 상태) 상태 분포 — 로그용. */
   statusAfterVerdict: Partial<Record<MatchStatus, number>>;
   llmSummary?: LlmRunSummary;
+  /** 3단 간접 영향 재분류 건수(ST-IE3, 2026-09-13) — `--no-llm`이면 항상 0. */
+  indirectEffectCount: number;
 }
 
 /**
@@ -141,6 +144,7 @@ export async function runMatchPipeline(params: RunMatchPipelineParams): Promise<
   const statusAfterVerdict = countByStatus(deltas);
 
   let llmSummary: LlmRunSummary | undefined;
+  let indirectEffectCount = 0;
   if (!params.noLlm) {
     const result = await inferIndirectCandidates(deltas, params.notes, params.ddragon, {
       maxDeltas: params.llmMax,
@@ -150,9 +154,23 @@ export async function runMatchPipeline(params: RunMatchPipelineParams): Promise<
     // 이미 정렬된 상태가 그대로 유지된다 — 재정렬 불필요.
     deltas = result.deltas;
     llmSummary = result.summary;
+
+    // 3단(ST-IE3, 2026-09-13) — LLM이 채운 causes를 근거로 "간접 영향"을 분리한다. verdict
+    // 단계에서는 causes가 구조적으로 비어 있어 불가능하므로 여기가 유일한 지점이다
+    // (src/pipeline/match/indirect-effect.ts 헤더 참고). status가 바뀌면 정렬 우선순위도
+    // 바뀌므로 **반드시 재정렬**해야 "항상 정렬된 상태로 반환" 계약이 유지된다.
+    const reclassified = reclassifyIndirectEffects(deltas, indexNotesById(params.notes));
+    deltas = sortDeltas(reclassified.deltas);
+    indirectEffectCount = reclassified.reclassifiedCount;
   }
 
-  return { deltas, mappingFailures: matchOutcome.mappingFailures, statusAfterVerdict, llmSummary };
+  return {
+    deltas,
+    mappingFailures: matchOutcome.mappingFailures,
+    statusAfterVerdict,
+    llmSummary,
+    indirectEffectCount,
+  };
 }
 
 export async function main(): Promise<void> {
@@ -193,6 +211,12 @@ export async function main(): Promise<void> {
     );
   } else {
     console.log(`[run-match] --no-llm — 2단 스킵`);
+  }
+
+  if (pipelineResult.indirectEffectCount > 0) {
+    console.log(
+      `[run-match] 3단 간접 영향 재분류: ${pipelineResult.indirectEffectCount}건(unannounced → indirect-effect)`
+    );
   }
 
   console.log(`[run-match] 최종 상태 분포:`, countByStatus(pipelineResult.deltas));

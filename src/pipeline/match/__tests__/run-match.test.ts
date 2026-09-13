@@ -11,7 +11,8 @@ import path from "node:path";
 import { parseArgs, runMatchPipeline } from "../../../../scripts/run-match";
 import type { AggregatedPatch } from "../delta";
 import type { DdragonChampion, DdragonData } from "../ddragon";
-import type { ChampionStat, PatchSummary } from "../../types";
+import type { ChampionStat, PatchNoteItem, PatchSummary } from "../../types";
+import { STATUS_SORT_PRIORITY } from "../../shared/status-order";
 
 describe("run-match: parseArgs", () => {
   it("--from/--to가 없으면 에러", () => {
@@ -189,5 +190,120 @@ describe("run-match: runMatchPipeline — LLM 상위 N은 정렬(중요도)순�
     // 핵심 단언: 더 큰 델타(Aatrox, 0.20)만 LLM이 처리했어야 한다(배열상 순회 순서로는 Graves가 먼저).
     expect(aatroxWinRate?.llm).toBeDefined();
     expect(gravesWinRate?.llm).toBeUndefined();
+  });
+
+  // ST-IE3(2026-09-13) — LLM이 붙인 verified medium+ 원인을 근거로 3단 재분류가 일어나고,
+  // status가 바뀐 뒤 **재정렬**되어 "항상 정렬된 상태로 반환" 계약이 유지되는지 검증한다.
+  it("verified medium 원인이 붙은 unannounced는 indirect-effect로 재분류되고 재정렬된다", async () => {
+    const itemNote: PatchNoteItem = {
+      id: "note:26.17:item:stormrazor:aaaa",
+      patch: "26.17",
+      section: "item",
+      entity: "폭풍갈퀴",
+      skill: null,
+      stat: "공격 속도",
+      before: "20%",
+      after: "25%",
+      direction: "buff",
+      summary: "공격 속도: 20% ⇒ 25%",
+      anchorUrl: "https://example.com/#stormrazor",
+      anchorKind: "entity",
+    };
+
+    const before: AggregatedPatch = {
+      patch: "26.16",
+      champions: [champAllRow({ championId: 1, championKey: "Aatrox", championName: "Aatrox", n: 1000, winRate: 0.4 })],
+      items: [],
+      lanes: [],
+      objectives: {
+        patch: "26.16",
+        n: 0,
+        firstDragonSecAvg: null,
+        firstHeraldSecAvg: null,
+        firstBaronSecAvg: null,
+        firstTowerSecAvg: null,
+        dragon: { n: 0, mean: null, sd: 0, occurrenceRate: 0 },
+        herald: { n: 0, mean: null, sd: 0, occurrenceRate: 0 },
+        baron: { n: 0, mean: null, sd: 0, occurrenceRate: 0 },
+        tower: { n: 0, mean: null, sd: 0, occurrenceRate: 0 },
+      },
+      summary: summaryStat({ patch: "26.16", avgDurationSec: 1500 }),
+    };
+    const after: AggregatedPatch = {
+      ...before,
+      patch: "26.17",
+      champions: [champAllRow({ championId: 1, championKey: "Aatrox", championName: "Aatrox", n: 1000, winRate: 0.6 })],
+      summary: summaryStat({ patch: "26.17", avgDurationSec: 1500 }),
+    };
+
+    const parseFn = vi.fn().mockResolvedValue({
+      ...fakeParseResponse("Aatrox"),
+      parsed_output: {
+        causes: [
+          {
+            text: "폭풍갈퀴 공격 속도 강화가 아트록스 성능에 간접 영향을 줬을 수 있습니다",
+            candidateNoteId: itemNote.id,
+            confidence: "medium",
+          },
+        ],
+        summary: "요약(Aatrox)",
+        summaryCites: [],
+      },
+    });
+
+    const result = await runMatchPipeline({
+      before,
+      after,
+      notes: [itemNote],
+      ddragon: makeDdragon(),
+      llmMax: 5,
+      noLlm: false,
+      llmOptions: { client: fakeClient(parseFn), cacheDir: tmpCacheDir },
+    });
+
+    const aatrox = result.deltas.find((d) => d.id === "champion:Aatrox:winRate");
+    expect(aatrox?.status).toBe("indirect-effect");
+    expect(result.indirectEffectCount).toBe(1);
+    // 원천 링크(노트 anchorUrl)가 채워지되, 1단 매칭 결과(matchedNoteId)는 오염되지 않는다.
+    expect(aatrox?.evidence.noteAnchor).toBe("https://example.com/#stormrazor");
+    expect(aatrox?.matchedNoteId).toBeNull();
+    // 재정렬 계약: status 우선순위 오름차순이 유지된다.
+    const priorities = result.deltas.map((d) => STATUS_SORT_PRIORITY[d.status]);
+    expect(priorities).toEqual([...priorities].sort((a, b) => a - b));
+  });
+
+  it("--no-llm이면 재분류가 일어나지 않는다(indirectEffectCount=0)", async () => {
+    const before: AggregatedPatch = {
+      patch: "26.16",
+      champions: [champAllRow({ championId: 1, championKey: "Aatrox", championName: "Aatrox", n: 1000, winRate: 0.4 })],
+      items: [],
+      lanes: [],
+      objectives: {
+        patch: "26.16",
+        n: 0,
+        firstDragonSecAvg: null,
+        firstHeraldSecAvg: null,
+        firstBaronSecAvg: null,
+        firstTowerSecAvg: null,
+        dragon: { n: 0, mean: null, sd: 0, occurrenceRate: 0 },
+        herald: { n: 0, mean: null, sd: 0, occurrenceRate: 0 },
+        baron: { n: 0, mean: null, sd: 0, occurrenceRate: 0 },
+        tower: { n: 0, mean: null, sd: 0, occurrenceRate: 0 },
+      },
+      summary: summaryStat({ patch: "26.16", avgDurationSec: 1500 }),
+    };
+    const after: AggregatedPatch = { ...before, patch: "26.17" };
+
+    const result = await runMatchPipeline({
+      before,
+      after,
+      notes: [],
+      ddragon: makeDdragon(),
+      llmMax: 5,
+      noLlm: true,
+    });
+
+    expect(result.indirectEffectCount).toBe(0);
+    expect(result.deltas.some((d) => d.status === "indirect-effect")).toBe(false);
   });
 });

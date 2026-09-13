@@ -22,6 +22,7 @@ export const STATUS_FILTERS: ReadonlyArray<{ key: MatchStatus | "all"; label: st
   { key: "announced-consistent", label: "공지-일치" },
   { key: "announced-inconsistent", label: "공지-불일치" },
   { key: "unannounced", label: "미공지" },
+  { key: "indirect-effect", label: "간접 영향" },
   { key: "insufficient-sample", label: "표본 부족" },
   { key: "below-threshold", label: "임계 미달" },
 ];
@@ -180,6 +181,9 @@ export interface CoverageStats {
    * `unannouncedCount`(여전히 `status==='unannounced'`만)와 별도 카운트로 노출해 CoverageBar가
    * 기본 비강조로 덧붙인다. */
   belowThresholdCount: number;
+  /** 2026-09-13 신규 — 노트 직접 조항은 없으나 다른 조항의 파급효과로 설명되는 건수
+   * (`indirect-effect`). `unannouncedCount`에서 빠져나간 만큼이 여기로 온다. */
+  indirectEffectCount: number;
 }
 
 export function computeCoverage(rows: DeltaRecord[], notes: NotesFile | null): CoverageStats {
@@ -187,11 +191,13 @@ export function computeCoverage(rows: DeltaRecord[], notes: NotesFile | null): C
   let unannouncedCount = 0;
   let lowSampleCount = 0;
   let belowThresholdCount = 0;
+  let indirectEffectCount = 0;
   for (const row of rows) {
     if (row.status === "announced-consistent" || row.status === "announced-inconsistent") matchedCount++;
     else if (row.status === "unannounced") unannouncedCount++;
     else if (row.status === "insufficient-sample") lowSampleCount++;
     else if (row.status === "below-threshold") belowThresholdCount++;
+    else if (row.status === "indirect-effect") indirectEffectCount++;
   }
   return {
     noteEntityCount: countRelevantNoteEntities(notes),
@@ -200,5 +206,6 @@ export function computeCoverage(rows: DeltaRecord[], notes: NotesFile | null): C
     unannouncedCount,
     lowSampleCount,
     belowThresholdCount,
+    indirectEffectCount,
   };
 }

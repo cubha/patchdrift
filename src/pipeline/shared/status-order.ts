@@ -12,18 +12,21 @@
 // fs 등 Node 전용 의존 없음 — significance.ts와 동일 원칙으로 클라이언트 번들에도 실린다
 // (compare/logic.ts가 "use client" CompareExplorer.tsx에서 소비).
 //
-// 순위 근거: unannounced(0) > announced-inconsistent(1) > announced-consistent(2) >
-// below-threshold(3) > insufficient-sample(4) > no-change(5). below-threshold는 통계적으로는
-// 실재하는 유의 변화이지만(insufficient-sample=판정 유보와 다름) 실무상 무시 가능한 규모라
-// unannounced보다 아래, insufficient-sample 바로 위에 둔다(정보량 순서와 일치).
+// 순위 근거: unannounced(0) > indirect-effect(1) > announced-inconsistent(2) >
+// announced-consistent(3) > below-threshold(4) > insufficient-sample(5) > no-change(6).
+// below-threshold는 통계적으로는 실재하는 유의 변화이지만(insufficient-sample=판정 유보와 다름)
+// 실무상 무시 가능한 규모라 아래쪽에 둔다. indirect-effect(2026-09-13 신규)는 "노트에 직접
+// 조항은 없지만 다른 조항의 파급효과로 설명되는 변화"라 순수 미공지 바로 다음 — 원인 체인이
+// 붙어 있어 정보량은 높지만 "노트가 말하지 않은 미지의 변화"라는 차별 지표에서는 한 단계 아래다.
 
 import type { MatchStatus } from "../types";
 
 export const STATUS_SORT_PRIORITY: Record<MatchStatus, number> = {
   unannounced: 0,
-  "announced-inconsistent": 1,
-  "announced-consistent": 2,
-  "below-threshold": 3,
-  "insufficient-sample": 4,
-  "no-change": 5,
+  "indirect-effect": 1,
+  "announced-inconsistent": 2,
+  "announced-consistent": 3,
+  "below-threshold": 4,
+  "insufficient-sample": 5,
+  "no-change": 6,
 };

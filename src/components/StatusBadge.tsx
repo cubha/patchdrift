@@ -20,6 +20,7 @@ const STATUS_CLASSES: Record<string, string> = {
   "announced-consistent": "border-border text-fg-2",
   "announced-inconsistent": "border-danger text-danger",
   unannounced: "border-accent text-accent",
+  "indirect-effect": "border-accent text-fg-2",
   "insufficient-sample": "border-warn text-warn",
   "below-threshold": "border-border-soft text-fg-2",
   "no-change": "border-border-soft text-muted",

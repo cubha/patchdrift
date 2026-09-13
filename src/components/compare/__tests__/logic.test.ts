@@ -172,10 +172,15 @@ describe("representativeStatus", () => {
   });
 });
 
-describe("STATUS_FILTERS — below-threshold 칩(2026-09-13 신규)", () => {
+describe("STATUS_FILTERS — below-threshold·indirect-effect 칩(2026-09-13 신규)", () => {
   it("below-threshold 칩이 '임계 미달' 라벨로 존재한다", () => {
     const entry = STATUS_FILTERS.find((f) => f.key === "below-threshold");
     expect(entry?.label).toBe("임계 미달");
+  });
+
+  it("indirect-effect 칩이 '간접 영향' 라벨로 존재한다", () => {
+    const entry = STATUS_FILTERS.find((f) => f.key === "indirect-effect");
+    expect(entry?.label).toBe("간접 영향");
   });
 });
 
@@ -234,6 +239,7 @@ describe("computeCoverage", () => {
       unannouncedCount: 0,
       lowSampleCount: 0,
       belowThresholdCount: 0,
+      indirectEffectCount: 0,
     });
   });
 
@@ -245,6 +251,7 @@ describe("computeCoverage", () => {
       delta({ id: "3", status: "insufficient-sample" }),
       delta({ id: "4", status: "no-change" }),
       delta({ id: "5", status: "below-threshold" }),
+      delta({ id: "6", status: "indirect-effect" }),
     ];
     expect(computeCoverage(rows, notes)).toEqual({
       noteEntityCount: 1,
@@ -253,6 +260,7 @@ describe("computeCoverage", () => {
       unannouncedCount: 1,
       lowSampleCount: 1,
       belowThresholdCount: 1,
+      indirectEffectCount: 1,
     });
   });
 });

@@ -211,6 +211,7 @@
 | 공지-일치 | 뉴트럴 보더 | `--border` + `--fg-2` |
 | 공지-불일치 | 위험 보더 | `--danger` |
 | 미공지 | 강조 | `--accent` |
+| 간접 영향 (2026-09-13 신규) | 강조 보더 + 보조 텍스트 | `--accent` 보더 + `--fg-2` |
 | 임계 미달 (2026-09-13 신규) | 뉴트럴 보더(약) | `--border-soft` + `--fg-2` |
 | 표본 부족 | 경고 | `--warn` |
 | 변화 없음 | 뉴트럴(최약) | `--border-soft` + `--muted` |
@@ -221,5 +222,10 @@
 > 채택률 상대 25% — `src/pipeline/aggregate/stats.ts` `EFFECT_SIZE_FLOORS`) 미달인 델타다.
 > `unannounced`(accent, 최상)보다 약하고 `no-change`(border-soft+muted, 최약)보다 강한 중간
 > 단계로, 신규 CSS 변수·arbitrary 값 추가 없이 기존 토큰 조합만으로 표현한다.
+>
+> "간접 영향"(`indirect-effect`)은 직접 조항은 없지만 다른 조항의 파급효과로 설명되는 변화다
+> (`src/pipeline/match/indirect-effect.ts`, confidence≥medium). `unannounced`와 **같은 accent
+> 보더**를 쓰되 텍스트만 `--fg-2`로 낮춰 "미공지의 친척이지만 한 단계 아래"라는 관계를 색으로
+> 드러낸다 — 역시 신규 토큰 0개.
 
 > 스택별 주입 구문(Tailwind v4 `@theme`·CSS 변수)은 `/init-project` Phase 4-5-a에서 처리한다. 이 파일은 값만 정의한다.

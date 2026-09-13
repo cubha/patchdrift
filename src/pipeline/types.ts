@@ -305,6 +305,7 @@ export type MatchStatus =
   | "announced-consistent"
   | "announced-inconsistent"
   | "unannounced"
+  | "indirect-effect"
   | "insufficient-sample"
   | "below-threshold"
   | "no-change";

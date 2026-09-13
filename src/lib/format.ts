@@ -93,6 +93,7 @@ const STATUS_LABELS: Record<MatchStatus, string> = {
   "announced-consistent": "공지-일치",
   "announced-inconsistent": "공지-불일치",
   unannounced: "미공지",
+  "indirect-effect": "간접 영향",
   "insufficient-sample": "표본 부족",
   "below-threshold": "임계 미달",
   "no-change": "변화 없음",

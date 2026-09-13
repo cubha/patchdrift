@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 import StatusDefinitionTable from "../StatusDefinitionTable";
 
 describe("StatusDefinitionTable", () => {
-  it("6개 상태(no-change·below-threshold 포함)를 모두 렌더하고 게이트 값을 조건 열에 반영한다", () => {
+  it("7개 상태(no-change·below-threshold·indirect-effect 포함)를 모두 렌더하고 게이트 값을 조건 열에 반영한다", () => {
     const { container } = render(
       <StatusDefinitionTable
         minN={200}
@@ -20,6 +20,8 @@ describe("StatusDefinitionTable", () => {
     expect(container.textContent).toContain("표본 부족");
     expect(container.textContent).toContain("변화 없음");
     expect(container.textContent).toContain("임계 미달");
+    expect(container.textContent).toContain("간접 영향");
+    expect(container.textContent).toContain("confidence≥medium");
     expect(container.textContent).toContain("n<200");
     expect(container.textContent).toContain("q<0.1");
     expect(container.textContent).toContain("픽 2%p");
